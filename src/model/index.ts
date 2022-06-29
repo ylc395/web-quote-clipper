@@ -1,10 +1,19 @@
 import type { InjectionToken } from 'tsyringe';
 
+export enum Colors {
+  Yellow = 'YELLOW',
+  Green = 'GREEN',
+  Blue = 'BLUE',
+  Pink = 'PINK',
+  Purple = 'PURPLE',
+}
+
 export interface Quote {
   sourceUrl: string;
   locator: string;
   content: string[];
   comment: string;
+  color?: Colors;
   note?: Note;
 }
 
@@ -15,7 +24,7 @@ export interface Note {
 }
 
 export interface NoteDatabase {
-  ready: () => Promise<void>;
+  ready: Promise<void>;
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
   getNotesByTag: (tag: string) => Promise<Required<Note>[]>;
@@ -23,7 +32,7 @@ export interface NoteDatabase {
 }
 
 export interface Storage {
-  get: (key: string) => Promise<string>;
+  get: (key: string) => Promise<string | null>;
   set: (key: string, value: string) => Promise<void>;
 }
 

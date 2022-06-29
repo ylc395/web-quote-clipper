@@ -1,44 +1,24 @@
 import { container, singleton } from 'tsyringe';
-import { Ref, ref } from '@vue/reactivity';
 import MarkdownIt from 'markdown-it';
 import { load as loadHtml } from 'cheerio';
-import type { Quote, Note } from 'model/index';
-import { databaseToken, storageToken } from 'model/index';
-
-const TAG = 'web-quote';
-const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
+import { Quote, Note, Colors, databaseToken } from 'model/index';
+import ConfigService from './ConfigService';
 
 @singleton()
-export default class DataService {
+export default class QuoteService {
   private readonly md = new MarkdownIt();
   private readonly db = container.resolve(databaseToken);
-  private readonly storage = container.resolve(storageToken);
-  readonly writeTargetPath = ref('');
-  private writeTargetId = '';
-  readonly quotes: Ref<Required<Quote>[]> = ref([]);
+  private quotes: Required<Quote>[] = [];
+  private configService = container.resolve(ConfigService);
   constructor() {
     // this.md.use(MarkdownItAttrs).use(MarkdownItAttribution);
-    this.initQuotes();
-    this.initWriteTarget();
+    this.init();
   }
 
-  private async initQuotes() {
-    await this.db.ready();
-    const notes = await this.db.getNotesByTag(TAG);
-    this.quotes.value = notes.flatMap((note) => this.extractQuotes(note));
-  }
-
-  private async initWriteTarget() {
-    this.writeTargetId = await this.storage.get(WRITE_TARGET_ID);
-
-    try {
-      this.writeTargetPath.value = (
-        await this.db.getNoteById(this.writeTargetId)
-      ).id;
-    } catch {
-      this.writeTargetId = '';
-      await this.storage.set(WRITE_TARGET_ID, '');
-    }
+  private async init() {
+    await Promise.all([this.db.ready, this.configService.ready]);
+    const notes = await this.db.getNotesByTag(this.configService.tag);
+    this.quotes = notes.flatMap((note) => this.extractQuotes(note));
   }
 
   private extractQuotes(note: Required<Note>) {
@@ -55,7 +35,8 @@ export default class DataService {
         .find('blockquote > p')
         .toArray()
         .map((el) => $(el).text());
-      const locator = $el.find('blockquote').data('locator') as string;
+      const locator = $el.data('locator') as string;
+      const color = $el.data('color') as Colors;
       const comment = $el
         .find('.c-quote-comment')
         .toArray()
@@ -68,6 +49,7 @@ export default class DataService {
           content,
           locator,
           comment,
+          color,
           note: {
             id: note.id,
             path: note.path,
@@ -79,23 +61,22 @@ export default class DataService {
     return quotes;
   }
 
-  async setWriteTarget({ id, path }: Note) {
-    this.writeTargetPath.value = path;
-    this.writeTargetId = id;
-    await this.storage.set(WRITE_TARGET_ID, id);
-  }
-
   async createQuote(quote: Quote) {
-    if (!this.writeTargetId) {
+    await this.configService.ready;
+    const { writeTarget, color } = this.configService;
+
+    if (!this.configService.writeTarget.id) {
+      // todo: handle no write target
       throw new Error('empty write target id');
     }
 
     const newQuote: Required<Quote> = {
       ...quote,
-      note: { id: this.writeTargetId, path: this.writeTargetPath.value },
+      color,
+      note: writeTarget,
     };
     await this.db.postQuote(newQuote);
-    this.quotes.value.push(newQuote);
+    this.quotes.push(newQuote);
   }
 
   async updateQuote(quote: Required<Quote>) {

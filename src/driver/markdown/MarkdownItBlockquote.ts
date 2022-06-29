@@ -1,21 +1,19 @@
-
-
-    /**
+/**
      * input:
      * 
      * > That's one small step for [a] man, one giant leap for mankind.
      * >
      * > That's two small step for [a] man, one giant leap for mankind.  
      * > 
-     * > @@ http://baidu.com xxxx
+     * > @@ http://baidu.com xxxx red
      * > 
      * > comment comment
      * 
      * 
      * output:
      * 
-      <figure class="c-blockquote">
-        <blockquote data-locator="xxxx">
+      <figure class="c-blockquote" data-locator="xxxx" data-color="red">
+        <blockquote>
           <p>
             That's one small step for [a] man, one giant leap for mankind.  
           </p>

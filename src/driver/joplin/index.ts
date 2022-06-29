@@ -10,16 +10,15 @@ export default class Joplin implements NoteDatabase {
   private readonly storage = container.resolve(storageToken);
   private apiToken = '';
   private authToken = '';
-
-  private readonly _ready: Promise<void>;
+  readonly ready: Promise<void>;
 
   constructor() {
-    this._ready = this.init();
+    this.ready = this.init();
   }
 
   private async init() {
-    this.apiToken = await this.storage.get(API_TOKEN_KEY);
-    this.authToken = await this.storage.get(AUTH_TOKEN_KEY);
+    this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
+    this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
@@ -76,10 +75,6 @@ export default class Joplin implements NoteDatabase {
   }
 
   fetchNoteByTags(tag: string) {}
-
-  ready() {
-    return this._ready;
-  }
 
   async putQuote(quote: Required<Quote>) {}
   async postQuote(quote: Required<Quote>) {}

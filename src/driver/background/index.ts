@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
 import { storageToken, databaseToken, CaptureEvents } from 'model/index';
-import DataService from 'service/DataService';
+import QuoteService from 'service/DataService';
 import Joplin from '../joplin';
 import Storage from './Storage';
 import type { Message } from '../types';
@@ -9,7 +9,7 @@ import type { Message } from '../types';
 container.registerSingleton(storageToken, Storage);
 container.registerSingleton(databaseToken, Joplin);
 
-const dataService = new DataService();
+const dataService = new QuoteService();
 
 chrome.runtime.onMessage.addListener((message: Message) => {
   switch (message.event) {
