@@ -1,12 +1,15 @@
 import { container, singleton } from 'tsyringe';
-import MarkdownIt from 'markdown-it';
 import { load as loadHtml } from 'cheerio';
+import type { Transformer } from 'unified';
 import { Quote, Note, Colors, databaseToken } from 'model/index';
+import Markdown from 'utils/Markdown';
 import ConfigService from './ConfigService';
 
 @singleton()
 export default class QuoteService {
-  private readonly md = new MarkdownIt();
+  private readonly md = new Markdown({
+    transformPlugins: [() => this.replaceQuoteContentImage],
+  });
   private readonly db = container.resolve(databaseToken);
   private quotes: Required<Quote>[] = [];
   private configService = container.resolve(ConfigService);
@@ -21,39 +24,37 @@ export default class QuoteService {
     this.quotes = notes.flatMap((note) => this.extractQuotes(note));
   }
 
+  // service knows note. so we process raw markdown note in service
   private extractQuotes(note: Required<Note>) {
     const html = this.md.render(note.content);
-    const htmlDocument = this.md.render(html);
-    const $ = loadHtml(htmlDocument);
+    const $ = loadHtml(html);
     const blockquoteContainers = $('.c-blockquote');
     const quotes: Required<Quote>[] = [];
 
     blockquoteContainers.each((_, el) => {
       const $el = $(el);
       const sourceUrl = $el.find('.c-cite a').attr('href');
-      const content = $el
+      const startLocator = $el.data('startLocator') as string;
+      const endLocator = $el.data('endLocator') as string;
+      const color = $el.data('color') as Colors;
+      const contents = $el
         .find('blockquote > p')
         .toArray()
-        .map((el) => $(el).text());
-      const locator = $el.data('locator') as string;
-      const color = $el.data('color') as Colors;
+        .map((el) => $(el).text().trim());
       const comment = $el
         .find('.c-quote-comment')
         .toArray()
-        .map((el) => $(el).text())
+        .map((el) => $(el).text().trim())
         .join('\n');
 
-      if (sourceUrl && content && locator) {
+      if (sourceUrl && contents.length > 0 && startLocator && endLocator) {
         quotes.push({
           sourceUrl,
-          content,
-          locator,
+          contents,
+          locators: [startLocator, endLocator],
           comment,
           color,
-          note: {
-            id: note.id,
-            path: note.path,
-          },
+          note: { id: note.id, path: note.path },
         });
       }
     });
@@ -61,17 +62,42 @@ export default class QuoteService {
     return quotes;
   }
 
+  private replaceQuoteContentImage: Transformer = async (node) => {
+    const replacer = async (_node: typeof node) => {
+      if (Markdown.isImageNode(_node)) {
+        _node.alt = _node.url;
+        _node.url = await this.db.putResource(_node.url);
+      }
+
+      if (Markdown.isParent(_node)) {
+        for (const child of _node.children) {
+          await replacer(child);
+        }
+      }
+    };
+
+    await replacer(node);
+    return node;
+  };
+
   async createQuote(quote: Quote) {
     await this.configService.ready;
     const { writeTarget, color } = this.configService;
 
-    if (!this.configService.writeTarget.id) {
-      // todo: handle no write target
-      throw new Error('empty write target id');
+    // if (!this.configService.writeTarget.id) {
+    // todo: handle no write target
+    //   throw new Error('empty write target id');
+    // }
+
+    const processedContents: string[] = [];
+
+    for (const content of quote.contents) {
+      processedContents.push((await this.md.transform(content)).trim());
     }
 
     const newQuote: Required<Quote> = {
       ...quote,
+      contents: processedContents,
       color,
       note: writeTarget,
     };

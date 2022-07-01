@@ -10,13 +10,17 @@
   "license": "MIT",
   "dependencies": {
     "@vue/reactivity": "^3.2.37",
+    "block-elements": "^1.2.0",
     "cheerio": "^1.0.0-rc.12",
     "eventemitter3": "^4.0.7",
     "lodash.debounce": "^4.0.8",
-    "markdown-it": "^13.0.1",
     "reflect-metadata": "^0.1.13",
+    "remark-html": "^15.0.1",
+    "remark-parse": "^10.0.1",
+    "remark-stringify": "^10.0.2",
     "tippy.js": "^6.3.7",
     "tsyringe": "^4.7.0",
+    "unified": "^10.1.2",
     "unique-selector": "^0.5.0"
   },
   "devDependencies": {
@@ -28,7 +32,7 @@
     "@types/chrome": "^0.0.191",
     "@types/eventemitter3": "^2.0.2",
     "@types/lodash.debounce": "^4.0.7",
-    "@types/markdown-it": "^12.2.3",
+    "@types/mdast": "^3.0.10",
     "rollup": "^2.75.7",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-polyfill-node": "^0.9.0",

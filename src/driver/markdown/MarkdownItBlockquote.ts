@@ -5,14 +5,14 @@
      * >
      * > That's two small step for [a] man, one giant leap for mankind.  
      * > 
-     * > @@ http://baidu.com xxxx red
+     * > @@ http://baidu.com xxxx yyyy RED
      * > 
      * > comment comment
      * 
      * 
      * output:
      * 
-      <figure class="c-blockquote" data-locator="xxxx" data-color="red">
+      <figure class="c-blockquote" data-start-locator="xxxx" data-end-locator="yyyy" data-color="red">
         <blockquote>
           <p>
             That's one small step for [a] man, one giant leap for mankind.  

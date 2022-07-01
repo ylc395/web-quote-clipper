@@ -1,31 +1,5 @@
+import BLOCK_ELEMENTS from 'block-elements';
 import type { Message } from '../types';
-
-function parents(base: Node) {
-  let node = base.parentElement;
-  const nodes: HTMLElement[] = [];
-
-  for (; node; node = node.parentElement) {
-    nodes.unshift(node);
-  }
-  return nodes;
-}
-
-export function getCommonAncestor(node1: Node, node2: Node) {
-  if (node1 === node2) {
-    return node1.parentElement;
-  }
-
-  const parents1 = parents(node1);
-  const parents2 = parents(node2);
-
-  for (let i = 0; i < parents1.length; i++) {
-    if (parents1[i] !== parents2[i]) {
-      return parents1[i - 1];
-    }
-  }
-
-  return parents1[parents1.length - 1];
-}
 
 export function getSelection() {
   const selection = document.getSelection();
@@ -43,10 +17,22 @@ export function getSelection() {
   return {
     anchor: selection.anchorNode,
     focus: selection.focusNode,
-    text: selection.toString(),
+    range: selection.getRangeAt(0),
   } as const;
 }
 
 export const postMessage = (message: Message) => {
   chrome.runtime.sendMessage(message);
 };
+
+export const isTextNode = (node: Node): node is Text =>
+  node.nodeType === document.TEXT_NODE;
+
+export const isElement = (node: Node): node is Element =>
+  node.nodeType === document.ELEMENT_NODE;
+
+export const isBlockElement = (element: Element) =>
+  (BLOCK_ELEMENTS as string[]).includes(element.tagName.toLowerCase());
+
+export const isImageElement = (element: Element): element is HTMLImageElement =>
+  element.tagName.toLowerCase() === 'img';

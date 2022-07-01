@@ -1,5 +1,6 @@
 import { defineConfig } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
+import vFileResolver from './tool/vFileResolver';
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
@@ -10,6 +11,7 @@ import nodePolyfills from 'rollup-plugin-polyfill-node';
 const plugins = [
   commonjs(),
   nodePolyfills(),
+  vFileResolver,
   nodeResolve(),
   typescript(),
   json(),

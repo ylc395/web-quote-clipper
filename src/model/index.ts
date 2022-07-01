@@ -10,8 +10,8 @@ export enum Colors {
 
 export interface Quote {
   sourceUrl: string;
-  locator: string;
-  content: string[];
+  locators: [string, string];
+  contents: string[];
   comment: string;
   color?: Colors;
   note?: Note;
@@ -27,6 +27,7 @@ export interface NoteDatabase {
   ready: Promise<void>;
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
+  putResource: (resourceUrl: string) => Promise<string>;
   getNotesByTag: (tag: string) => Promise<Required<Note>[]>;
   getNoteById: (id: string) => Promise<Note>;
 }

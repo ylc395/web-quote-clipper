@@ -88,6 +88,10 @@ export default class Joplin implements NoteDatabase {
   async getNotesByTag(tag: string) {
     return [await this.getNoteById('ddd')];
   }
+
+  async putResource(resourceUrl: string) {
+    return 'dddd';
+  }
 }
 
 container.registerSingleton(databaseToken, Joplin);
