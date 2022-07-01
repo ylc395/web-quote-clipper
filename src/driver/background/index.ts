@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
 import { storageToken, databaseToken, CaptureEvents } from 'model/index';
-import QuoteService from 'service/DataService';
+import QuoteService from 'service/QuoteService';
 import Joplin from '../joplin';
-import Storage from './Storage';
+import Storage from './helper/Storage';
 import type { Message } from '../types';
 
 container.registerSingleton(storageToken, Storage);

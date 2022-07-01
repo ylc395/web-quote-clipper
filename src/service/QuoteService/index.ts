@@ -2,8 +2,8 @@ import { container, singleton } from 'tsyringe';
 import { load as loadHtml } from 'cheerio';
 import type { Transformer } from 'unified';
 import { Quote, Note, Colors, databaseToken } from 'model/index';
-import Markdown from 'utils/Markdown';
-import ConfigService from './ConfigService';
+import Markdown from 'service/QuoteService/Markdown';
+import ConfigService from '../ConfigService';
 
 @singleton()
 export default class QuoteService {
