@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
-import { storageToken, databaseToken, CaptureEvents } from 'model/index';
+import { storageToken, databaseToken } from 'model/index';
 import QuoteService from 'service/QuoteService';
 import Joplin from '../joplin';
 import Storage from './helper/Storage';
-import type { Message } from '../types';
+import { Message, MessageEvents } from '../types';
 
 container.registerSingleton(storageToken, Storage);
 container.registerSingleton(databaseToken, Joplin);
@@ -13,7 +13,7 @@ const dataService = new QuoteService();
 
 chrome.runtime.onMessage.addListener((message: Message) => {
   switch (message.event) {
-    case CaptureEvents.Captured:
+    case MessageEvents.Captured:
       return dataService.createQuote(message.payload);
     default:
       break;

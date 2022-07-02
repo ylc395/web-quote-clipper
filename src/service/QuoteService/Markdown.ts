@@ -21,12 +21,16 @@ export default class Markdown {
       .use(remarkStringify)
       .use(options?.transformPlugins || []);
   }
-  render(md: string) {
+  renderSync(md: string) {
     return this.renderer.processSync(md).toString();
   }
 
   async transform(md: string) {
-    return await (await this.transformer.process(md)).toString();
+    return (await this.transformer.process(md)).toString();
+  }
+
+  transformSync(md: string) {
+    return this.transformer.processSync(md).toString();
   }
 
   static isImageNode(node: any): node is Image {

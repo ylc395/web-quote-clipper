@@ -12,6 +12,7 @@
     "@vue/reactivity": "^3.2.37",
     "block-elements": "^1.2.0",
     "cheerio": "^1.0.0-rc.12",
+    "dom-highlight-range": "^3.0.1",
     "eventemitter3": "^4.0.7",
     "lodash.debounce": "^4.0.8",
     "reflect-metadata": "^0.1.13",

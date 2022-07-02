@@ -26,7 +26,7 @@ export default class QuoteService {
 
   // service knows note. so we process raw markdown note in service
   private extractQuotes(note: Required<Note>) {
-    const html = this.md.render(note.content);
+    const html = this.md.renderSync(note.content);
     const $ = loadHtml(html);
     const blockquoteContainers = $('.c-blockquote');
     const quotes: Required<Quote>[] = [];

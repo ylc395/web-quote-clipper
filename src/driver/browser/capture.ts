@@ -1,23 +1,53 @@
 import uniqueSelector from 'unique-selector';
+import { create as createMarker, isAvailableRange } from './markManage';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
+import type { Quote } from 'model/index';
 import {
-  getSelection,
   isBlockElement,
   isElement,
   isImageElement,
   isTextNode,
   postMessage,
 } from './utils';
-import { CaptureEvents, Quote } from 'model/index';
+import { MessageEvents } from '../types';
+import { highlightQuote } from './highlight';
 
-function generateQuote(): Quote | undefined {
-  const selection = getSelection();
+function getSelection() {
+  const selection = document.getSelection();
 
-  if (!selection) {
+  if (
+    !selection ||
+    selection.rangeCount > 1 ||
+    selection.isCollapsed ||
+    !selection.anchorNode ||
+    !selection.focusNode
+  ) {
     return;
   }
 
-  const { range } = selection;
+  const anchorEl = isElement(selection.anchorNode)
+    ? selection.anchorNode
+    : selection.anchorNode.parentElement;
+  const focusEl = isElement(selection.focusNode)
+    ? selection.focusNode
+    : selection.focusNode.parentElement;
+
+  if (!anchorEl || !focusEl) {
+    return;
+  }
+
+  const isFocusElPreceding =
+    anchorEl.compareDocumentPosition(focusEl) &
+    Node.DOCUMENT_POSITION_PRECEDING;
+
+  return {
+    startEl: isFocusElPreceding ? focusEl : anchorEl,
+    endEl: isFocusElPreceding ? anchorEl : focusEl,
+    range: selection.getRangeAt(0),
+  } as const;
+}
+
+function generateQuote(range: Range): Quote | undefined {
   const { startContainer, endContainer } = range;
   const fragment = range.cloneContents();
 
@@ -73,28 +103,42 @@ function generateQuote(): Quote | undefined {
 export function createTooltip() {
   const selection = getSelection();
 
-  if (!selection || !selection.focus.parentElement) {
+  if (!selection) {
     return;
   }
 
   let tooltip: TippyInstance;
 
-  const handleClick = () => {
-    const quote = generateQuote();
+  const handleClick = async () => {
+    const quote = generateQuote(selection.range);
+
     if (quote) {
-      postMessage({ event: CaptureEvents.Captured, payload: quote });
+      // await postMessage({ event: MessageEvents.Captured, payload: quote });
+      const isSuccessful = highlightQuote(quote);
+
+      if (isSuccessful) {
+        const selection = window.getSelection();
+        selection?.empty();
+      } else {
+        // todo: always createMarker manually since users hope to see markers just made
+        // createMarker(selection.range, quote);
+      }
     } else {
       // todo: handle no quote
     }
     tooltip.destroy();
   };
 
-  tooltip = tippy(selection.focus.parentElement, {
+  const tooltipDisabled = !isAvailableRange(selection.range);
+
+  tooltip = tippy(selection.endEl, {
     showOnCreate: true,
     trigger: 'manual',
     allowHTML: true,
     interactive: true,
-    content: '<div><button>Quote!</button></div>',
+    content: `<div><button${
+      tooltipDisabled ? ' disabled' : ''
+    }>Quote!</button></div>`,
     appendTo: document.body,
     onDestroy: (instance) => {
       instance.popper.removeEventListener('click', handleClick);

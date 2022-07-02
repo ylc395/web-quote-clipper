@@ -1,28 +1,8 @@
 import BLOCK_ELEMENTS from 'block-elements';
 import type { Message } from '../types';
 
-export function getSelection() {
-  const selection = document.getSelection();
-
-  if (
-    !selection ||
-    selection.rangeCount > 1 ||
-    selection.isCollapsed ||
-    !selection.anchorNode ||
-    !selection.focusNode
-  ) {
-    return;
-  }
-
-  return {
-    anchor: selection.anchorNode,
-    focus: selection.focusNode,
-    range: selection.getRangeAt(0),
-  } as const;
-}
-
-export const postMessage = (message: Message) => {
-  chrome.runtime.sendMessage(message);
+export const postMessage = <T = void>(message: Message) => {
+  return chrome.runtime.sendMessage<Message, T>(message);
 };
 
 export const isTextNode = (node: Node): node is Text =>

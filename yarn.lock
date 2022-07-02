@@ -390,6 +390,11 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
+dom-highlight-range@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/dom-highlight-range/-/dom-highlight-range-3.0.1.tgz#f02d0baae04aa44ff87707782538f52713ed8e55"
+  integrity sha512-RLQuKlyrM5urZma8CZV/UvmQWPS+7eAzI36aE/bpg5lW7klaQRgYZ5S1Tyr/FaTEOye2SHFild3XV7gQnpljZA==
+
 dom-serializer@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/dom-serializer/-/dom-serializer-2.0.0.tgz#e41b802e1eedf9f6cae183ce5e622d789d7d8e53"

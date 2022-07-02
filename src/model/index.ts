@@ -37,11 +37,6 @@ export interface Storage {
   set: (key: string, value: string) => Promise<void>;
 }
 
-export enum CaptureEvents {
-  Captured = 'quoteCaptured',
-  Commented = 'commented',
-  Error = 'error',
-}
 export const storageToken: InjectionToken<Storage> = Symbol('storageToken');
 export const databaseToken: InjectionToken<NoteDatabase> =
   Symbol('databaseToken');
