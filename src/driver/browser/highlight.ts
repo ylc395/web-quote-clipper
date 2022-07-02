@@ -61,11 +61,32 @@ function findBoundary(
     currentNode = treeWalker.nextNode();
   }
 
-  const startBoundaryNode = startBoundary?.[0];
   const isReversed = Boolean(startBoundary);
+  let textNodePointer = isReversed ? texts.length - 1 : 0;
+  const startBoundaryNode = startBoundary?.[0];
+
+  if (startBoundaryNode) {
+    const startBoundaryNodeIndex = nodes.findIndex(
+      (n) => n === startBoundaryNode,
+    );
+
+    // if startBoundaryNode and endBoundaryNode are siblings,
+    // we can guess endBoundaryNode's position by startBoundary
+    if (startBoundaryNodeIndex > -1) {
+      let text = startBoundaryNode.textContent!.slice(startBoundary[1]);
+      let i = startBoundaryNodeIndex + 1;
+
+      while (text.length < content.length && i < nodes.length - 1) {
+        text += nodes[i].textContent || '';
+        i += 1;
+      }
+
+      textNodePointer = i;
+    }
+  }
+
   const unit = isReversed ? -1 : 1;
   let offset = 0;
-  let textNodePointer = isReversed ? texts.length - 1 : 0;
   let contentCharPointer = isReversed ? content.length - 1 : 0;
   let contentMatchPoint: { index: number; node: Node } | null = null;
 
@@ -125,7 +146,7 @@ function findBoundary(
       textCharPointer += unit;
     }
 
-    if (contentMatchPoint) {
+    if (contentMatchPoint && !boundaryNode) {
       boundaryNode = contentMatchPoint.node;
     }
 
