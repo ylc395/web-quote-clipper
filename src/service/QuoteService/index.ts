@@ -33,6 +33,11 @@ export default class QuoteService {
 
     blockquoteContainers.each((_, el) => {
       const $el = $(el);
+
+      $el.find('img').replaceWith((i, v) => {
+        return Markdown.imgElToText(v as unknown as HTMLImageElement);
+      });
+
       const sourceUrl = $el.find('.c-cite a').attr('href');
       const startLocator = $el.data('startLocator') as string;
       const endLocator = $el.data('endLocator') as string;

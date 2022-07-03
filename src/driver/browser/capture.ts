@@ -11,6 +11,7 @@ import {
 import { MessageEvents } from '../types';
 import { highlightQuote } from './highlight';
 import Tooltip from './Tooltip';
+import Markdown from 'service/QuoteService/Markdown';
 
 let currentMousePosition = { x: 0, y: 0 };
 document.addEventListener('mousemove', ({ x, y }) => {
@@ -84,7 +85,7 @@ function generateQuote(range: Range): Quote | undefined {
       }
 
       if (isImageElement(currentNode)) {
-        lastText += `![${currentNode.alt}](${currentNode.src} ${currentNode.title})`;
+        lastText += Markdown.imgElToText(currentNode);
       }
     }
 

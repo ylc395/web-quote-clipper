@@ -1,31 +1,8 @@
-import { Node as ASTNode } from 'unified/lib';
 import type { Quote } from 'model/index';
 import { isElement, isImageElement, postMessage, isTextNode } from './utils';
 import { create as createMarker } from './markManage';
 import { MessageEvents } from '../types';
 import Markdown from 'service/QuoteService/Markdown';
-
-const md = new Markdown({
-  transformPlugins: [
-    () => (node) => {
-      const replacer = (_node: ASTNode) => {
-        if (Markdown.isImageNode(_node)) {
-          (_node as any).type = 'text';
-          (_node as any).value = _node.url;
-        }
-
-        if (Markdown.isParent(_node)) {
-          for (const child of _node.children) {
-            replacer(child);
-          }
-        }
-      };
-
-      replacer(node);
-      return node;
-    },
-  ],
-});
 
 function warnPopup(msg: string) {
   alert(msg);
@@ -40,7 +17,6 @@ function findBoundary(
     el,
     NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
   );
-  content = md.transformSync(content);
 
   const texts: string[] = [];
   const nodes: Node[] = [];
@@ -49,7 +25,7 @@ function findBoundary(
 
   while (currentNode) {
     if (isElement(currentNode) && isImageElement(currentNode)) {
-      texts.push(currentNode.src);
+      texts.push(Markdown.imgElToText(currentNode));
       nodes.push(currentNode);
     }
 

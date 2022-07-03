@@ -2,6 +2,7 @@
      * input:
      * 
      * > That's one small step for [a] man, one giant leap for mankind.
+     * > ![www.xxxx.com](:/resourceId)
      * >
      * > That's two small step for [a] man, one giant leap for mankind.  
      * > 
@@ -16,6 +17,7 @@
         <blockquote>
           <p>
             That's one small step for [a] man, one giant leap for mankind.  
+            <img src="www.xxxx.com">
           </p>
           <p>
             That's two small step for [a] man, one giant leap for mankind.  

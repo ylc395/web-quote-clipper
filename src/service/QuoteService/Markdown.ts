@@ -40,4 +40,9 @@ export default class Markdown {
   static isParent(node: any): node is Parent {
     return Array.isArray(node.children);
   }
+
+  static imgElToText(el: HTMLImageElement) {
+    // ignore alt because alt is always replaced by url of image
+    return `![](${el.src}${el.title ? ` "${el.title}"` : ''})`;
+  }
 }
