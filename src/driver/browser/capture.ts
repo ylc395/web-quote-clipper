@@ -1,6 +1,5 @@
 import uniqueSelector from 'unique-selector';
 import { create as createMarker, isAvailableRange } from './markManage';
-import tippy, { Instance as TippyInstance } from 'tippy.js';
 import type { Quote } from 'model/index';
 import {
   isBlockElement,
@@ -11,6 +10,12 @@ import {
 } from './utils';
 import { MessageEvents } from '../types';
 import { highlightQuote } from './highlight';
+import Tooltip from './Tooltip';
+
+let currentMousePosition = { x: 0, y: 0 };
+document.addEventListener('mousemove', ({ x, y }) => {
+  currentMousePosition = { x, y };
+});
 
 function getSelection() {
   const selection = document.getSelection();
@@ -107,7 +112,7 @@ export function createTooltip() {
     return;
   }
 
-  let tooltip: TippyInstance;
+  let tooltip: Tooltip;
 
   const handleClick = async () => {
     const quote = generateQuote(selection.range);
@@ -117,9 +122,7 @@ export function createTooltip() {
       // todo: always createMarker manually since users hope to see markers just made
       // createMarker(selection.range, quote);
       highlightQuote(quote);
-
-      const selection = window.getSelection();
-      selection?.empty();
+      window.getSelection()?.empty();
     } else {
       // todo: handle no quote
     }
@@ -128,25 +131,9 @@ export function createTooltip() {
 
   const tooltipDisabled = !isAvailableRange(selection.range);
 
-  tooltip = tippy(selection.endEl, {
-    showOnCreate: true,
-    trigger: 'manual',
-    allowHTML: true,
-    interactive: true,
-    content: `<div><button${
-      tooltipDisabled ? ' disabled' : ''
-    }>Quote!</button></div>`,
-    appendTo: document.body,
-    onDestroy: (instance) => {
-      instance.popper.removeEventListener('click', handleClick);
-    },
-    onHidden: (instance) => {
-      if (!instance.state.isDestroyed) {
-        instance.destroy();
-      }
-    },
-    onCreate: (instance) => {
-      instance.popper.addEventListener('click', handleClick);
-    },
+  tooltip = new Tooltip({
+    handleClick,
+    disabled: tooltipDisabled,
+    position: [currentMousePosition.x + 10, currentMousePosition.y + 10],
   });
 }
