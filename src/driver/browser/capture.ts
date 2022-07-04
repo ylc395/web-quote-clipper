@@ -9,9 +9,8 @@ import {
   postMessage,
 } from './utils';
 import { MessageEvents } from '../types';
-import { highlightQuote } from './highlight';
 import Tooltip from './Tooltip';
-import Markdown from 'service/QuoteService/Markdown';
+import Markdown from 'service/MarkdownService';
 
 let currentMousePosition = { x: 0, y: 0 };
 document.addEventListener('mousemove', ({ x, y }) => {

@@ -4,7 +4,7 @@ import remarkStringify from 'remark-stringify';
 import remarkHtml from 'remark-html';
 import type { Image, Parent } from 'mdast';
 
-export default class Markdown {
+export default class MarkdownService {
   private readonly renderer: Processor;
   private readonly transformer: Processor;
   constructor(options?: {
@@ -27,10 +27,6 @@ export default class Markdown {
 
   async transform(md: string) {
     return (await this.transformer.process(md)).toString();
-  }
-
-  transformSync(md: string) {
-    return this.transformer.processSync(md).toString();
   }
 
   static isImageNode(node: any): node is Image {

@@ -1,8 +1,14 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
-import { databaseToken, NoteDatabase, storageToken, Quote } from 'model/index';
+import {
+  databaseToken,
+  storageToken,
+  NoteDatabase,
+  Quote,
+  Note,
+} from 'model/index';
 import ConfigService from 'service/ConfigService';
-import Markdown from 'service/QuoteService/Markdown';
+import Markdown from 'service/MarkdownService';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
@@ -165,7 +171,7 @@ export default class Joplin implements NoteDatabase {
     await this.request('POST', `/tags/${tagId}/notes`, { id: note.id });
   }
 
-  async getNoteById(id: string) {
+  async getNoteById(id: string): Promise<Required<Note>> {
     const note = await this.request<{ body: string }>(
       'GET',
       `/notes/${id}?fields=body`,
@@ -191,16 +197,10 @@ export default class Joplin implements NoteDatabase {
     );
 
     const notes = await Promise.all(
-      noteInfos.map(({ id }) =>
-        this.request<{ body: string; id: string }>(
-          'GET',
-          `/notes/${id}?fields=body,id`,
-        ),
-      ),
+      noteInfos.map(({ id }) => this.getNoteById(id)),
     );
 
-    // todo: get note path
-    return notes.map(({ body, id }) => ({ content: body, id, path: '' }));
+    return notes;
   }
 
   private async putResource(resourceUrl: string) {
@@ -211,8 +211,8 @@ export default class Joplin implements NoteDatabase {
     const processedContents: string[] = [];
 
     for (const content of quote.contents) {
-      const replaced = await this.md.transform(content);
-      processedContents.push(`> ${replaced.trim()}`);
+      const transformed = await this.md.transform(content);
+      processedContents.push(`> ${transformed.trim()}`);
     }
 
     return `${processedContents.join('\n>\n')}\n>\n> @@ ${

@@ -2,7 +2,7 @@ import type { Quote } from 'model/index';
 import { isElement, isImageElement, postMessage, isTextNode } from './utils';
 import { create as createMarker } from './markManage';
 import { MessageEvents } from '../types';
-import Markdown from 'service/QuoteService/Markdown';
+import Markdown from 'service/MarkdownService';
 
 function warnPopup(msg: string) {
   alert(msg);

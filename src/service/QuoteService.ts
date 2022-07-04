@@ -1,12 +1,12 @@
 import { container, singleton } from 'tsyringe';
 import { load as loadHtml } from 'cheerio';
 import { Quote, Note, Colors, databaseToken } from 'model/index';
-import Markdown from 'service/QuoteService/Markdown';
-import ConfigService from '../ConfigService';
+import MarkdownService from './MarkdownService';
+import ConfigService from './ConfigService';
 
 @singleton()
 export default class QuoteService {
-  private readonly md = new Markdown({
+  private readonly md = new MarkdownService({
     // todo: add render plugin
   });
   private readonly db = container.resolve(databaseToken);
@@ -32,7 +32,7 @@ export default class QuoteService {
       const $el = $(el);
 
       $el.find('img').replaceWith((i, v) => {
-        return Markdown.imgElToText(v as unknown as HTMLImageElement);
+        return MarkdownService.imgElToText(v as unknown as HTMLImageElement);
       });
 
       const sourceUrl = $el.find('.c-cite a').attr('href');
