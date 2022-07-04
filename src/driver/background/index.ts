@@ -3,11 +3,10 @@ import { container } from 'tsyringe';
 import { storageToken, databaseToken } from 'model/index';
 import QuoteService from 'service/QuoteService';
 import Joplin from '../joplin';
-import Storage from './helper/Storage';
 import { Message, MessageEvents } from '../types';
-import { imgSrcToDataUrl } from './helper';
+import { imgSrcToDataUrl, BrowserStorage } from './helper';
 
-container.registerSingleton(storageToken, Storage);
+container.registerSingleton(storageToken, BrowserStorage);
 container.registerSingleton(databaseToken, Joplin);
 
 const dataService = new QuoteService();

@@ -1,3 +1,5 @@
+import type { Storage } from 'model/index';
+
 export async function imgSrcToDataUrl(imgSrc: string) {
   const res = await fetch(imgSrc, { credentials: 'include' });
 
@@ -16,3 +18,16 @@ export async function imgSrcToDataUrl(imgSrc: string) {
 
   return '';
 }
+
+export class BrowserStorage implements Storage {
+  set(key: string, value: string) {
+    return chrome.storage.local.set({ [key]: value });
+  }
+
+  get(key: string) {
+    return chrome.storage.local.get([key]).then((v) => v[key]);
+  }
+}
+
+// watch reactive data and postmessage to other processes
+export class Broadcaster {}
