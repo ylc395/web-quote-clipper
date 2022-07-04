@@ -252,7 +252,9 @@ export default class Joplin implements NoteDatabase {
 
     for (const content of quote.contents) {
       const transformed = await this.md.transform(content);
-      processedContents.push(`> ${transformed.trim()}`);
+      processedContents.push(
+        `> ${transformed.trim().replaceAll('\n', '\n> ')}`,
+      );
     }
 
     return `${processedContents.join('\n>\n')}\n>\n> @@ ${

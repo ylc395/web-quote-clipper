@@ -18,7 +18,8 @@ export default class MarkdownService {
 
     this.transformer = unified()
       .use(remarkParse)
-      .use(remarkStringify)
+      // https://github.com/remarkjs/remark/tree/main/packages/remark-stringify#unifieduseremarkstringify-options
+      .use(remarkStringify, { fences: true })
       .use(options?.transformPlugins || []);
   }
   renderSync(md: string) {

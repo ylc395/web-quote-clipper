@@ -21,7 +21,7 @@ export default class QuoteService {
     return this.quotes;
   }
 
-  // service knows note. so we process raw markdown note in service
+  // todo: move to driver
   private extractQuotes(note: Required<Note>) {
     const html = this.md.renderSync(note.content);
     const $ = loadHtml(html);

@@ -8,6 +8,10 @@ import {
   isTextNode,
   imgUrlToDataUrl,
   postMessage,
+  isValidAnchorElement,
+  getLastChildNode,
+  isCodeElement,
+  isUnderPre,
 } from './utils';
 import { MessageEvents } from '../types';
 import Tooltip from './Tooltip';
@@ -74,6 +78,8 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
   const treeWalker = document.createTreeWalker(fragment);
   const contents: string[] = [];
   let lastText = '';
+  let lastAnchor: { root: HTMLAnchorElement; lastChild: Node } | null = null;
+  let lastCode: { lastChild: Node; isBlock: boolean } | null = null;
 
   while (treeWalker.nextNode()) {
     const { currentNode } = treeWalker;
@@ -93,10 +99,64 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
         );
         lastText += Markdown.imgElToText(imgEl);
       }
+
+      if (isValidAnchorElement(currentNode)) {
+        const lastChild = getLastChildNode(currentNode);
+
+        if (lastChild) {
+          lastAnchor = {
+            root: currentNode,
+            lastChild,
+          };
+          lastText += '[';
+        }
+      }
+
+      if (isCodeElement(currentNode)) {
+        const lastChild = getLastChildNode(currentNode);
+
+        if (lastChild) {
+          const isBlock = isUnderPre(currentNode);
+          lastCode = { lastChild, isBlock };
+          lastText += isBlock ? '```\n' : '`';
+        }
+      }
+
+      if (lastAnchor?.lastChild === currentNode) {
+        const lastChild = getLastChildNode(currentNode);
+
+        if (lastChild) {
+          lastAnchor.lastChild = lastChild;
+        } else {
+          lastText += `](${lastAnchor.root.href})`;
+          lastAnchor = null;
+        }
+      }
+
+      if (lastCode?.lastChild === currentNode) {
+        const lastChild = getLastChildNode(currentNode);
+
+        if (lastChild) {
+          lastCode.lastChild = lastChild;
+        } else {
+          lastText += lastCode.isBlock ? '\n```' : '`';
+          lastCode = null;
+        }
+      }
     }
 
     if (isTextNode(currentNode) && currentNode.textContent) {
       lastText += currentNode.textContent;
+    }
+
+    if (lastAnchor?.lastChild === currentNode) {
+      lastText += `](${lastAnchor.root.href})`;
+      lastAnchor = null;
+    }
+
+    if (lastCode?.lastChild === currentNode) {
+      lastText += lastCode.isBlock ? '\n```' : '`';
+      lastCode = null;
     }
   }
 

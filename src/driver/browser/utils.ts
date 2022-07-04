@@ -17,6 +17,42 @@ export const isBlockElement = (element: Element) =>
 export const isImageElement = (element: Element): element is HTMLImageElement =>
   element.tagName.toLowerCase() === 'img';
 
+export const isValidAnchorElement = (
+  element: Element,
+): element is HTMLAnchorElement =>
+  element.tagName.toLowerCase() === 'a' &&
+  element.getAttribute('href') !== '#' &&
+  /^https?:\/\//.test((element as HTMLAnchorElement).href);
+
+export const isCodeElement = (element: Element) =>
+  element.tagName.toLowerCase() === 'code';
+
+export const getLastChildNode = (node: Element) => {
+  for (let i = node.childNodes.length - 1; i >= 0; i--) {
+    const child = node.childNodes[i];
+
+    if (!isTextNode(child) && !isElement(child)) {
+      continue;
+    }
+
+    return child;
+  }
+
+  return null;
+};
+
+export const isUnderPre = (el: Element) => {
+  let parent = el.parentElement;
+
+  while (parent) {
+    if (parent.tagName.toLowerCase() === 'pre') {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const imgUrlToDataUrl = async (imgSrc: string) => {
   return postMessage<string>({
     event: MessageEvents.GetDataUrl,
