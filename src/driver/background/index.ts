@@ -11,11 +11,15 @@ container.registerSingleton(databaseToken, Joplin);
 
 const dataService = new QuoteService();
 
-chrome.runtime.onMessage.addListener((message: Message) => {
-  switch (message.event) {
-    case MessageEvents.Captured:
-      return dataService.createQuote(message.payload);
-    default:
-      break;
-  }
-});
+chrome.runtime.onMessage.addListener(
+  async (message: Message, sender, sendBack) => {
+    switch (message.event) {
+      case MessageEvents.Captured:
+        return dataService.createQuote(message.payload);
+      case MessageEvents.Request:
+        return sendBack(await dataService.getAllQuotes());
+      default:
+        break;
+    }
+  },
+);

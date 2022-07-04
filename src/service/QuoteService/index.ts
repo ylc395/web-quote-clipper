@@ -9,19 +9,18 @@ import ConfigService from '../ConfigService';
 export default class QuoteService {
   private readonly md = new Markdown({
     transformPlugins: [() => this.replaceQuoteContentImage],
+    // todo: add render plugin
   });
   private readonly db = container.resolve(databaseToken);
   private quotes: Required<Quote>[] = [];
   private configService = container.resolve(ConfigService);
-  constructor() {
-    // this.md.use(MarkdownItAttrs).use(MarkdownItAttribution);
-    this.init();
-  }
 
-  private async init() {
+  async getAllQuotes() {
     await Promise.all([this.db.ready, this.configService.ready]);
     const notes = await this.db.getNotesByTag(this.configService.tag);
+
     this.quotes = notes.flatMap((note) => this.extractQuotes(note));
+    return this.quotes;
   }
 
   // service knows note. so we process raw markdown note in service
@@ -87,16 +86,17 @@ export default class QuoteService {
 
   async createQuote(quote: Quote) {
     await this.configService.ready;
-    const { writeTarget, color } = this.configService;
+    const { writeTargetId, color } = this.configService;
 
-    // if (!this.configService.writeTarget.id) {
-    // todo: handle no write target
-    //   throw new Error('empty write target id');
-    // }
+    if (!writeTargetId) {
+      // todo: handle no write target
+      throw new Error('empty write target id');
+    }
 
     const processedContents: string[] = [];
 
     for (const content of quote.contents) {
+      // todo: move this to joplin driver
       processedContents.push((await this.md.transform(content)).trim());
     }
 
@@ -104,7 +104,7 @@ export default class QuoteService {
       ...quote,
       contents: processedContents,
       color,
-      note: writeTarget,
+      note: { id: writeTargetId },
     };
     await this.db.postQuote(newQuote);
     this.quotes.push(newQuote);

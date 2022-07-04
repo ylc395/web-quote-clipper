@@ -20,7 +20,7 @@ export interface Quote {
 export interface Note {
   content?: string;
   id: string;
-  path: string;
+  path?: string;
 }
 
 export interface NoteDatabase {

@@ -1,20 +1,17 @@
 import { Note, Colors } from 'model/index';
 import { container, singleton } from 'tsyringe';
-import { databaseToken, storageToken } from 'model/index';
+import { storageToken } from 'model/index';
 
 const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
 const COLOR = 'COLOR';
 const TAG = 'TAG';
-const DEFAULT_TAG = 'web-quote';
+export const DEFAULT_TAG = 'web-quote';
 
 @singleton()
 export default class ConfigService {
   private readonly storage = container.resolve(storageToken);
-  private readonly db = container.resolve(databaseToken);
-  private _writeTarget: Readonly<{ id: string; path: string }> = {
-    id: '',
-    path: '',
-  };
+  private _writeTargetId = '622b83982fd244dca3bc3bcecb8c29e4';
+  // private _writeTargetId = '';
 
   readonly ready: Promise<void>;
 
@@ -28,29 +25,19 @@ export default class ConfigService {
   private async init() {
     const targetId = await this.storage.get(WRITE_TARGET_ID);
     const color = (await this.storage.get(COLOR)) as Colors | null;
+    const tag = (await this.storage.get(TAG)) as string | null;
 
-    if (color) {
-      this._color = color;
-    }
-
-    if (!targetId) {
-      return;
-    }
-
-    try {
-      const targetPath = (await this.db.getNoteById(targetId)).path;
-      this._writeTarget = { id: targetId, path: targetPath };
-    } catch {
-      await this.storage.set(WRITE_TARGET_ID, '');
-    }
+    this._color = color || this._color;
+    this._tag = tag || this._tag;
+    this._writeTargetId = targetId || this._writeTargetId;
   }
 
   get color() {
     return this._color;
   }
 
-  get writeTarget() {
-    return this._writeTarget;
+  get writeTargetId() {
+    return this._writeTargetId;
   }
 
   get tag() {
@@ -59,7 +46,7 @@ export default class ConfigService {
 
   async setWriteTarget({ id, path }: Note) {
     await this.storage.set(WRITE_TARGET_ID, id);
-    this._writeTarget = { id, path };
+    this._writeTargetId = id;
   }
 
   async setColor(color: Colors) {

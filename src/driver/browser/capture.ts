@@ -119,10 +119,8 @@ export function createTooltip() {
     const quote = generateQuote(selection.range);
 
     if (quote) {
-      // await postMessage({ event: MessageEvents.Captured, payload: quote });
-      // todo: always createMarker manually since users hope to see markers just made
-      // createMarker(selection.range, quote);
-      highlightQuote(quote);
+      await postMessage({ event: MessageEvents.Captured, payload: quote });
+      createMarker(selection.range, quote);
       window.getSelection()?.empty();
     } else {
       // todo: handle no quote
