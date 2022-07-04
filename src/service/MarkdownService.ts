@@ -37,8 +37,9 @@ export default class MarkdownService {
     return Array.isArray(node.children);
   }
 
-  static imgElToText(el: HTMLImageElement) {
-    // ignore alt because alt is always replaced by url of image
-    return `![](${el.src}${el.title ? ` "${el.title}"` : ''})`;
+  static imgElToText(el: HTMLImageElement, ignoreAlt = false) {
+    return `![${ignoreAlt ? '' : el.alt}](${el.src}${
+      el.title ? ` "${el.title}"` : ''
+    })`;
   }
 }

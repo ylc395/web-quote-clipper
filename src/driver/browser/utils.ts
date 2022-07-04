@@ -1,5 +1,5 @@
 import BLOCK_ELEMENTS from 'block-elements';
-import type { Message } from '../types';
+import { Message, MessageEvents } from '../types';
 
 export const postMessage = <T = void>(message: Message) => {
   return chrome.runtime.sendMessage<Message, T>(message);
@@ -16,3 +16,10 @@ export const isBlockElement = (element: Element) =>
 
 export const isImageElement = (element: Element): element is HTMLImageElement =>
   element.tagName.toLowerCase() === 'img';
+
+export const imgUrlToDataUrl = async (imgSrc: string) => {
+  return postMessage<string>({
+    event: MessageEvents.GetDataUrl,
+    payload: imgSrc,
+  });
+};

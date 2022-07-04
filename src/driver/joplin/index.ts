@@ -40,31 +40,40 @@ export default class Joplin implements NoteDatabase {
   }
 
   private async request<T = unknown>(
-    method: 'PUT' | 'GET' | 'POST',
-    url: string,
-    body?: Record<string, unknown>,
+    options: {
+      method: 'PUT' | 'GET' | 'POST';
+      url: string;
+      body?: Record<string, unknown> | FormData;
+    },
     fromRequest = false,
   ): Promise<T> {
+    let { method, url, body } = options;
+
     url = `${API_URL}${url}${!url.includes('?') ? '?' : '&'}token=${
       this.apiToken
     }`;
 
     const res = await fetch(url, {
       method,
-      body: body ? JSON.stringify(body) : null,
+      body:
+        body instanceof FormData ? body : body ? JSON.stringify(body) : null,
     });
 
-    // response may be empty string
-    // for example: add a existed tag to a note
     let resBody: any = await res.text();
-    resBody = JSON.parse(resBody || '{}');
+    try {
+      resBody = JSON.parse(resBody);
+    } catch {}
 
-    // https://joplinapp.org/api/references/rest_api/#error-handling
-    if (res.status >= 400) {
-      throw new Error(resBody.error);
+    if (!res.ok) {
+      // https://joplinapp.org/api/references/rest_api/#error-handling
+      throw new Error(`fail to request Joplin: ${resBody.error || resBody}`);
     }
 
-    if (!('has_more' in resBody) || fromRequest) {
+    if (
+      typeof resBody !== 'object' ||
+      !('has_more' in resBody) ||
+      fromRequest
+    ) {
       return resBody as T;
     }
 
@@ -80,7 +89,7 @@ export default class Joplin implements NoteDatabase {
       const { has_more, items } = await this.request<{
         has_more: boolean;
         items: unknown[];
-      }>(method, `${url}&page=${page}`, body, true);
+      }>({ ...options, url: `${url}&page=${page}` }, true);
 
       result.push(...items);
       hasMore = has_more;
@@ -138,10 +147,10 @@ export default class Joplin implements NoteDatabase {
   }
 
   private async getTagIdByName(tagName: string): Promise<string | undefined> {
-    const searchedTags = await this.request<{ id: string }[]>(
-      'GET',
-      `/search?type=tag&query=${tagName}`,
-    );
+    const searchedTags = await this.request<{ id: string }[]>({
+      method: 'GET',
+      url: `/search?type=tag&query=${tagName}`,
+    });
 
     return searchedTags[0]?.id;
   }
@@ -155,27 +164,39 @@ export default class Joplin implements NoteDatabase {
       note.content.trim() ? '\n***\n' : ''
     }${quoteContent}`;
 
-    await this.request('PUT', `/notes/${note.id}`, { body: noteContent });
+    await this.request({
+      method: 'PUT',
+      url: `/notes/${note.id}`,
+      body: { body: noteContent },
+    });
 
     // set tag
     const tagName = this.config.tag;
     let tagId = await this.getTagIdByName(tagName);
 
     if (!tagId) {
-      const { id } = await this.request<{ id: string }>('POST', `/tags`, {
-        title: tagName,
+      const { id } = await this.request<{ id: string }>({
+        method: 'POST',
+        url: `/tags`,
+        body: {
+          title: tagName,
+        },
       });
       tagId = id;
     }
 
-    await this.request('POST', `/tags/${tagId}/notes`, { id: note.id });
+    await this.request({
+      method: 'POST',
+      url: `/tags/${tagId}/notes`,
+      body: { id: note.id },
+    });
   }
 
   async getNoteById(id: string): Promise<Required<Note>> {
-    const note = await this.request<{ body: string }>(
-      'GET',
-      `/notes/${id}?fields=body`,
-    );
+    const note = await this.request<{ body: string }>({
+      method: 'GET',
+      url: `/notes/${id}?fields=body`,
+    });
 
     return {
       content: note.body,
@@ -191,10 +212,10 @@ export default class Joplin implements NoteDatabase {
       return [];
     }
 
-    const noteInfos = await this.request<{ id: string; parent_id: string }[]>(
-      'GET',
-      `/tags/${tagId}/notes`,
-    );
+    const noteInfos = await this.request<{ id: string; parent_id: string }[]>({
+      method: 'GET',
+      url: `/tags/${tagId}/notes`,
+    });
 
     const notes = await Promise.all(
       noteInfos.map(({ id }) => this.getNoteById(id)),
@@ -203,8 +224,27 @@ export default class Joplin implements NoteDatabase {
     return notes;
   }
 
-  private async putResource(resourceUrl: string) {
-    return 'dddd';
+  private async postResource(dataUrl: string) {
+    const parts = dataUrl.split(',');
+
+    if (!parts[0]?.includes('base64')) {
+      throw new Error('no base64');
+    }
+
+    const byteString = atob(parts[1]);
+    const mimeString = parts[0].split(':')[1]?.split(';')[0];
+    const bytes = Uint8Array.from(byteString, (s) => s.charCodeAt(0));
+    const formData = new FormData();
+    // https://joplinapp.org/api/references/rest_api/#post-resources
+    formData.append('data', new Blob([bytes], { type: mimeString }));
+    formData.append('props', '{}');
+    const resource = await this.request<{ id: string }>({
+      method: 'POST',
+      url: '/resources',
+      body: formData,
+    });
+
+    return `:/${resource.id}`;
   }
 
   private async generateQuoteContent(quote: Required<Quote>) {
@@ -223,8 +263,7 @@ export default class Joplin implements NoteDatabase {
   private replaceQuoteContentImage: Transformer = async (node) => {
     const replacer = async (_node: typeof node) => {
       if (Markdown.isImageNode(_node)) {
-        _node.alt = _node.url;
-        _node.url = await this.putResource(_node.url);
+        _node.url = await this.postResource(_node.url);
       }
 
       if (Markdown.isParent(_node)) {

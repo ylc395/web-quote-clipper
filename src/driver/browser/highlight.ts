@@ -25,7 +25,8 @@ function findBoundary(
 
   while (currentNode) {
     if (isElement(currentNode) && isImageElement(currentNode)) {
-      texts.push(Markdown.imgElToText(currentNode));
+      // original image'alt text is dropped in note. So we ignore alt text of images in web page
+      texts.push(Markdown.imgElToText(currentNode, true));
       nodes.push(currentNode);
     }
 

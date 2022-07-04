@@ -6,6 +6,7 @@ import {
   isElement,
   isImageElement,
   isTextNode,
+  imgUrlToDataUrl,
   postMessage,
 } from './utils';
 import { MessageEvents } from '../types';
@@ -52,7 +53,7 @@ function getSelection() {
   } as const;
 }
 
-function generateQuote(range: Range): Quote | undefined {
+async function generateQuote(range: Range): Promise<Quote | undefined> {
   const { startContainer, endContainer } = range;
   const fragment = range.cloneContents();
 
@@ -84,7 +85,13 @@ function generateQuote(range: Range): Quote | undefined {
       }
 
       if (isImageElement(currentNode)) {
-        lastText += Markdown.imgElToText(currentNode);
+        const imgEl = new Image();
+        imgEl.title = currentNode.title;
+        imgEl.alt = currentNode.src;
+        imgEl.src = await imgUrlToDataUrl(
+          currentNode.currentSrc || currentNode.src,
+        );
+        lastText += Markdown.imgElToText(imgEl);
       }
     }
 
@@ -115,7 +122,7 @@ export function createTooltip() {
   let tooltip: Tooltip;
 
   const handleClick = async () => {
-    const quote = generateQuote(selection.range);
+    const quote = await generateQuote(selection.range);
 
     if (quote) {
       await postMessage({ event: MessageEvents.Captured, payload: quote });

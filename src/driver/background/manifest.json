@@ -5,7 +5,7 @@
   "manifest_version": 3,
   "content_scripts": [
     {
-      "matches": ["*://*/*"],
+      "matches": ["<all_urls>"],
       "js": ["./content-script.js"],
       "run_at": "document_end"
     }
@@ -13,5 +13,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage"]
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"]
 }
