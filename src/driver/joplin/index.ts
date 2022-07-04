@@ -1,13 +1,18 @@
 import { container } from 'tsyringe';
+import type { Transformer } from 'unified';
 import { databaseToken, NoteDatabase, storageToken, Quote } from 'model/index';
 import ConfigService from 'service/ConfigService';
+import Markdown from 'service/QuoteService/Markdown';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
 
 export default class Joplin implements NoteDatabase {
-  private readonly configService = container.resolve(ConfigService);
+  private readonly config = container.resolve(ConfigService);
+  private readonly md = new Markdown({
+    transformPlugins: [() => this.replaceQuoteContentImage],
+  });
   private readonly storage = container.resolve(storageToken);
   private apiToken = '';
   private authToken = '';
@@ -43,7 +48,10 @@ export default class Joplin implements NoteDatabase {
       body: body ? JSON.stringify(body) : null,
     });
 
-    const resBody = await res.json();
+    // response may be empty string
+    // for example: add a existed tag to a note
+    let resBody: any = await res.text();
+    resBody = JSON.parse(resBody || '{}');
 
     // https://joplinapp.org/api/references/rest_api/#error-handling
     if (res.status >= 400) {
@@ -136,19 +144,15 @@ export default class Joplin implements NoteDatabase {
   async postQuote(quote: Required<Quote>) {
     // set note body
     const note = await this.getNoteById(quote.note.id);
-    const quoteContent = quote.contents
-      .map((content) => `> ${content}`)
-      .join('\n');
+    const quoteContent = await this.generateQuoteContent(quote);
     const noteContent = `${note.content}${
       note.content.trim() ? '\n***\n' : ''
-    }${quoteContent}\n>\n> @@ ${quote.sourceUrl} ${quote.locators[0]} ${
-      quote.locators[1]
-    } ${quote.color}`;
+    }${quoteContent}`;
 
     await this.request('PUT', `/notes/${note.id}`, { body: noteContent });
 
     // set tag
-    const tagName = this.configService.tag;
+    const tagName = this.config.tag;
     let tagId = await this.getTagIdByName(tagName);
 
     if (!tagId) {
@@ -199,9 +203,40 @@ export default class Joplin implements NoteDatabase {
     return notes.map(({ body, id }) => ({ content: body, id, path: '' }));
   }
 
-  async putResource(resourceUrl: string) {
+  private async putResource(resourceUrl: string) {
     return 'dddd';
   }
+
+  private async generateQuoteContent(quote: Required<Quote>) {
+    const processedContents: string[] = [];
+
+    for (const content of quote.contents) {
+      const replaced = await this.md.transform(content);
+      processedContents.push(`> ${replaced.trim()}`);
+    }
+
+    return `${processedContents.join('\n>\n')}\n>\n> @@ ${
+      quote.sourceUrl
+    } ${quote.locators.join(' ')} ${quote.color}}`;
+  }
+
+  private replaceQuoteContentImage: Transformer = async (node) => {
+    const replacer = async (_node: typeof node) => {
+      if (Markdown.isImageNode(_node)) {
+        _node.alt = _node.url;
+        _node.url = await this.putResource(_node.url);
+      }
+
+      if (Markdown.isParent(_node)) {
+        for (const child of _node.children) {
+          await replacer(child);
+        }
+      }
+    };
+
+    await replacer(node);
+    return node;
+  };
 }
 
 container.registerSingleton(databaseToken, Joplin);

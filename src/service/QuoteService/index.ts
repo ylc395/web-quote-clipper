@@ -1,6 +1,5 @@
 import { container, singleton } from 'tsyringe';
 import { load as loadHtml } from 'cheerio';
-import type { Transformer } from 'unified';
 import { Quote, Note, Colors, databaseToken } from 'model/index';
 import Markdown from 'service/QuoteService/Markdown';
 import ConfigService from '../ConfigService';
@@ -8,7 +7,6 @@ import ConfigService from '../ConfigService';
 @singleton()
 export default class QuoteService {
   private readonly md = new Markdown({
-    transformPlugins: [() => this.replaceQuoteContentImage],
     // todo: add render plugin
   });
   private readonly db = container.resolve(databaseToken);
@@ -66,24 +64,6 @@ export default class QuoteService {
     return quotes;
   }
 
-  private replaceQuoteContentImage: Transformer = async (node) => {
-    const replacer = async (_node: typeof node) => {
-      if (Markdown.isImageNode(_node)) {
-        _node.alt = _node.url;
-        _node.url = await this.db.putResource(_node.url);
-      }
-
-      if (Markdown.isParent(_node)) {
-        for (const child of _node.children) {
-          await replacer(child);
-        }
-      }
-    };
-
-    await replacer(node);
-    return node;
-  };
-
   async createQuote(quote: Quote) {
     await this.configService.ready;
     const { writeTargetId, color } = this.configService;
@@ -93,21 +73,13 @@ export default class QuoteService {
       throw new Error('empty write target id');
     }
 
-    const processedContents: string[] = [];
-
-    for (const content of quote.contents) {
-      // todo: move this to joplin driver
-      processedContents.push((await this.md.transform(content)).trim());
-    }
-
     const newQuote: Required<Quote> = {
       ...quote,
-      contents: processedContents,
       color,
       note: { id: writeTargetId },
     };
     await this.db.postQuote(newQuote);
-    this.quotes.push(newQuote);
+    this.getAllQuotes();
   }
 
   async updateQuote(quote: Required<Quote>) {
