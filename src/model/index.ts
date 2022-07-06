@@ -27,8 +27,8 @@ export interface NoteDatabase {
   ready: Promise<void>;
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
-  getNotesByTag: (tag: string) => Promise<Required<Note>[]>;
   getNoteById: (id: string) => Promise<Note>;
+  getAllQuotes: () => Promise<Required<Quote>[]>;
 }
 
 export interface Storage {

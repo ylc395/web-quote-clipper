@@ -48,6 +48,8 @@ export const isUnderPre = (el: Element) => {
     if (parent.tagName.toLowerCase() === 'pre') {
       return true;
     }
+
+    parent = parent.parentElement;
   }
 
   return false;

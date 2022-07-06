@@ -165,7 +165,7 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
   }
 
   return {
-    locators: [window.btoa(startLocator), window.btoa(endLocator)],
+    locators: [startLocator, endLocator],
     sourceUrl: location.href,
     contents,
     comment: '',

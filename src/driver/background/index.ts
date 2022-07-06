@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendBack) => {
       dataService.createQuote(message.payload).then(() => sendBack(true));
       break;
     case MessageEvents.Request:
-      dataService.getAllQuotes().then(sendBack);
+      dataService.fetchQuotes(message.payload).then(sendBack);
       break;
     case MessageEvents.GetDataUrl:
       imgSrcToDataUrl(message.payload).then(sendBack);

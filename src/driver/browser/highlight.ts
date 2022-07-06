@@ -5,6 +5,7 @@ import { MessageEvents } from '../types';
 import Markdown from 'service/MarkdownService';
 
 function warnPopup(msg: string) {
+  // todo: popup
   alert(msg);
 }
 
@@ -148,8 +149,8 @@ function findBoundary(
 
 export function highlightQuote(quote: Quote) {
   const { locators, contents } = quote;
-  const startEl = document.querySelector(window.atob(locators[0]));
-  const endEl = document.querySelector(window.atob(locators[1]));
+  const startEl = document.querySelector(locators[0]);
+  const endEl = document.querySelector(locators[1]);
 
   if (!startEl || !endEl) {
     return false;
@@ -187,5 +188,7 @@ export default async function highlight() {
     }
   }
 
-  warnPopup(`${failQuote} quotes failed to load.`);
+  if (failQuote > 0) {
+    warnPopup(`${failQuote} quotes failed to load.`);
+  }
 }

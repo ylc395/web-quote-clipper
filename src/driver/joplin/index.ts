@@ -1,18 +1,23 @@
 import { container } from 'tsyringe';
+import { load as loadHtml } from 'cheerio';
 import type { Transformer } from 'unified';
+import parseAttr from 'md-attr-parser';
 import {
   databaseToken,
   storageToken,
   NoteDatabase,
   Quote,
   Note,
+  Colors,
 } from 'model/index';
 import ConfigService from 'service/ConfigService';
 import Markdown from 'service/MarkdownService';
+import { encodeString, decodeString } from './utils';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
+const LOCATOR_SEPARATOR = '&';
 
 export default class Joplin implements NoteDatabase {
   private readonly config = container.resolve(ConfigService);
@@ -25,7 +30,7 @@ export default class Joplin implements NoteDatabase {
   readonly ready: Promise<void>;
 
   constructor() {
-    this.ready = this.init();
+    this.ready = Promise.all([this.init(), this.config.ready]).then();
   }
 
   private async init() {
@@ -160,9 +165,7 @@ export default class Joplin implements NoteDatabase {
     // set note body
     const note = await this.getNoteById(quote.note.id);
     const quoteContent = await this.generateQuoteContent(quote);
-    const noteContent = `${note.content}${
-      note.content.trim() ? '\n***\n' : ''
-    }${quoteContent}`;
+    const noteContent = `${note.content}\n\n${quoteContent}`;
 
     await this.request({
       method: 'PUT',
@@ -205,7 +208,12 @@ export default class Joplin implements NoteDatabase {
     };
   }
 
-  async getNotesByTag(tagName: string) {
+  async getAllQuotes() {
+    const notes = await this.getNotesByTag(this.config.tag);
+    return notes.flatMap((note) => this.extractQuotes(note));
+  }
+
+  private async getNotesByTag(tagName: string) {
     const tagId = await this.getTagIdByName(tagName);
 
     if (!tagId) {
@@ -257,9 +265,59 @@ export default class Joplin implements NoteDatabase {
       );
     }
 
-    return `${processedContents.join('\n>\n')}\n>\n> @@ ${
+    const locatorsStr = encodeString(quote.locators.join(LOCATOR_SEPARATOR));
+
+    return `${processedContents.join('\n>\n')}\n>\n> {cite="${
       quote.sourceUrl
-    } ${quote.locators.join(' ')} ${quote.color}}`;
+    }" data-web-clipper-locators="${locatorsStr}" data-web-clipper-color="${
+      quote.color
+    }"}`;
+  }
+
+  private extractQuotes(note: Required<Note>) {
+    const html = this.md.renderSync(note.content);
+    const $ = loadHtml(html);
+    const blockquotes = $('blockquote');
+    const quotes: Required<Quote>[] = [];
+
+    blockquotes.each((_, el) => {
+      const $el = $(el);
+      const metadata: Record<string, string> = parseAttr(
+        $el.children().last().text().trim(),
+      ).prop;
+
+      const sourceUrl = metadata['cite'];
+      const locators = metadata['data-web-clipper-locators'] || '';
+
+      const [startLocator, endLocator] =
+        decodeString(locators).split(LOCATOR_SEPARATOR) || [];
+      const color =
+        (metadata['data-web-clipper-color'] as Colors) || Colors.Yellow;
+      const comment = metadata['data-web-clipper-comment'];
+
+      if (!sourceUrl || !startLocator || !endLocator) {
+        return;
+      }
+
+      const contents = $el
+        .find('p, pre')
+        .toArray()
+        .slice(0, -1)
+        .map((el) => $(el).text().trim());
+
+      if (contents.length > 0) {
+        quotes.push({
+          sourceUrl,
+          contents,
+          locators: [startLocator, endLocator],
+          comment,
+          color,
+          note: { id: note.id, path: note.path },
+        });
+      }
+    });
+
+    return quotes;
   }
 
   private replaceQuoteContentImage: Transformer = async (node) => {
