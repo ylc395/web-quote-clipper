@@ -18,6 +18,7 @@ const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
 const LOCATOR_SEPARATOR = '&';
+const KEYWORD = 'data-web-clipper';
 
 export default class Joplin implements NoteDatabase {
   private readonly config = container.resolve(ConfigService);
@@ -151,15 +152,6 @@ export default class Joplin implements NoteDatabase {
     await this.storage.set(AUTH_TOKEN_KEY, this.authToken);
   }
 
-  private async getTagIdByName(tagName: string): Promise<string | undefined> {
-    const searchedTags = await this.request<{ id: string }[]>({
-      method: 'GET',
-      url: `/search?type=tag&query=${tagName}`,
-    });
-
-    return searchedTags[0]?.id;
-  }
-
   async putQuote(quote: Required<Quote>) {}
   async postQuote(quote: Required<Quote>) {
     // set note body
@@ -171,27 +163,6 @@ export default class Joplin implements NoteDatabase {
       method: 'PUT',
       url: `/notes/${note.id}`,
       body: { body: noteContent },
-    });
-
-    // set tag
-    const tagName = this.config.tag;
-    let tagId = await this.getTagIdByName(tagName);
-
-    if (!tagId) {
-      const { id } = await this.request<{ id: string }>({
-        method: 'POST',
-        url: `/tags`,
-        body: {
-          title: tagName,
-        },
-      });
-      tagId = id;
-    }
-
-    await this.request({
-      method: 'POST',
-      url: `/tags/${tagId}/notes`,
-      body: { id: note.id },
     });
   }
 
@@ -209,20 +180,14 @@ export default class Joplin implements NoteDatabase {
   }
 
   async getAllQuotes() {
-    const notes = await this.getNotesByTag(this.config.tag);
+    const notes = await this.searchNotes(KEYWORD);
     return notes.flatMap((note) => this.extractQuotes(note));
   }
 
-  private async getNotesByTag(tagName: string) {
-    const tagId = await this.getTagIdByName(tagName);
-
-    if (!tagId) {
-      return [];
-    }
-
+  private async searchNotes(keyword: string) {
     const noteInfos = await this.request<{ id: string; parent_id: string }[]>({
       method: 'GET',
-      url: `/tags/${tagId}/notes`,
+      url: `/search?query=${keyword}`,
     });
 
     const notes = await Promise.all(
