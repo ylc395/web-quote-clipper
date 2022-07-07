@@ -1,9 +1,4 @@
 import BLOCK_ELEMENTS from 'block-elements';
-import { Message, MessageEvents } from '../types';
-
-export const postMessage = <T = void>(message: Message) => {
-  return chrome.runtime.sendMessage<Message, T>(message);
-};
 
 export const isTextNode = (node: Node): node is Text =>
   node.nodeType === document.TEXT_NODE;
@@ -53,11 +48,4 @@ export const isUnderPre = (el: Element) => {
   }
 
   return false;
-};
-
-export const imgUrlToDataUrl = async (imgSrc: string) => {
-  return postMessage<string>({
-    event: MessageEvents.GetDataUrl,
-    payload: imgSrc,
-  });
 };

@@ -1,8 +1,8 @@
-import type { Quote } from 'model/index';
-import { isElement, isImageElement, postMessage, isTextNode } from './utils';
-import { create as createMarker } from './markManage';
-import { MessageEvents } from '../types';
+import type { Quote } from 'model/entity';
 import Markdown from 'service/MarkdownService';
+import { getQuotes } from 'driver/web/fetcher';
+import { isElement, isImageElement, isTextNode } from './utils';
+import { create as createMarker } from './markManage';
 
 function warnPopup(msg: string) {
   // todo: popup
@@ -174,10 +174,7 @@ export function highlightQuote(quote: Quote) {
 }
 
 export default async function highlight() {
-  const quotes = await postMessage<Required<Quote>[]>({
-    event: MessageEvents.Request,
-    payload: location.href,
-  });
+  const quotes = await getQuotes(location.href);
   let failQuote = 0;
 
   for (const quote of quotes) {

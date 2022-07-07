@@ -30,7 +30,7 @@ const plugins = [
         dest: 'dist/chrome-extension',
       },
       {
-        src: 'src/driver/ui/main/index.html',
+        src: 'src/driver/web/ui/main/index.html',
         dest: 'dist/chrome-extension',
         rename: 'popup.html',
       },
@@ -48,7 +48,7 @@ export default defineConfig([
     plugins,
   },
   {
-    input: 'src/driver/content/index.ts',
+    input: 'src/driver/web/content/index.ts',
     output: {
       file: './dist/chrome-extension/content-script.js',
       format: 'iife',
@@ -56,7 +56,7 @@ export default defineConfig([
     plugins,
   },
   {
-    input: 'src/driver/ui/main/index.ts',
+    input: 'src/driver/web/ui/main/index.ts',
     output: {
       file: './dist/chrome-extension/popup.js',
       format: 'iife',

@@ -1,23 +1,23 @@
-import type { Quote } from 'model/index';
+import type { Quote } from 'model/entity';
 export type Message =
   | CaptureQuoteMessage
   | RequestQuotesMessage
   | DataUrlMessage;
 
 export enum MessageEvents {
-  Captured = 'CAPTURED',
-  Request = 'REQUEST',
+  CreateQuote = 'CREATE_QUOTE',
+  RequestQuotes = 'REQUEST',
   GetDataUrl = 'GET_DATA_URL',
 }
 
 interface CaptureQuoteMessage {
-  event: MessageEvents.Captured;
+  event: MessageEvents.CreateQuote;
   payload: Quote;
 }
 
 interface RequestQuotesMessage {
-  event: MessageEvents.Request;
-  payload: string;
+  event: MessageEvents.RequestQuotes;
+  payload?: string;
 }
 
 interface DataUrlMessage {

@@ -1,5 +1,5 @@
 import highlightRange from 'dom-highlight-range';
-import type { Quote } from 'model/index';
+import type { Quote } from 'model/entity';
 
 const STYLE_ID = 'marker-style';
 const MARK_CLASSNAME = 'quote-collector-mark';

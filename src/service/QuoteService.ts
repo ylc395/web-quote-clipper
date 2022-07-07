@@ -1,5 +1,6 @@
 import { container, singleton } from 'tsyringe';
-import { Quote, databaseToken } from 'model/index';
+import type { Quote } from 'model/entity';
+import { databaseToken } from 'model/io';
 import ConfigService from './ConfigService';
 
 @singleton()

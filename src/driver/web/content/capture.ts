@@ -1,21 +1,20 @@
 import uniqueSelector from 'unique-selector';
+import type { Quote } from 'model/entity';
+import { toDataUrl } from 'driver/web/fetcher';
+import { MessageEvents } from 'driver/message';
+import Markdown from 'service/MarkdownService';
 import { create as createMarker, isAvailableRange } from './markManage';
-import type { Quote } from 'model/index';
 import {
   isBlockElement,
   isElement,
   isImageElement,
   isTextNode,
-  imgUrlToDataUrl,
-  postMessage,
   isValidAnchorElement,
   getLastChildNode,
   isCodeElement,
   isUnderPre,
 } from './utils';
-import { MessageEvents } from '../types';
 import Tooltip from './Tooltip';
-import Markdown from 'service/MarkdownService';
 
 let currentMousePosition = { x: 0, y: 0 };
 document.addEventListener('mousemove', ({ x, y }) => {
@@ -95,9 +94,7 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
         const imgEl = new Image();
         imgEl.title = currentNode.title;
         imgEl.alt = currentNode.src;
-        imgEl.src = await imgUrlToDataUrl(
-          currentNode.currentSrc || currentNode.src,
-        );
+        imgEl.src = await toDataUrl(currentNode.currentSrc || currentNode.src);
         lastText += Markdown.imgElToText(imgEl);
       }
 
@@ -186,7 +183,7 @@ export function createTooltip() {
     const quote = await generateQuote(selection.range);
 
     if (quote) {
-      await postMessage({ event: MessageEvents.Captured, payload: quote });
+      await postMessage({ event: MessageEvents.CreateQuote, payload: quote });
       createMarker(selection.range, quote);
       window.getSelection()?.empty();
     } else {

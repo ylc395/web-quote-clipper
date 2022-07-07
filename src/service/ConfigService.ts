@@ -1,6 +1,6 @@
-import { Note, Colors } from 'model/index';
 import { container, singleton } from 'tsyringe';
-import { storageToken } from 'model/index';
+import { Note, Colors } from 'model/entity';
+import { storageToken } from 'model/io';
 
 const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
 const COLOR = 'COLOR';

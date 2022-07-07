@@ -2,14 +2,8 @@ import { container } from 'tsyringe';
 import { load as loadHtml } from 'cheerio';
 import type { Transformer } from 'unified';
 import parseAttr from 'md-attr-parser';
-import {
-  databaseToken,
-  storageToken,
-  NoteDatabase,
-  Quote,
-  Note,
-  Colors,
-} from 'model/index';
+import { Quote, Note, Colors } from 'model/entity';
+import { databaseToken, storageToken, NoteDatabase } from 'model/io';
 import ConfigService from 'service/ConfigService';
 import Markdown from 'service/MarkdownService';
 import { encodeString, decodeString } from './utils';
