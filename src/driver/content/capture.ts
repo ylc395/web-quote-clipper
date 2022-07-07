@@ -81,6 +81,7 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
   let lastAnchor: { root: HTMLAnchorElement; lastChild: Node } | null = null;
   let lastCode: { lastChild: Node; isBlock: boolean } | null = null;
 
+  // todo: handle strong,em,del...
   while (treeWalker.nextNode()) {
     const { currentNode } = treeWalker;
 
