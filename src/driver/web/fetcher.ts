@@ -17,6 +17,8 @@ export const getQuotes: Fetcher['getQuotes'] = (url?: string) => {
   });
 };
 
+export const putQuote: Fetcher['putQuote'] = async (quote: Quote) => {};
+
 export const toDataUrl = (url: string) => {
   return postMessage<string>({
     event: MessageEvents.GetDataUrl,

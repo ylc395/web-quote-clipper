@@ -1,18 +1,17 @@
 import { container } from 'tsyringe';
-import { load as loadHtml } from 'cheerio';
 import type { Transformer } from 'unified';
-import parseAttr from 'md-attr-parser';
 import { Quote, Note, Colors } from 'model/entity';
 import { databaseToken, storageToken, NoteDatabase } from 'model/io';
 import ConfigService from 'service/ConfigService';
-import Markdown from 'service/MarkdownService';
-import { encodeString, decodeString } from './utils';
+import Markdown, {
+  generateLocatorString,
+  ATTR_PREFIX,
+} from 'service/MarkdownService';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
-const LOCATOR_SEPARATOR = '&';
-const KEYWORD = 'data-web-clipper';
+const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
 
 export default class Joplin implements NoteDatabase {
   private readonly config = container.resolve(ConfigService);
@@ -150,7 +149,7 @@ export default class Joplin implements NoteDatabase {
   async postQuote(quote: Required<Quote>) {
     // set note body
     const note = await this.getNoteById(quote.note.id);
-    const quoteContent = await this.generateQuoteContent(quote);
+    const quoteContent = await this.md.generateQuoteContent(quote);
     const noteContent = `${note.content}\n\n${quoteContent}`;
 
     await this.request({
@@ -174,8 +173,19 @@ export default class Joplin implements NoteDatabase {
   }
 
   async getAllQuotes() {
-    const notes = await this.searchNotes(KEYWORD);
-    return notes.flatMap((note) => this.extractQuotes(note));
+    const notes = await this.searchNotes(ATTR_PREFIX);
+    const quotes = notes.flatMap((note) => {
+      const quotes = this.md.extractQuotes(note.content);
+
+      return quotes.map((quote) => ({
+        ...quote,
+        color: quote.color || Colors.Yellow,
+        pureTextContents: quote.pureTextContents || [],
+        note: { id: note.id, path: note.path },
+      }));
+    });
+
+    return quotes;
   }
 
   private async searchNotes(keyword: string) {
@@ -214,74 +224,12 @@ export default class Joplin implements NoteDatabase {
     return `:/${resource.id}`;
   }
 
-  private async generateQuoteContent(quote: Required<Quote>) {
-    const processedContents: string[] = [];
-
-    for (const content of quote.contents) {
-      const transformed = await this.md.transform(content);
-      processedContents.push(
-        `> ${transformed.trim().replaceAll('\n', '\n> ')}`,
-      );
-    }
-
-    const locatorsStr = encodeString(quote.locators.join(LOCATOR_SEPARATOR));
-
-    return `${processedContents.join('\n>\n')}\n>\n> {cite="${
-      quote.sourceUrl
-    }" data-web-clipper-locators="${locatorsStr}" data-web-clipper-color="${
-      quote.color
-    }"}`;
-  }
-
-  private extractQuotes(note: Required<Note>) {
-    const html = this.md.renderSync(note.content);
-    const $ = loadHtml(html);
-    const blockquotes = $('blockquote');
-    const quotes: Required<Quote>[] = [];
-
-    blockquotes.each((_, el) => {
-      const $el = $(el);
-      const metadata: Record<string, string> = parseAttr(
-        $el.children().last().text().trim(),
-      ).prop;
-
-      const sourceUrl = metadata['cite'];
-      const locators = metadata['data-web-clipper-locators'] || '';
-
-      const [startLocator, endLocator] =
-        decodeString(locators).split(LOCATOR_SEPARATOR) || [];
-      const color =
-        (metadata['data-web-clipper-color'] as Colors) || Colors.Yellow;
-      const comment = metadata['data-web-clipper-comment'];
-
-      if (!sourceUrl || !startLocator || !endLocator) {
-        return;
-      }
-
-      const contents = $el
-        .find('p, pre')
-        .toArray()
-        .slice(0, -1)
-        .map((el) => $(el).text().trim());
-
-      if (contents.length > 0) {
-        quotes.push({
-          sourceUrl,
-          contents,
-          locators: [startLocator, endLocator],
-          comment,
-          color,
-          note: { id: note.id, path: note.path },
-        });
-      }
-    });
-
-    return quotes;
-  }
-
   private replaceQuoteContentImage: Transformer = async (node) => {
     const replacer = async (_node: typeof node) => {
-      if (Markdown.isImageNode(_node)) {
+      if (
+        Markdown.isImageNode(_node) &&
+        !JOPLIN_RESOURCE_URL_REGEX.test(_node.url)
+      ) {
         _node.url = await this.postResource(_node.url);
       }
 

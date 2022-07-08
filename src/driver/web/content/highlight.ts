@@ -147,8 +147,8 @@ function findBoundary(
   }
 }
 
-export function highlightQuote(quote: Quote) {
-  const { locators, contents } = quote;
+export function highlightQuote(quote: Required<Quote>) {
+  const { locators, pureTextContents } = quote;
   const startEl = document.querySelector(locators[0]);
   const endEl = document.querySelector(locators[1]);
 
@@ -156,10 +156,14 @@ export function highlightQuote(quote: Quote) {
     return false;
   }
 
-  const startBoundary = findBoundary(contents[0], startEl);
+  const startBoundary = findBoundary(pureTextContents[0], startEl);
   const endBoundary =
     startBoundary &&
-    findBoundary(contents[contents.length - 1], endEl, startBoundary);
+    findBoundary(
+      pureTextContents[pureTextContents.length - 1],
+      endEl,
+      startBoundary,
+    );
 
   if (!startBoundary || !endBoundary) {
     return false;

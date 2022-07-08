@@ -9,7 +9,8 @@ export enum Colors {
 export interface Quote {
   sourceUrl: string;
   locators: [string, string];
-  contents: string[]; // no markdown syntax here, except img syntax
+  contents: string[];
+  pureTextContents?: string[];
   comment: string;
   color?: Colors;
   note?: Note;

@@ -1,7 +1,6 @@
 import uniqueSelector from 'unique-selector';
 import type { Quote } from 'model/entity';
-import { toDataUrl } from 'driver/web/fetcher';
-import { MessageEvents } from 'driver/message';
+import { toDataUrl, postQuote } from 'driver/web/fetcher';
 import Markdown from 'service/MarkdownService';
 import { create as createMarker, isAvailableRange } from './markManage';
 import {
@@ -183,7 +182,7 @@ export function createTooltip() {
     const quote = await generateQuote(selection.range);
 
     if (quote) {
-      await postMessage({ event: MessageEvents.CreateQuote, payload: quote });
+      await postQuote(quote);
       createMarker(selection.range, quote);
       window.getSelection()?.empty();
     } else {

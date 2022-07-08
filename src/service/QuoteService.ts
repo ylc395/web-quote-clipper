@@ -29,6 +29,7 @@ export default class QuoteService {
     const newQuote: Required<Quote> = {
       ...quote,
       color,
+      pureTextContents: [],
       note: { id: writeTargetId },
     };
     await this.db.postQuote(newQuote);
