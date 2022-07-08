@@ -19,7 +19,7 @@ export default class QuoteService {
 
   async createQuote(quote: Quote) {
     await this.ready;
-    const { writeTargetId, color } = this.config;
+    const { writeTargetId } = this.config;
 
     if (!writeTargetId) {
       // todo: handle no write target
@@ -28,7 +28,6 @@ export default class QuoteService {
 
     const newQuote: Required<Quote> = {
       ...quote,
-      color,
       pureTextContents: [],
       note: { id: writeTargetId },
     };

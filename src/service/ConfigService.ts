@@ -3,7 +3,6 @@ import { Note, Colors } from 'model/entity';
 import { storageToken } from 'model/io';
 
 const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
-const COLOR = 'COLOR';
 
 @singleton()
 export default class ConfigService {
@@ -21,14 +20,8 @@ export default class ConfigService {
 
   private async init() {
     const targetId = await this.storage.get(WRITE_TARGET_ID);
-    const color = (await this.storage.get(COLOR)) as Colors | null;
 
-    this._color = color || this._color;
     this._writeTargetId = targetId || this._writeTargetId;
-  }
-
-  get color() {
-    return this._color;
   }
 
   get writeTargetId() {
@@ -38,10 +31,5 @@ export default class ConfigService {
   async setWriteTarget({ id, path }: Note) {
     await this.storage.set(WRITE_TARGET_ID, id);
     this._writeTargetId = id;
-  }
-
-  async setColor(color: Colors) {
-    await this.storage.set(COLOR, color);
-    this._color = color;
   }
 }

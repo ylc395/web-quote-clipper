@@ -12,7 +12,7 @@ export interface Quote {
   contents: string[];
   pureTextContents?: string[];
   comment: string;
-  color?: Colors;
+  color: Colors;
   note?: Note;
 }
 

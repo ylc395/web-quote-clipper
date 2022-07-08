@@ -1,5 +1,5 @@
 import uniqueSelector from 'unique-selector';
-import type { Quote } from 'model/entity';
+import { Colors, Quote } from 'model/entity';
 import { toDataUrl, postQuote } from 'driver/web/fetcher';
 import Markdown from 'service/MarkdownService';
 import { create as createMarker, isAvailableRange } from './markManage';
@@ -164,6 +164,7 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
   return {
     locators: [startLocator, endLocator],
     sourceUrl: location.href,
+    color: Colors.Yellow,
     contents,
     comment: '',
   };
