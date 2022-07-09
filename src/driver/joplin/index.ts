@@ -3,15 +3,20 @@ import type { Transformer } from 'unified';
 import { Quote, Note, Colors } from 'model/entity';
 import { databaseToken, storageToken, NoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import Markdown, {
-  generateLocatorString,
-  ATTR_PREFIX,
-} from 'service/MarkdownService';
+import Markdown, { ATTR_PREFIX } from 'service/MarkdownService';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
+const TIME_INTERVAL = 1 * 60 * 1000;
+
+interface Notebook {
+  id: string;
+  children: Notebook[];
+  parent_id: string;
+  title: string;
+}
 
 export default class Joplin implements NoteDatabase {
   private readonly config = container.resolve(ConfigService);
@@ -21,20 +26,31 @@ export default class Joplin implements NoteDatabase {
   private readonly storage = container.resolve(storageToken);
   private apiToken = '';
   private authToken = '';
+  private notebooksIndex?: Promise<Record<Notebook['id'], Notebook>>;
+  private isInitializing = false;
   readonly ready: Promise<void>;
 
   constructor() {
     this.ready = Promise.all([this.init(), this.config.ready]).then();
+    setTimeout(() => this.init.bind(this), TIME_INTERVAL);
   }
 
   private async init() {
+    if (this.isInitializing) {
+      return;
+    }
+
+    this.isInitializing = true;
     this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
     this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
+      this.notebooksIndex = this.buildNotebookIndex();
     } catch (error) {
       // todo: handle network error
+    } finally {
+      this.isInitializing = false;
     }
   }
 
@@ -160,14 +176,18 @@ export default class Joplin implements NoteDatabase {
   }
 
   async getNoteById(id: string): Promise<Required<Note>> {
-    const note = await this.request<{ body: string }>({
+    const note = await this.request<{
+      body: string;
+      parent_id: string;
+      title: string;
+    }>({
       method: 'GET',
-      url: `/notes/${id}?fields=body`,
+      url: `/notes/${id}?fields=body,parent_id,title`,
     });
 
     return {
       content: note.body,
-      path: '',
+      path: await this.getPathOfNote(note),
       id,
     };
   }
@@ -242,6 +262,50 @@ export default class Joplin implements NoteDatabase {
     await replacer(node);
     return node;
   };
+
+  private async buildNotebookIndex() {
+    this.notebooksIndex && (await this.notebooksIndex);
+
+    const notebooksIndex: Record<Notebook['id'], Notebook> = {};
+    const notebooks = await this.request<Notebook[]>({
+      url: '/folders',
+      method: 'GET',
+    });
+
+    const buildIndex = (notebooks: Notebook[]) => {
+      if (!this.notebooksIndex) {
+        throw new Error('no notebooke index');
+      }
+
+      for (const notebook of notebooks) {
+        notebooksIndex[notebook.id] = notebook;
+
+        if (notebook.children) {
+          buildIndex(notebook.children);
+        }
+      }
+    };
+
+    buildIndex(notebooks);
+
+    return notebooksIndex;
+  }
+  private async getPathOfNote(note: { parent_id: string; title: string }) {
+    if (!this.notebooksIndex) {
+      throw new Error('no index');
+    }
+
+    const notebooksIndex = await this.notebooksIndex;
+    let parentId = note.parent_id;
+    let path = '';
+
+    while (notebooksIndex[parentId]) {
+      path = '/' + notebooksIndex[parentId].title + path;
+      parentId = notebooksIndex[parentId].parent_id;
+    }
+
+    return `${path}/${note.title}`;
+  }
 }
 
 container.registerSingleton(databaseToken, Joplin);

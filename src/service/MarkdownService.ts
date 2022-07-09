@@ -13,7 +13,7 @@ const LOCATOR_SPLITTER = '&';
 const encode = (s: string) => btoa(s);
 const decode = (s: string) => atob(s);
 
-export const generateLocatorString = (s: [string, string]) =>
+const generateLocatorString = (s: [string, string]) =>
   s.map(encode).join(LOCATOR_SPLITTER);
 
 export default class MarkdownService {
@@ -84,7 +84,9 @@ export default class MarkdownService {
         });
 
         if (contentType === 'html') {
-          contents = contents.map((md) => this.renderSync(md));
+          contents = contents.map((md) =>
+            this.renderSync(md.replaceAll(/^>/gm, '')),
+          );
         }
       }
 
