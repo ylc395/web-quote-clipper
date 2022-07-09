@@ -76,6 +76,7 @@ export default class MarkdownService {
       let contents: string[];
 
       if (contentType === 'pure') {
+        // img will be replaced by its url in alt
         contents = children.map((child) => toPureText(child));
       } else {
         contents = children.map((node) => {
@@ -137,9 +138,7 @@ export default class MarkdownService {
     return Array.isArray(node.children);
   }
 
-  static imgElToText(el: HTMLImageElement, ignoreAlt = false) {
-    return `![${ignoreAlt ? '' : el.alt}](${el.src}${
-      el.title ? ` "${el.title}"` : ''
-    })`;
+  static imgElToText(el: HTMLImageElement) {
+    return `![${el.alt}](${el.src}${el.title ? ` "${el.title}"` : ''})`;
   }
 }

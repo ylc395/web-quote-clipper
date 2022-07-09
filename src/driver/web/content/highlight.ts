@@ -26,8 +26,7 @@ function findBoundary(
 
   while (currentNode) {
     if (isElement(currentNode) && isImageElement(currentNode)) {
-      // original image'alt text is dropped in note. So we ignore alt text of images in web page
-      texts.push(Markdown.imgElToText(currentNode, true));
+      texts.push(currentNode.src);
       nodes.push(currentNode);
     }
 
@@ -54,12 +53,12 @@ function findBoundary(
       let text = startBoundaryNode.textContent!.slice(startBoundary[1]);
       let i = startBoundaryNodeIndex + 1;
 
-      while (text.length < content.length && i < nodes.length - 1) {
-        text += nodes[i].textContent || '';
+      while (text.length < content.length && i < texts.length - 1) {
+        text += texts[i];
         i += 1;
       }
 
-      textNodePointer = i;
+      textNodePointer = Math.min(i, texts.length - 1);
     }
   }
 
@@ -159,7 +158,11 @@ export function highlightQuote(quote: Required<Quote>) {
   const startBoundary = findBoundary(contents[0], startEl);
   const endBoundary =
     startBoundary &&
-    findBoundary(contents[contents.length - 1], endEl, startBoundary);
+    findBoundary(
+      contents[contents.length - 1],
+      startEl !== endEl && contents.length < 2 ? startEl : endEl,
+      startBoundary,
+    );
 
   if (!startBoundary || !endBoundary) {
     return false;

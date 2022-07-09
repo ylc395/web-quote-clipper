@@ -1,7 +1,6 @@
 import uniqueSelector from 'unique-selector';
 import { Colors, Quote } from 'model/entity';
 import { toDataUrl, postQuote } from 'driver/web/fetcher';
-import Markdown from 'service/MarkdownService';
 import { create as createMarker, isAvailableRange } from './markManage';
 import {
   isBlockElement,
@@ -94,7 +93,9 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
         imgEl.title = currentNode.title;
         imgEl.alt = currentNode.src;
         imgEl.src = await toDataUrl(currentNode.currentSrc || currentNode.src);
-        lastText += Markdown.imgElToText(imgEl);
+        lastText += `![${imgEl.alt}](${imgEl.src}${
+          imgEl.title ? ` "${imgEl.title}"` : ''
+        })`;
       }
 
       if (isValidAnchorElement(currentNode)) {

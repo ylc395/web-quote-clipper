@@ -21,7 +21,8 @@ interface Notebook {
 export default class Joplin implements NoteDatabase {
   private readonly config = container.resolve(ConfigService);
   private readonly md = new Markdown({
-    transformPlugins: [() => this.replaceQuoteContentImage],
+    transformPlugins: [() => this.replaceImageWithResource],
+    renderPlugins: [() => this.replaceSrcWithAlt],
   });
   private readonly storage = container.resolve(storageToken);
   private apiToken = '';
@@ -243,7 +244,26 @@ export default class Joplin implements NoteDatabase {
     return `:/${resource.id}`;
   }
 
-  private replaceQuoteContentImage: Transformer = async (node) => {
+  // alt is url in quote markdown text.
+  //  see `generateQuote` in capture,js
+  private replaceSrcWithAlt: Transformer = (node) => {
+    const replacer = async (_node: typeof node) => {
+      if (Markdown.isImageNode(_node)) {
+        _node.url = _node.alt || _node.url;
+      }
+
+      if (Markdown.isParent(_node)) {
+        for (const child of _node.children) {
+          replacer(child);
+        }
+      }
+    };
+
+    replacer(node);
+    return node;
+  };
+
+  private replaceImageWithResource: Transformer = async (node) => {
     const replacer = async (_node: typeof node) => {
       if (
         Markdown.isImageNode(_node) &&
