@@ -1,7 +1,7 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
 import { Quote, Note, Colors } from 'model/entity';
-import { databaseToken, storageToken, NoteDatabase } from 'model/io';
+import { databaseToken, storageToken, NoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, {
   generateLocatorString,
@@ -172,15 +172,14 @@ export default class Joplin implements NoteDatabase {
     };
   }
 
-  async getAllQuotes() {
+  async getAllQuotes(contentType: 'md' | 'pure' | 'html') {
     const notes = await this.searchNotes(ATTR_PREFIX);
     const quotes = notes.flatMap((note) => {
-      const quotes = this.md.extractQuotes(note.content);
+      const quotes = this.md.extractQuotes(note.content, contentType);
 
       return quotes.map((quote) => ({
         ...quote,
         color: quote.color || Colors.Yellow,
-        pureTextContents: quote.pureTextContents || [],
         note: { id: note.id, path: note.path },
       }));
     });

@@ -6,7 +6,9 @@ export interface NoteDatabase {
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
   getNoteById: (id: string) => Promise<Required<Note>>;
-  getAllQuotes: () => Promise<Required<Quote>[]>;
+  getAllQuotes: (
+    contentType: 'md' | 'pure' | 'html',
+  ) => Promise<Required<Quote>[]>;
 }
 
 export interface Storage {

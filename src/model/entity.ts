@@ -10,7 +10,6 @@ export interface Quote {
   sourceUrl: string;
   locators: [string, string];
   contents: string[];
-  pureTextContents?: string[];
   comment: string;
   color: Colors;
   note?: Note;

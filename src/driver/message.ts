@@ -17,7 +17,10 @@ interface CaptureQuoteMessage {
 
 interface RequestQuotesMessage {
   event: MessageEvents.RequestQuotes;
-  payload?: string;
+  payload: {
+    url?: string;
+    contentType: 'md' | 'pure' | 'html';
+  };
 }
 
 interface DataUrlMessage {

@@ -13,6 +13,6 @@ export default class ClientService {
   }
 
   private init = async () => {
-    this.quotes.value = await this.fetcher.getQuotes();
+    this.quotes.value = await this.fetcher.getQuotes({ contentType: 'html' });
   };
 }

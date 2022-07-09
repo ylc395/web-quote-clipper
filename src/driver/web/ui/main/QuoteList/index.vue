@@ -7,14 +7,18 @@ export default defineComponent({
   setup() {
     const { quotes } = container.resolve(ClientService);
 
-    return { quotes };
+    return {
+      quotes,
+    };
   },
 });
 </script>
 <template>
   <ul>
-    <li v-for="quote of quotes">
-      {{ quote.contents }}
+    <li v-for="quote of quotes" :key="quote.locators[0]">
+      <template v-for="content of quote.contents">
+        <div v-html="content"></div>
+      </template>
     </li>
   </ul>
 </template>

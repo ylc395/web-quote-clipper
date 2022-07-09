@@ -148,7 +148,7 @@ function findBoundary(
 }
 
 export function highlightQuote(quote: Required<Quote>) {
-  const { locators, pureTextContents } = quote;
+  const { locators, contents } = quote;
   const startEl = document.querySelector(locators[0]);
   const endEl = document.querySelector(locators[1]);
 
@@ -156,14 +156,10 @@ export function highlightQuote(quote: Required<Quote>) {
     return false;
   }
 
-  const startBoundary = findBoundary(pureTextContents[0], startEl);
+  const startBoundary = findBoundary(contents[0], startEl);
   const endBoundary =
     startBoundary &&
-    findBoundary(
-      pureTextContents[pureTextContents.length - 1],
-      endEl,
-      startBoundary,
-    );
+    findBoundary(contents[contents.length - 1], endEl, startBoundary);
 
   if (!startBoundary || !endBoundary) {
     return false;
@@ -178,7 +174,7 @@ export function highlightQuote(quote: Required<Quote>) {
 }
 
 export default async function highlight() {
-  const quotes = await getQuotes(location.href);
+  const quotes = await getQuotes({ url: location.href, contentType: 'pure' });
   let failQuote = 0;
 
   for (const quote of quotes) {

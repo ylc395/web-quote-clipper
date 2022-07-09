@@ -10,10 +10,13 @@ export const postQuote: Fetcher['postQuote'] = (quote: Quote) => {
   return postMessage({ event: MessageEvents.CreateQuote, payload: quote });
 };
 
-export const getQuotes: Fetcher['getQuotes'] = (url?: string) => {
+export const getQuotes: Fetcher['getQuotes'] = (options: {
+  url?: string;
+  contentType: 'pure' | 'html';
+}) => {
   return postMessage<Required<Quote>[]>({
     event: MessageEvents.RequestQuotes,
-    payload: url,
+    payload: options,
   });
 };
 

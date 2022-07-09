@@ -1,6 +1,6 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
-import { databaseToken } from 'model/io';
+import { databaseToken } from 'model/db';
 import ConfigService from './ConfigService';
 
 @singleton()
@@ -9,9 +9,15 @@ export default class QuoteService {
   private config = container.resolve(ConfigService);
   private ready = Promise.all([this.db.ready, this.config.ready]);
 
-  async fetchQuotes(url?: string) {
+  async fetchQuotes({
+    url,
+    contentType,
+  }: {
+    url?: string;
+    contentType: 'pure' | 'md' | 'html';
+  }) {
     await this.ready;
-    const quotes = await this.db.getAllQuotes();
+    const quotes = await this.db.getAllQuotes(contentType);
 
     // todo: emit a event here
     return url ? quotes.filter((q) => q.sourceUrl === url) : quotes;
@@ -28,11 +34,9 @@ export default class QuoteService {
 
     const newQuote: Required<Quote> = {
       ...quote,
-      pureTextContents: [],
       note: { id: writeTargetId },
     };
     await this.db.postQuote(newQuote);
-    this.fetchQuotes();
   }
 
   async updateQuote(quote: Required<Quote>) {

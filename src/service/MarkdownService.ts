@@ -39,7 +39,7 @@ export default class MarkdownService {
     return this.renderer.processSync(md).toString();
   }
 
-  extractQuotes(md: string) {
+  extractQuotes(md: string, contentType: 'pure' | 'md' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     visit(root, (node) => {
@@ -73,12 +73,20 @@ export default class MarkdownService {
       }
 
       const children = node.children.slice(0, -1);
-      const contents = children.map((node) => {
-        const { start, end } = node.position!;
-        return md.slice(start.offset, end.offset);
-      });
+      let contents: string[];
 
-      const pureTextContents = children.map((child) => toPureText(child));
+      if (contentType === 'pure') {
+        contents = children.map((child) => toPureText(child));
+      } else {
+        contents = children.map((node) => {
+          const { start, end } = node.position!;
+          return md.slice(start.offset, end.offset);
+        });
+
+        if (contentType === 'html') {
+          contents = contents.map((md) => this.renderSync(md));
+        }
+      }
 
       quotes.push({
         sourceUrl,
@@ -86,7 +94,6 @@ export default class MarkdownService {
         color,
         locators: [startLocator, endLocator],
         contents,
-        pureTextContents,
       });
     });
 

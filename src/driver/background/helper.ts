@@ -1,4 +1,4 @@
-import type { Storage } from 'model/io';
+import type { Storage } from 'model/db';
 
 export async function imgSrcToDataUrl(imgSrc: string) {
   const res = await fetch(imgSrc, { credentials: 'include' });

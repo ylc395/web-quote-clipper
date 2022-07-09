@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
-import { storageToken, databaseToken } from 'model/io';
+import { storageToken, databaseToken } from 'model/db';
 import QuoteService from 'service/QuoteService';
 import Joplin from '../joplin';
 import { Message, MessageEvents } from '../message';
