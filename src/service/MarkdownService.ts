@@ -6,7 +6,7 @@ import type { Image, Parent, Blockquote } from 'mdast';
 import { visit } from 'unist-util-visit';
 import { toString as toPureText } from 'mdast-util-to-string';
 import parseAttr from 'md-attr-parser';
-import type { Quote, Colors } from 'model/entity';
+import { Quote, Colors } from 'model/entity';
 
 export const ATTR_PREFIX = 'data-web-clipper';
 const LOCATOR_SPLITTER = '&';
@@ -65,7 +65,8 @@ export default class MarkdownService {
       const locators = metadata[`${ATTR_PREFIX}-locators`] || '';
       const [startLocator, endLocator] =
         locators.split(LOCATOR_SPLITTER).map(decode) || [];
-      const color = metadata[`${ATTR_PREFIX}-color`] as Colors;
+      const color = (metadata[`${ATTR_PREFIX}-color`] ||
+        Colors.Yellow) as Colors;
       const comment = metadata[`${ATTR_PREFIX}-comment`];
 
       if (!sourceUrl || !startLocator || !endLocator) {

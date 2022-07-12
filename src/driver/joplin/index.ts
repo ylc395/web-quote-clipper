@@ -1,6 +1,6 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
-import { Quote, Note, Colors } from 'model/entity';
+import type { Quote, Note } from 'model/entity';
 import { databaseToken, storageToken, QuoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, { ATTR_PREFIX } from 'service/MarkdownService';
@@ -33,7 +33,7 @@ export default class Joplin implements QuoteDatabase {
 
   constructor() {
     this.ready = Promise.all([this.init(), this.config.ready]).then();
-    setTimeout(() => this.init.bind(this), TIME_INTERVAL);
+    setInterval(() => this.init.bind(this), TIME_INTERVAL);
   }
 
   private async init() {
@@ -200,7 +200,6 @@ export default class Joplin implements QuoteDatabase {
 
       return quotes.map((quote) => ({
         ...quote,
-        color: quote.color || Colors.Yellow,
         note: { id: note.id, path: note.path },
       }));
     });

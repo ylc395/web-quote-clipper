@@ -1,5 +1,5 @@
 import { container, singleton } from 'tsyringe';
-import { Note, Colors } from 'model/entity';
+import type { Note } from 'model/entity';
 import { storageToken } from 'model/db';
 
 const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
@@ -15,8 +15,6 @@ export default class ConfigService {
   constructor() {
     this.ready = this.init();
   }
-
-  private _color: Colors = Colors.Yellow;
 
   private async init() {
     const targetId = await this.storage.get(WRITE_TARGET_ID);
