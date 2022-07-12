@@ -1,7 +1,7 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
 import { Quote, Note, Colors } from 'model/entity';
-import { databaseToken, storageToken, NoteDatabase } from 'model/db';
+import { databaseToken, storageToken, QuoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, { ATTR_PREFIX } from 'service/MarkdownService';
 
@@ -18,7 +18,7 @@ interface Notebook {
   title: string;
 }
 
-export default class Joplin implements NoteDatabase {
+export default class Joplin implements QuoteDatabase {
   private readonly config = container.resolve(ConfigService);
   private readonly md = new Markdown({
     transformPlugins: [() => this.replaceImageWithResource],
@@ -176,7 +176,7 @@ export default class Joplin implements NoteDatabase {
     });
   }
 
-  async getNoteById(id: string): Promise<Required<Note>> {
+  private async getNoteById(id: string): Promise<Required<Note>> {
     const note = await this.request<{
       body: string;
       parent_id: string;

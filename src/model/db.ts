@@ -1,11 +1,10 @@
 import type { InjectionToken } from 'tsyringe';
 import type { Note, Quote } from './entity';
 
-export interface NoteDatabase {
+export interface QuoteDatabase {
   ready: Promise<void>;
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
-  getNoteById: (id: string) => Promise<Required<Note>>;
   getAllQuotes: (
     contentType: 'md' | 'pure' | 'html',
   ) => Promise<Required<Quote>[]>;
@@ -17,5 +16,5 @@ export interface Storage {
 }
 
 export const storageToken: InjectionToken<Storage> = Symbol('storageToken');
-export const databaseToken: InjectionToken<NoteDatabase> =
+export const databaseToken: InjectionToken<QuoteDatabase> =
   Symbol('databaseToken');
