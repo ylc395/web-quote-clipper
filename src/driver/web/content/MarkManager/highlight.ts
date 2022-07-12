@@ -18,7 +18,6 @@ export function findBoundary(
   const texts: string[] = [];
   const nodes: Node[] = [];
   let currentNode = treeWalker.nextNode();
-  let boundaryNode: Node | null = null;
 
   while (currentNode) {
     if (isElement(currentNode) && isImageElement(currentNode)) {
@@ -66,6 +65,7 @@ export function findBoundary(
   let offset = 0;
   let contentCharPointer = isReversed ? content.length - 1 : 0;
   let contentMatchPoint: { index: number; node: Node } | null = null;
+  let boundaryNode: Node | null = null;
 
   for (
     ;
@@ -117,6 +117,7 @@ export function findBoundary(
         textCharPointer = contentMatchPoint.index + unit;
         contentCharPointer = isReversed ? content.length - 1 : 0;
         contentMatchPoint = null;
+        boundaryNode = null;
         continue;
       }
 
@@ -143,5 +144,7 @@ export function findBoundary(
         ? offset + 1
         : offset,
     ];
+  } else if (isReversed) {
+    return [el, 0];
   }
 }

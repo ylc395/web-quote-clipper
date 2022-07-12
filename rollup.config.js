@@ -55,7 +55,11 @@ export default defineConfig([
       file: './dist/chrome-extension/content-script.js',
       format: 'iife',
     },
-    plugins: [handlebars(), styles(), ...plugins],
+    plugins: [
+      handlebars(),
+      styles({ mode: ['inject', { singleTag: true }] }),
+      ...plugins,
+    ],
   },
   {
     input: 'src/driver/web/ui/main/index.ts',
