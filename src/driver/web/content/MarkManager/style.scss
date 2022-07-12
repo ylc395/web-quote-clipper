@@ -1,0 +1,21 @@
+@use '../constants';
+
+.web-clipper-mark-PINK {
+  background-color: constants.$pink;
+}
+
+.web-clipper-mark-GREEN {
+  background-color: constants.$green;
+}
+
+.web-clipper-mark-YELLOW {
+  background-color: constants.$yellow;
+}
+
+.web-clipper-mark-BLUE {
+  background-color: constants.$blue;
+}
+
+.web-clipper-mark-PURPLE {
+  background-color: constants.$purple;
+}

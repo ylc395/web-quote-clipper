@@ -1,29 +1,46 @@
 import debounce from 'lodash.debounce';
+import { Colors } from 'model/entity';
 import { postQuote } from 'driver/web/fetcher';
 import {
   generateQuote,
   getSelection,
   getSelectionEndPosition,
 } from './capture';
+import renderTooltip from './template.hbs';
 import type MarkManager from '../MarkManager';
+import './style.scss';
 
 const ROOT_ID = 'tooltip-container';
+const COLORS = [
+  Colors.Yellow,
+  Colors.Green,
+  Colors.Blue,
+  Colors.Pink,
+  Colors.Purple,
+];
 
 export default class Tooltip {
   private rootEl: HTMLElement;
-  private styleEl: HTMLStyleElement;
   private constructor(private readonly markManager: MarkManager) {
     this.rootEl = document.createElement('div');
-    this.rootEl.addEventListener('click', this.capture.bind(this));
+    this.rootEl.addEventListener('click', this.handleClick.bind(this));
     this.rootEl.id = ROOT_ID;
-    this.rootEl.innerHTML = `<button>Quote!</button>`;
-
-    this.styleEl = document.createElement('style');
-    this.styleEl.textContent = `#${ROOT_ID} * {all: initial;} #${ROOT_ID} {position: fixed;}`;
   }
 
-  private get buttonEl() {
-    return this.rootEl.querySelector('');
+  private handleClick(e: MouseEvent) {
+    const target = e.target as HTMLElement | null;
+
+    if (!target) {
+      return;
+    }
+
+    switch (true) {
+      case target.matches('[data-web-clipper-color]'):
+        this.capture(target.dataset.webClipperColor as Colors);
+        break;
+      default:
+        break;
+    }
   }
 
   private handleClickOut = (e: MouseEvent) => {
@@ -46,27 +63,29 @@ export default class Tooltip {
     const tooltipDisabled = !this.markManager.isAvailableRange(selection.range);
     const { x, y, reversed } = getSelectionEndPosition();
 
+    this.rootEl.innerHTML = renderTooltip({
+      colors: COLORS,
+      disabled: tooltipDisabled,
+    });
     this.rootEl.style.left = `${x + (reversed ? -10 : 10)}px`;
     this.rootEl.style.top = `${y + (reversed ? -10 : 10)}px`;
     document.body.appendChild(this.rootEl);
-    document.head.appendChild(this.styleEl);
     document.addEventListener('click', this.handleClickOut);
   };
 
   private unmount = () => {
     document.removeEventListener('click', this.handleClickOut);
     this.rootEl.remove();
-    this.styleEl.remove();
   };
 
-  private async capture() {
+  private async capture(color: Colors) {
     const selection = getSelection();
 
     if (!selection) {
       return;
     }
 
-    const quote = await generateQuote(selection.range);
+    const quote = await generateQuote(selection.range, color);
 
     if (quote) {
       await postQuote(quote);
@@ -81,6 +100,7 @@ export default class Tooltip {
     const tooltip = new Tooltip(markManager);
     document.addEventListener('selectionchange', tooltip.unmount);
     document.addEventListener('selectionchange', debounce(tooltip.mount, 500));
+    window.addEventListener('scroll', debounce(tooltip.unmount, 1000));
 
     return tooltip;
   }

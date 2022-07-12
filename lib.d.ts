@@ -8,3 +8,8 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>;
   export default component;
 }
+
+declare module '*.hbs' {
+  const render: (params: Record<string, unknown>) => string;
+  export default render;
+}

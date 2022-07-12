@@ -1,5 +1,5 @@
 import uniqueSelector from 'unique-selector';
-import { Colors, Quote } from 'model/entity';
+import type { Colors, Quote } from 'model/entity';
 import { toDataUrl } from 'driver/web/fetcher';
 import {
   isBlockElement,
@@ -85,7 +85,10 @@ export const getSelectionEndPosition = () => {
   return { x, y, reversed: collapseToStart } as const;
 };
 
-export async function generateQuote(range: Range): Promise<Quote | undefined> {
+export async function generateQuote(
+  range: Range,
+  color: Colors,
+): Promise<Quote | undefined> {
   const { startContainer, endContainer } = range;
   const fragment = range.cloneContents();
 
@@ -196,7 +199,7 @@ export async function generateQuote(range: Range): Promise<Quote | undefined> {
   return {
     locators: [startLocator, endLocator],
     sourceUrl: location.href,
-    color: Colors.Yellow,
+    color,
     contents,
     comment: '',
   };

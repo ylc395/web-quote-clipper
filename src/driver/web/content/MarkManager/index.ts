@@ -2,9 +2,9 @@ import highlightRange from 'dom-highlight-range';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/web/fetcher';
 import { findBoundary, warnPopup } from './highlight';
+import './style.scss';
 
-const MARK_CLASSNAME = 'quote-collector-mark';
-const CSS = ``;
+const MARK_CLASSNAME = 'web-clipper-mark';
 
 interface Maker {
   remove: () => void;
@@ -13,17 +13,12 @@ interface Maker {
 
 export default class MarkManager {
   private markers: Maker[] = [];
-  private styleEl?: HTMLStyleElement;
   createMark(range: Range, quote: Quote) {
-    if (!this.styleEl) {
-      const styleEl = document.createElement('style');
-      styleEl.textContent = CSS;
-      document.head.appendChild(styleEl);
-    }
-
     this.markers.push({
       quote,
-      remove: highlightRange(range, 'mark', { class: MARK_CLASSNAME }),
+      remove: highlightRange(range, 'mark', {
+        class: `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`,
+      }),
     });
   }
 

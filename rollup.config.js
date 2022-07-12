@@ -6,6 +6,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import vue from 'rollup-plugin-vue';
 import copy from 'rollup-plugin-copy';
+import handlebars from 'rollup-plugin-handlebars-plus';
+import styles from 'rollup-plugin-styles';
 import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 
@@ -53,7 +55,7 @@ export default defineConfig([
       file: './dist/chrome-extension/content-script.js',
       format: 'iife',
     },
-    plugins,
+    plugins: [handlebars(), styles(), ...plugins],
   },
   {
     input: 'src/driver/web/ui/main/index.ts',
