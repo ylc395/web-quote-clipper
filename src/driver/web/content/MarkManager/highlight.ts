@@ -1,19 +1,15 @@
-import type { Quote } from 'model/entity';
-import Markdown from 'service/MarkdownService';
-import { getQuotes } from 'driver/web/fetcher';
-import { isElement, isImageElement, isTextNode } from './utils';
-import { create as createMarker } from './markManage';
+import { isElement, isImageElement, isTextNode } from '../utils';
 
-function warnPopup(msg: string) {
+export function warnPopup(msg: string) {
   // todo: popup
   alert(msg);
 }
 
-function findBoundary(
+export function findBoundary(
   content: string,
   el: Element,
   startBoundary?: Readonly<[Node, number]>,
-) {
+): [Node, number] | undefined {
   const treeWalker = document.createTreeWalker(
     el,
     NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
@@ -36,6 +32,10 @@ function findBoundary(
     }
 
     currentNode = treeWalker.nextNode();
+  }
+
+  if (texts.length < 1) {
+    return [el, 0];
   }
 
   const isReversed = Boolean(startBoundary);
@@ -142,53 +142,6 @@ function findBoundary(
         : isReversed
         ? offset + 1
         : offset,
-    ] as const;
-  }
-}
-
-export function highlightQuote(quote: Required<Quote>) {
-  const { locators, contents } = quote;
-  const startEl = document.querySelector(locators[0]);
-  const endEl = document.querySelector(locators[1]);
-
-  if (!startEl || !endEl) {
-    return false;
-  }
-
-  const startBoundary = findBoundary(contents[0], startEl);
-  const endBoundary =
-    startBoundary &&
-    findBoundary(
-      contents[contents.length - 1],
-      startEl !== endEl && contents.length < 2 ? startEl : endEl,
-      startBoundary,
-    );
-
-  if (!startBoundary || !endBoundary) {
-    return false;
-  }
-
-  const range = document.createRange();
-  range.setStart(...startBoundary);
-  range.setEnd(...endBoundary);
-  createMarker(range, quote);
-
-  return true;
-}
-
-export default async function highlight() {
-  const quotes = await getQuotes({ url: location.href, contentType: 'pure' });
-  let failQuote = 0;
-
-  for (const quote of quotes) {
-    const isSuccessful = highlightQuote(quote);
-
-    if (!isSuccessful) {
-      failQuote += 1;
-    }
-  }
-
-  if (failQuote > 0) {
-    warnPopup(`${failQuote} quotes failed to load.`);
+    ];
   }
 }

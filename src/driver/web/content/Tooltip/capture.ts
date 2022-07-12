@@ -1,7 +1,6 @@
 import uniqueSelector from 'unique-selector';
 import { Colors, Quote } from 'model/entity';
-import { toDataUrl, postQuote } from 'driver/web/fetcher';
-import { create as createMarker, isAvailableRange } from './markManage';
+import { toDataUrl } from 'driver/web/fetcher';
 import {
   isBlockElement,
   isElement,
@@ -11,15 +10,9 @@ import {
   getLastChildNode,
   isCodeElement,
   isUnderPre,
-} from './utils';
-import Tooltip from './Tooltip';
+} from '../utils';
 
-let currentMousePosition = { x: 0, y: 0 };
-document.addEventListener('mousemove', ({ x, y }) => {
-  currentMousePosition = { x, y };
-});
-
-function getSelection() {
+export function getSelection() {
   const selection = document.getSelection();
 
   if (
@@ -54,7 +47,45 @@ function getSelection() {
   } as const;
 }
 
-async function generateQuote(range: Range): Promise<Quote | undefined> {
+export const getSelectionEndPosition = () => {
+  const selection = window.getSelection();
+
+  if (!selection) {
+    throw new Error('no selection');
+  }
+
+  const range = selection.getRangeAt(0).cloneRange();
+  const tmpEl = document.createElement('span');
+
+  const collapseToStart = (() => {
+    const { focusNode, focusOffset, anchorNode, anchorOffset } = selection;
+
+    if (focusNode === anchorNode) {
+      return focusOffset < anchorOffset;
+    }
+
+    if (!anchorNode || !focusNode) {
+      throw new Error('no anchorNode / focusNode');
+    }
+
+    return Boolean(
+      anchorNode.compareDocumentPosition(focusNode) &
+        Node.DOCUMENT_POSITION_PRECEDING,
+    );
+  })();
+
+  range.collapse(collapseToStart);
+  range.insertNode(tmpEl);
+
+  const rect = tmpEl.getBoundingClientRect();
+  const x = rect.left;
+  const y = rect.top;
+  tmpEl.remove();
+
+  return { x, y, reversed: collapseToStart } as const;
+};
+
+export async function generateQuote(range: Range): Promise<Quote | undefined> {
   const { startContainer, endContainer } = range;
   const fragment = range.cloneContents();
 
@@ -169,35 +200,4 @@ async function generateQuote(range: Range): Promise<Quote | undefined> {
     contents,
     comment: '',
   };
-}
-
-export function createTooltip() {
-  const selection = getSelection();
-
-  if (!selection) {
-    return;
-  }
-
-  let tooltip: Tooltip;
-
-  const handleClick = async () => {
-    const quote = await generateQuote(selection.range);
-
-    if (quote) {
-      await postQuote(quote);
-      createMarker(selection.range, quote);
-      window.getSelection()?.empty();
-    } else {
-      // todo: handle no quote
-    }
-    tooltip.destroy();
-  };
-
-  const tooltipDisabled = !isAvailableRange(selection.range);
-
-  tooltip = new Tooltip({
-    handleClick,
-    disabled: tooltipDisabled,
-    position: [currentMousePosition.x + 10, currentMousePosition.y + 10],
-  });
 }
