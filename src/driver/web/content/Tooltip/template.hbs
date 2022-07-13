@@ -1,7 +1,7 @@
 <div>
-  <div>
+  <div class="web-clipper-buttons">
     {{#each colors}}
-    <button{{#if disabled}} disabled'{{/if}} data-web-clipper-color="{{ this }}"></button>
+    <button{{#if ../disabled}} disabled {{/if}} data-web-clipper-color="{{ this }}"></button>
     {{/each}}
   </div>
 </div>

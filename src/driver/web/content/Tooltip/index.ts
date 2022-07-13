@@ -11,7 +11,7 @@ import renderTooltip from './template.hbs';
 import type MarkManager from '../MarkManager';
 import './style.scss';
 
-const ROOT_ID = 'tooltip-container';
+const ROOT_ID = 'web-clipper-tooltip-container';
 const COLORS = [
   Colors.Yellow,
   Colors.Green,
@@ -37,9 +37,8 @@ export default class Tooltip {
     }
 
     switch (true) {
-      case target.matches('[data-web-clipper-color]'):
-        this.capture(target.dataset.webClipperColor as Colors);
-        break;
+      case target.matches('button[data-web-clipper-color]'):
+        return this.capture(target.dataset.webClipperColor as Colors);
       default:
         break;
     }
@@ -72,6 +71,11 @@ export default class Tooltip {
     });
     this.rootEl.style.left = `${x + (reversed ? -10 : 10)}px`;
     this.rootEl.style.top = `${y + (reversed ? -10 : 10)}px`;
+
+    if (reversed) {
+      this.rootEl.className = `${ROOT_ID}-reversed`;
+    }
+
     document.body.appendChild(this.rootEl);
     document.addEventListener('click', this.handleClickOut);
     window.addEventListener('scroll', this.checkAndUnmount);
@@ -84,6 +88,8 @@ export default class Tooltip {
 
     document.removeEventListener('click', this.handleClickOut);
     window.removeEventListener('scroll', this.checkAndUnmount);
+
+    this.rootEl.className = '';
     this.rootEl.remove();
     this.currentSelectionEnd = undefined;
   };
@@ -114,7 +120,7 @@ export default class Tooltip {
     const { y } = this.rootEl.getBoundingClientRect();
     const tooltipOffsetY = y + window.scrollY;
 
-    if (Math.abs(tooltipOffsetY - this.currentSelectionEnd.offsetY) > 150) {
+    if (Math.abs(tooltipOffsetY - this.currentSelectionEnd.offsetY) > 100) {
       this.unmount();
     }
   }, 500);

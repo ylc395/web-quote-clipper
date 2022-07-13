@@ -1,16 +1,28 @@
 @use '../constants';
 
-#tooltip-container {
+#web-clipper-tooltip-container {
   position: fixed;
+
+  &.web-clipper-tooltip-container-reversed {
+    transform: translate(-100%, -100%);
+  }
+
+  .web-clipper-buttons {
+    display: flex;
+  }
 
   * {
     all: initial;
   }
 
   button[data-web-clipper-color] {
-    width: 15px;
-    height: 15px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
+
+    &[disabled] {
+      opacity: 0.7;
+    }
   }
 
   button[data-web-clipper-color='GREEN'] {
