@@ -25,7 +25,7 @@ export default class QuoteService {
 
   async createQuote(quote: Quote) {
     await this.ready;
-    const writeTargetId = await this.config.get('targetJoplinNote');
+    const writeTargetId = await this.config.get('targetId');
 
     if (!writeTargetId) {
       // todo: handle no write target

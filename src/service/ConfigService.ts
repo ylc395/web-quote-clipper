@@ -7,13 +7,18 @@ const CONFIG_KEY = 'config';
 enum DbTypes {
   Joplin = 'JOPLIN',
   Github = 'GITHUB',
+  Browser = 'BROWSER',
 }
 
 interface AppConfig {
-  targetJoplinNote?: Note['id'];
-  targets?: DbTypes[];
-  sources?: DbTypes[];
+  targetId: Note['id'];
+  db: DbTypes;
 }
+
+const DEFAULT_CONFIG: AppConfig = {
+  targetId: '622b83982fd244dca3bc3bcecb8c29e4',
+  db: DbTypes.Joplin,
+};
 
 @singleton()
 export default class ConfigService {
@@ -35,17 +40,16 @@ export default class ConfigService {
   };
 
   private parseConfigText(v: unknown) {
-    let config: AppConfig;
+    let config: Partial<AppConfig>;
 
     try {
       // @ts-ignore
       config = JSON.parse(v);
     } catch (error) {
-      // config = { targetJoplinNote: '622b83982fd244dca3bc3bcecb8c29e4' };
       config = {};
     }
 
-    return config;
+    return { ...DEFAULT_CONFIG, ...config };
   }
 
   private async init() {
