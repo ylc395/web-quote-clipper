@@ -1,7 +1,7 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
 import type { Quote, Note } from 'model/entity';
-import { databaseToken, storageToken, QuoteDatabase } from 'model/db';
+import { storageToken, QuoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, { ATTR_PREFIX } from 'service/MarkdownService';
 
@@ -326,5 +326,3 @@ export default class Joplin implements QuoteDatabase {
     return `${path}/${note.title}`;
   }
 }
-
-container.registerSingleton(databaseToken, Joplin);
