@@ -4,6 +4,11 @@ export type Message =
   | RequestQuotesMessage
   | DataUrlMessage;
 
+export interface Response<T = unknown> {
+  err?: unknown;
+  res?: T;
+}
+
 export enum MessageEvents {
   CreateQuote = 'CREATE_QUOTE',
   RequestQuotes = 'REQUEST',

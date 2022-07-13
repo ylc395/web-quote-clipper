@@ -3,7 +3,6 @@ import type EventEmitter from 'eventemitter3';
 import type { Quote } from './entity';
 
 export interface QuoteDatabase {
-  ready: Promise<void>;
   putQuote: (quote: Required<Quote>) => Promise<void>; // update
   postQuote: (quote: Required<Quote>) => Promise<void>; // create
   getAllQuotes: (

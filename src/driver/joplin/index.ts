@@ -27,12 +27,11 @@ export default class Joplin implements QuoteDatabase {
   private readonly storage = container.resolve(storageToken);
   private apiToken = '';
   private authToken = '';
-  private notebooksIndex?: Promise<Record<Notebook['id'], Notebook>>;
+  private notebooksIndex?: Record<Notebook['id'], Notebook>;
   private isInitializing = false;
-  readonly ready: Promise<void>;
+  private isReady = false;
 
   constructor() {
-    this.ready = this.init();
     setInterval(() => this.init.bind(this), TIME_INTERVAL);
   }
 
@@ -41,15 +40,16 @@ export default class Joplin implements QuoteDatabase {
       return;
     }
 
+    this.isReady = false;
     this.isInitializing = true;
     this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
     this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
-      this.notebooksIndex = this.buildNotebookIndex();
+      this.notebooksIndex = await this.buildNotebookIndex();
+      this.isReady = true;
     } catch (error) {
-      // todo: handle network error
     } finally {
       this.isInitializing = false;
     }
@@ -63,6 +63,10 @@ export default class Joplin implements QuoteDatabase {
     },
     fromRequest = false,
   ): Promise<T> {
+    if (!this.isInitializing && !this.isReady) {
+      throw new Error('joplin not ready');
+    }
+
     let { method, url, body } = options;
 
     url = `${API_URL}${url}${!url.includes('?') ? '?' : '&'}token=${
@@ -188,7 +192,7 @@ export default class Joplin implements QuoteDatabase {
 
     return {
       content: note.body,
-      path: await this.getPathOfNote(note),
+      path: this.getPathOfNote(note),
       id,
     };
   }
@@ -283,8 +287,6 @@ export default class Joplin implements QuoteDatabase {
   };
 
   private async buildNotebookIndex() {
-    this.notebooksIndex && (await this.notebooksIndex);
-
     const notebooksIndex: Record<Notebook['id'], Notebook> = {};
     const notebooks = await this.request<Notebook[]>({
       url: '/folders',
@@ -309,12 +311,12 @@ export default class Joplin implements QuoteDatabase {
 
     return notebooksIndex;
   }
-  private async getPathOfNote(note: { parent_id: string; title: string }) {
+  private getPathOfNote(note: { parent_id: string; title: string }) {
     if (!this.notebooksIndex) {
       throw new Error('no index');
     }
 
-    const notebooksIndex = await this.notebooksIndex;
+    const notebooksIndex = this.notebooksIndex;
     let parentId = note.parent_id;
     let path = '';
 

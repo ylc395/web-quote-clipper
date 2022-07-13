@@ -103,13 +103,20 @@ export default class Tooltip {
 
     const quote = await generateQuote(selection.range, color);
 
-    if (quote) {
-      await postQuote(quote);
-      this.markManager.createMark(selection.range, quote);
-      window.getSelection()?.empty();
-    } else {
-      // todo: handle no quote
+    if (!quote) {
+      return;
     }
+
+    try {
+      await postQuote(quote);
+    } catch (error) {
+      // todo: handle error
+      alert(error);
+      return;
+    }
+
+    this.markManager.createMark(selection.range, quote);
+    window.getSelection()?.empty();
   }
 
   private checkAndUnmount = throttle(() => {

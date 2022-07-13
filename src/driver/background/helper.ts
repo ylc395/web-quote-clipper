@@ -43,6 +43,3 @@ export class BrowserStorage
     return chrome.storage[STORAGE_AREA].get([key]).then((v) => v[key]);
   }
 }
-
-// watch reactive data and postmessage to other processes
-export class Broadcaster {}

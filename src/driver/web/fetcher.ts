@@ -1,9 +1,17 @@
-import { Message, MessageEvents } from 'driver/message';
+import { Message, MessageEvents, Response } from 'driver/message';
 import type { Fetcher } from 'model/client';
 import type { Quote } from 'model/entity';
 
-const postMessage = <T = void>(message: Message) => {
-  return chrome.runtime.sendMessage<Message, T>(message);
+const postMessage = async <T = void>(message: Message) => {
+  const { err, res } = await chrome.runtime.sendMessage<Message, Response<T>>(
+    message,
+  );
+
+  if (err) {
+    throw new Error(String(err));
+  }
+
+  return res!;
 };
 
 export const postQuote: Fetcher['postQuote'] = (quote: Quote) => {

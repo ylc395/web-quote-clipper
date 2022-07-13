@@ -7,7 +7,6 @@ import ConfigService from './ConfigService';
 export default class QuoteService {
   private readonly db = container.resolve(databaseToken);
   private config = container.resolve(ConfigService);
-  private ready = this.db.ready;
 
   async fetchQuotes({
     url,
@@ -16,7 +15,6 @@ export default class QuoteService {
     url?: string;
     contentType: 'pure' | 'md' | 'html';
   }) {
-    await this.ready;
     const quotes = await this.db.getAllQuotes(contentType);
 
     // todo: emit a event here
@@ -24,7 +22,6 @@ export default class QuoteService {
   }
 
   async createQuote(quote: Quote) {
-    await this.ready;
     const writeTargetId = await this.config.get('targetId');
 
     if (!writeTargetId) {

@@ -28,9 +28,17 @@ export default class MarkManager {
   }
 
   active = async () => {
-    const quotes = await getQuotes({ url: location.href, contentType: 'pure' });
-    let failQuote = 0;
+    let quotes: Quote[];
 
+    try {
+      quotes = await getQuotes({ url: location.href, contentType: 'pure' });
+    } catch (error) {
+      // todo: handle error
+      alert(error);
+      return;
+    }
+
+    let failQuote = 0;
     for (const quote of quotes) {
       const isSuccessful = this.highlightQuote(quote);
 
@@ -44,7 +52,7 @@ export default class MarkManager {
     }
   };
 
-  private highlightQuote(quote: Required<Quote>) {
+  private highlightQuote(quote: Quote) {
     const { locators, contents } = quote;
     const startEl = document.querySelector(locators[0]);
     const endEl = document.querySelector(locators[1]);
