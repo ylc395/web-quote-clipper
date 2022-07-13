@@ -7,7 +7,7 @@ import ConfigService from './ConfigService';
 export default class QuoteService {
   private readonly db = container.resolve(databaseToken);
   private config = container.resolve(ConfigService);
-  private ready = Promise.all([this.db.ready, this.config.ready]);
+  private ready = this.db.ready;
 
   async fetchQuotes({
     url,
@@ -25,7 +25,7 @@ export default class QuoteService {
 
   async createQuote(quote: Quote) {
     await this.ready;
-    const { writeTargetId } = this.config;
+    const writeTargetId = await this.config.get('targetJoplinNote');
 
     if (!writeTargetId) {
       // todo: handle no write target
@@ -40,7 +40,6 @@ export default class QuoteService {
   }
 
   async updateQuote(quote: Required<Quote>) {
-    await this.config.ready;
     const comment = quote.comment.replace(/\n/g, '\n>\n');
     quote.comment = comment;
     await this.db.putQuote(quote);

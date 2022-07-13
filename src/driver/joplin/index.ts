@@ -32,7 +32,7 @@ export default class Joplin implements QuoteDatabase {
   readonly ready: Promise<void>;
 
   constructor() {
-    this.ready = Promise.all([this.init(), this.config.ready]).then();
+    this.ready = this.init();
     setInterval(() => this.init.bind(this), TIME_INTERVAL);
   }
 

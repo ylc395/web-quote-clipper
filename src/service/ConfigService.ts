@@ -2,32 +2,63 @@ import { container, singleton } from 'tsyringe';
 import type { Note } from 'model/entity';
 import { storageToken } from 'model/db';
 
-const WRITE_TARGET_ID = 'WRITE_TARGET_ID';
+const CONFIG_KEY = 'config';
+
+enum DbTypes {
+  Joplin = 'JOPLIN',
+  Github = 'GITHUB',
+}
+
+interface AppConfig {
+  targetJoplinNote?: Note['id'];
+  targets?: DbTypes[];
+  sources?: DbTypes[];
+}
 
 @singleton()
 export default class ConfigService {
   private readonly storage = container.resolve(storageToken);
-  private _writeTargetId = '622b83982fd244dca3bc3bcecb8c29e4';
-  // private _writeTargetId = '';
-
-  readonly ready: Promise<void>;
+  private config?: AppConfig;
+  private readonly ready: Promise<void>;
 
   constructor() {
     this.ready = this.init();
   }
 
   private async init() {
-    const targetId = await this.storage.get(WRITE_TARGET_ID);
+    let config: AppConfig;
 
-    this._writeTargetId = targetId || this._writeTargetId;
+    try {
+      config = JSON.parse(
+        (await this.storage.get(CONFIG_KEY)) ||
+          '{"targetJoplinNote": "622b83982fd244dca3bc3bcecb8c29e4"}',
+        // '{}',
+      );
+    } catch (error) {
+      config = {};
+    }
+
+    this.config = config;
   }
 
-  get writeTargetId() {
-    return this._writeTargetId;
+  async get<T extends keyof AppConfig>(key: T): Promise<AppConfig[T]> {
+    await this.ready;
+
+    if (!this.config) {
+      throw new Error('no _config');
+    }
+
+    return this.config[key];
   }
 
-  async setWriteTarget({ id, path }: Note) {
-    await this.storage.set(WRITE_TARGET_ID, id);
-    this._writeTargetId = id;
+  async set<T extends keyof AppConfig>(key: T, value: AppConfig[T]) {
+    await this.ready;
+
+    if (!this.config) {
+      throw new Error('no _config');
+    }
+
+    this.config[key] = value;
+    await this.storage.set(CONFIG_KEY, JSON.stringify(this.config));
   }
 }
