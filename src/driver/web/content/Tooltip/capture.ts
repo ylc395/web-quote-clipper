@@ -82,7 +82,12 @@ export const getSelectionEndPosition = () => {
   const y = rect.top;
   tmpEl.remove();
 
-  return { x, y, reversed: collapseToStart } as const;
+  return {
+    x,
+    y,
+    reversed: collapseToStart,
+    offsetY: y + window.scrollY,
+  } as const;
 };
 
 export async function generateQuote(

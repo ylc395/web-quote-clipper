@@ -1,4 +1,5 @@
 import debounce from 'lodash.debounce';
+import throttle from 'lodash.throttle';
 import { Colors } from 'model/entity';
 import { postQuote } from 'driver/web/fetcher';
 import {
@@ -21,6 +22,7 @@ const COLORS = [
 
 export default class Tooltip {
   private rootEl: HTMLElement;
+  private currentSelectionEnd?: ReturnType<typeof getSelectionEndPosition>;
   private constructor(private readonly markManager: MarkManager) {
     this.rootEl = document.createElement('div');
     this.rootEl.addEventListener('click', this.handleClick.bind(this));
@@ -60,8 +62,9 @@ export default class Tooltip {
       return;
     }
 
+    this.currentSelectionEnd = getSelectionEndPosition();
+    const { x, y, reversed } = this.currentSelectionEnd;
     const tooltipDisabled = !this.markManager.isAvailableRange(selection.range);
-    const { x, y, reversed } = getSelectionEndPosition();
 
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS,
@@ -71,11 +74,18 @@ export default class Tooltip {
     this.rootEl.style.top = `${y + (reversed ? -10 : 10)}px`;
     document.body.appendChild(this.rootEl);
     document.addEventListener('click', this.handleClickOut);
+    window.addEventListener('scroll', this.checkAndUnmount);
   };
 
   private unmount = () => {
+    if (!this.currentSelectionEnd) {
+      return;
+    }
+
     document.removeEventListener('click', this.handleClickOut);
+    window.removeEventListener('scroll', this.checkAndUnmount);
     this.rootEl.remove();
+    this.currentSelectionEnd = undefined;
   };
 
   private async capture(color: Colors) {
@@ -96,11 +106,23 @@ export default class Tooltip {
     }
   }
 
+  private checkAndUnmount = throttle(() => {
+    if (!this.currentSelectionEnd) {
+      return;
+    }
+
+    const { y } = this.rootEl.getBoundingClientRect();
+    const tooltipOffsetY = y + window.scrollY;
+
+    if (Math.abs(tooltipOffsetY - this.currentSelectionEnd.offsetY) > 150) {
+      this.unmount();
+    }
+  }, 500);
+
   static init(markManager: MarkManager) {
     const tooltip = new Tooltip(markManager);
     document.addEventListener('selectionchange', tooltip.unmount);
     document.addEventListener('selectionchange', debounce(tooltip.mount, 500));
-    window.addEventListener('scroll', debounce(tooltip.unmount, 1000));
 
     return tooltip;
   }
