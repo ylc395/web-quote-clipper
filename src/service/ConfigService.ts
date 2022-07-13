@@ -1,6 +1,6 @@
 import { container, singleton } from 'tsyringe';
 import type { Note } from 'model/entity';
-import { storageToken } from 'model/db';
+import { StorageEvents, storageToken, StorageChangedEvent } from 'model/db';
 
 const CONFIG_KEY = 'config';
 
@@ -23,22 +23,34 @@ export default class ConfigService {
 
   constructor() {
     this.ready = this.init();
+    this.storage.on(StorageEvents.Changed, this.handleStorageChanged);
   }
 
-  private async init() {
+  private handleStorageChanged = (changes: StorageChangedEvent) => {
+    if (!changes[CONFIG_KEY]) {
+      return;
+    }
+
+    this.config = this.parseConfigText(changes[CONFIG_KEY].newValue);
+  };
+
+  private parseConfigText(v: unknown) {
     let config: AppConfig;
 
     try {
-      config = JSON.parse(
-        (await this.storage.get(CONFIG_KEY)) ||
-          '{"targetJoplinNote": "622b83982fd244dca3bc3bcecb8c29e4"}',
-        // '{}',
-      );
+      // @ts-ignore
+      config = JSON.parse(v);
     } catch (error) {
+      // config = { targetJoplinNote: '622b83982fd244dca3bc3bcecb8c29e4' };
       config = {};
     }
 
-    this.config = config;
+    return config;
+  }
+
+  private async init() {
+    const configText = await this.storage.get(CONFIG_KEY);
+    this.config = this.parseConfigText(configText);
   }
 
   async get<T extends keyof AppConfig>(key: T): Promise<AppConfig[T]> {

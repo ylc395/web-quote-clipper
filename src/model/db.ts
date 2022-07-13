@@ -1,5 +1,6 @@
 import type { InjectionToken } from 'tsyringe';
-import type { Note, Quote } from './entity';
+import type EventEmitter from 'eventemitter3';
+import type { Quote } from './entity';
 
 export interface QuoteDatabase {
   ready: Promise<void>;
@@ -10,7 +11,15 @@ export interface QuoteDatabase {
   ) => Promise<Required<Quote>[]>;
 }
 
-export interface Storage {
+export enum StorageEvents {
+  Changed = 'Changed',
+}
+
+export interface StorageChangedEvent {
+  [key: string]: { newValue?: unknown; oldValue?: unknown };
+}
+
+export interface Storage extends EventEmitter<StorageEvents> {
   get: (key: string) => Promise<string | null>;
   set: (key: string, value: string) => Promise<void>;
 }
