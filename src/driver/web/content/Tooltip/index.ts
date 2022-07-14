@@ -77,7 +77,7 @@ export default class Tooltip {
     }
 
     document.body.appendChild(this.rootEl);
-    document.addEventListener('click', this.handleClickOut);
+    document.addEventListener('mousedown', this.handleClickOut);
     window.addEventListener('scroll', this.checkAndUnmount);
   };
 
@@ -86,7 +86,7 @@ export default class Tooltip {
       return;
     }
 
-    document.removeEventListener('click', this.handleClickOut);
+    document.removeEventListener('mousedown', this.handleClickOut);
     window.removeEventListener('scroll', this.checkAndUnmount);
 
     this.rootEl.className = '';
