@@ -6,7 +6,7 @@ import { Ref, ref } from 'vue';
 @singleton()
 export default class ClientService {
   private readonly fetcher = container.resolve(fetcherToken);
-  readonly quotes: Ref<Required<Quote>[]> = ref([]);
+  readonly quotes: Ref<Quote[]> = ref([]);
 
   constructor() {
     this.init();

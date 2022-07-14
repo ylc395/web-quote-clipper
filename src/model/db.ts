@@ -3,11 +3,9 @@ import type EventEmitter from 'eventemitter3';
 import type { Quote } from './entity';
 
 export interface QuoteDatabase {
-  putQuote: (quote: Required<Quote>) => Promise<void>; // update
-  postQuote: (quote: Required<Quote>) => Promise<void>; // create
-  getAllQuotes: (
-    contentType: 'md' | 'pure' | 'html',
-  ) => Promise<Required<Quote>[]>;
+  putQuote: (quote: Quote) => Promise<void>; // update
+  postQuote: (quote: Quote) => Promise<void>; // create
+  getAllQuotes: (contentType: 'pure' | 'html') => Promise<Quote[]>;
 }
 
 export enum StorageEvents {

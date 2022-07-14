@@ -1,44 +1,39 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
-import { databaseToken } from 'model/db';
-import ConfigService from './ConfigService';
+import { databaseToken, QuoteDatabase } from 'model/db';
 
 @singleton()
 export default class QuoteService {
-  private readonly db = container.resolve(databaseToken);
-  private config = container.resolve(ConfigService);
+  private db?: QuoteDatabase;
+
+  constructor() {
+    this.initDb();
+  }
 
   async fetchQuotes({
     url,
     contentType,
   }: {
     url?: string;
-    contentType: 'pure' | 'md' | 'html';
+    contentType: 'pure' | 'html';
   }) {
-    const quotes = await this.db.getAllQuotes(contentType);
+    const quotes = await this.db!.getAllQuotes(contentType);
 
     // todo: emit a event here
     return url ? quotes.filter((q) => q.sourceUrl === url) : quotes;
   }
 
   async createQuote(quote: Quote) {
-    const writeTargetId = await this.config.get('targetId');
+    await this.db!.postQuote(quote);
+  }
 
-    if (!writeTargetId) {
-      // todo: handle no write target
-      throw new Error('empty write target id');
-    }
-
-    const newQuote: Required<Quote> = {
-      ...quote,
-      note: { id: writeTargetId },
-    };
-    await this.db.postQuote(newQuote);
+  private initDb() {
+    this.db = container.resolve(databaseToken);
   }
 
   async updateQuote(quote: Required<Quote>) {
     const comment = quote.comment.replace(/\n/g, '\n>\n');
     quote.comment = comment;
-    await this.db.putQuote(quote);
+    await this.db!.putQuote(quote);
   }
 }

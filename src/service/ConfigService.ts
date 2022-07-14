@@ -4,7 +4,7 @@ import { StorageEvents, storageToken, StorageChangedEvent } from 'model/db';
 
 const CONFIG_KEY = 'config';
 
-enum DbTypes {
+export enum DbTypes {
   Joplin = 'JOPLIN',
   Github = 'GITHUB',
   Browser = 'BROWSER',
@@ -17,7 +17,7 @@ interface AppConfig {
 
 const DEFAULT_CONFIG: AppConfig = {
   targetId: '622b83982fd244dca3bc3bcecb8c29e4',
-  db: DbTypes.Joplin,
+  db: DbTypes.Browser,
 };
 
 @singleton()

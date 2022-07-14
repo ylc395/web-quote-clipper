@@ -9,12 +9,14 @@ import parseAttr from 'md-attr-parser';
 import { Quote, Colors } from 'model/entity';
 
 export const ATTR_PREFIX = 'data-web-clipper';
+
 const LOCATOR_SPLITTER = '&';
 const encode = (s: string) => btoa(s);
 const decode = (s: string) => atob(s);
-
 const generateLocatorString = (s: [string, string]) =>
   s.map(encode).join(LOCATOR_SPLITTER);
+const parseLocatorString = (str: string) =>
+  str.split(LOCATOR_SPLITTER).map(decode);
 
 export default class MarkdownService {
   private readonly renderer: Processor;
@@ -39,7 +41,12 @@ export default class MarkdownService {
     return this.renderer.processSync(md).toString();
   }
 
-  extractQuotes(md: string, contentType: 'pure' | 'md' | 'html') {
+  getPureText(md: string) {
+    const root = this.parser.parse(md);
+    return toPureText(root);
+  }
+
+  extractQuotes(md: string, contentType: 'pure' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     visit(root, (node) => {
@@ -63,8 +70,7 @@ export default class MarkdownService {
 
       const sourceUrl = metadata['cite'];
       const locators = metadata[`${ATTR_PREFIX}-locators`] || '';
-      const [startLocator, endLocator] =
-        locators.split(LOCATOR_SPLITTER).map(decode) || [];
+      const [startLocator, endLocator] = parseLocatorString(locators);
       const color = (metadata[`${ATTR_PREFIX}-color`] ||
         Colors.Yellow) as Colors;
       const comment = metadata[`${ATTR_PREFIX}-comment`];
@@ -74,23 +80,14 @@ export default class MarkdownService {
       }
 
       const children = node.children.slice(0, -1);
-      let contents: string[];
-
-      if (contentType === 'pure') {
-        // img will be replaced by its url in alt
-        contents = children.map((child) => toPureText(child));
-      } else {
-        contents = children.map((node) => {
-          const { start, end } = node.position!;
-          return md.slice(start.offset, end.offset);
-        });
-
-        if (contentType === 'html') {
-          contents = contents.map((md) =>
-            this.renderSync(md.replaceAll(/^>/gm, '')),
-          );
-        }
-      }
+      const contents =
+        contentType === 'pure' // img will be replaced by its url in alt
+          ? children.map((child) => toPureText(child))
+          : children.map((node) => {
+              const { start, end } = node.position!;
+              const rawText = md.slice(start.offset, end.offset);
+              return this.renderSync(rawText.replaceAll(/^>/gm, ''));
+            });
 
       quotes.push({
         sourceUrl,
@@ -104,7 +101,7 @@ export default class MarkdownService {
     return quotes;
   }
 
-  async generateQuoteContent(quote: Required<Quote>) {
+  async generateBlockquote(quote: Quote) {
     const processedContents: string[] = [];
 
     for (const content of quote.contents) {

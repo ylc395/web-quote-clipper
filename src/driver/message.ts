@@ -24,7 +24,7 @@ interface RequestQuotesMessage {
   event: MessageEvents.RequestQuotes;
   payload: {
     url?: string;
-    contentType: 'md' | 'pure' | 'html';
+    contentType: 'pure' | 'html';
   };
 }
 

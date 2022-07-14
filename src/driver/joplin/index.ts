@@ -32,6 +32,7 @@ export default class Joplin implements QuoteDatabase {
   private isReady = false;
 
   constructor() {
+    this.init();
     setInterval(() => this.init.bind(this), TIME_INTERVAL);
   }
 
@@ -49,7 +50,6 @@ export default class Joplin implements QuoteDatabase {
       await this.requestPermission();
       this.notebooksIndex = await this.buildNotebookIndex();
       this.isReady = true;
-    } catch (error) {
     } finally {
       this.isInitializing = false;
     }
@@ -166,12 +166,13 @@ export default class Joplin implements QuoteDatabase {
     await this.storage.set(AUTH_TOKEN_KEY, this.authToken);
   }
 
-  async putQuote(quote: Required<Quote>) {}
-  async postQuote(quote: Required<Quote>) {
+  async putQuote(quote: Quote) {}
+  async postQuote(quote: Quote) {
+    const noteId = await this.config.get('targetId');
     // set note body
-    const note = await this.getNoteById(quote.note.id);
-    const quoteContent = await this.md.generateQuoteContent(quote);
-    const noteContent = `${note.content}\n\n${quoteContent}`;
+    const note = await this.getNoteById(noteId);
+    const blockquote = await this.md.generateBlockquote(quote);
+    const noteContent = `${note.content}\n\n${blockquote}`;
 
     await this.request({
       method: 'PUT',
@@ -197,7 +198,7 @@ export default class Joplin implements QuoteDatabase {
     };
   }
 
-  async getAllQuotes(contentType: 'md' | 'pure' | 'html') {
+  async getAllQuotes(contentType: 'pure' | 'html') {
     const notes = await this.searchNotes(ATTR_PREFIX);
     const quotes = notes.flatMap((note) => {
       const quotes = this.md.extractQuotes(note.content, contentType);
@@ -294,10 +295,6 @@ export default class Joplin implements QuoteDatabase {
     });
 
     const buildIndex = (notebooks: Notebook[]) => {
-      if (!this.notebooksIndex) {
-        throw new Error('no notebooke index');
-      }
-
       for (const notebook of notebooks) {
         notebooksIndex[notebook.id] = notebook;
 

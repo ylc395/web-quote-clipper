@@ -7,7 +7,7 @@ export interface Fetcher {
   getQuotes: (options: {
     url?: string;
     contentType: 'html' | 'pure';
-  }) => Promise<Required<Quote>[]>;
+  }) => Promise<Quote[]>;
 }
 
 export const fetcherToken: InjectionToken<Fetcher> = Symbol('fetcherToken');
