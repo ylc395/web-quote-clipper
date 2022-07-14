@@ -18,6 +18,10 @@ const generateLocatorString = (s: [string, string]) =>
 const parseLocatorString = (str: string) =>
   str.split(LOCATOR_SPLITTER).map(decode);
 
+const generateQuoteId = () => `quote${Date.now().toString(36)}`;
+const getTimestampFromQuoteId = (id: string) =>
+  parseInt(id.slice('quote'.length), 36) || 0;
+
 export default class MarkdownService {
   private readonly renderer: Processor;
   private readonly transformer: Processor;
@@ -69,6 +73,7 @@ export default class MarkdownService {
       ).prop;
 
       const sourceUrl = metadata['cite'];
+      const quoteId = metadata['id'] || '';
       const locators = metadata[`${ATTR_PREFIX}-locators`] || '';
       const [startLocator, endLocator] = parseLocatorString(locators);
       const color = (metadata[`${ATTR_PREFIX}-color`] ||
@@ -79,6 +84,7 @@ export default class MarkdownService {
         return;
       }
 
+      const timestamp = getTimestampFromQuoteId(quoteId);
       const children = node.children.slice(0, -1);
       const contents =
         contentType === 'pure' // img will be replaced by its url in alt
@@ -95,6 +101,7 @@ export default class MarkdownService {
         color,
         locators: [startLocator, endLocator],
         contents,
+        createdAt: timestamp,
       });
     });
 
@@ -112,8 +119,9 @@ export default class MarkdownService {
     }
 
     const locatorsStr = generateLocatorString(quote.locators);
+    const quoteId = generateQuoteId();
 
-    return `${processedContents.join('\n>\n')}\n>\n> {cite="${
+    return `${processedContents.join('\n>\n')}\n>\n> {#${quoteId} cite="${
       quote.sourceUrl
     }" ${ATTR_PREFIX}-locators="${locatorsStr}" ${ATTR_PREFIX}-color="${
       quote.color

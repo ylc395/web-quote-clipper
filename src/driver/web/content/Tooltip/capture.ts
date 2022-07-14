@@ -207,5 +207,6 @@ export async function generateQuote(
     color,
     contents,
     comment: '',
+    createdAt: Date.now(),
   };
 }
