@@ -80,15 +80,8 @@ export default class MarkManager {
 
   static init() {
     const markManager = new MarkManager();
-    const timer = setTimeout(() => {
-      window.removeEventListener('load', markManager.active);
-      markManager.active();
-    }, 3000);
-
-    window.addEventListener('load', () => {
-      clearTimeout(timer);
-      markManager.active();
-    });
+    // do not need to listen for the window.onload event, they are guaranteed to run after the DOM is complete
+    markManager.active();
 
     return markManager;
   }
