@@ -17,7 +17,7 @@ interface AppConfig {
 
 const DEFAULT_CONFIG: AppConfig = {
   targetId: '622b83982fd244dca3bc3bcecb8c29e4',
-  db: DbTypes.Browser,
+  db: DbTypes.Joplin,
 };
 
 @singleton()

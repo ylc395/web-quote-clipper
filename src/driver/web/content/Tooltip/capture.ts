@@ -1,4 +1,3 @@
-import uniqueSelector from 'unique-selector';
 import type { Colors, Quote } from 'model/entity';
 import { toDataUrl } from 'driver/web/fetcher';
 import {
@@ -104,13 +103,6 @@ export async function generateQuote(
     return;
   }
 
-  const startLocator: string = uniqueSelector(
-    isElement(startContainer) ? startContainer : startContainer.parentElement,
-  );
-  const endLocator: string = uniqueSelector(
-    isElement(endContainer) ? endContainer : endContainer.parentElement,
-  );
-
   const treeWalker = document.createTreeWalker(fragment);
   const contents: string[] = [];
   let lastText = '';
@@ -202,7 +194,6 @@ export async function generateQuote(
   }
 
   return {
-    locators: [startLocator, endLocator],
     sourceUrl: location.href,
     color,
     contents,

@@ -8,7 +8,6 @@ export enum Colors {
 
 export interface Quote {
   sourceUrl: string;
-  locators: [string, string];
   contents: string[];
   comment: string;
   color: Colors;

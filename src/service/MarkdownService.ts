@@ -4,23 +4,11 @@ import remarkStringify from 'remark-stringify';
 import remarkHtml from 'remark-html';
 import type { Image, Parent, Blockquote } from 'mdast';
 import { visit } from 'unist-util-visit';
-import { toString as toPureText } from 'mdast-util-to-string';
+import { toString } from 'mdast-util-to-string';
 import parseAttr from 'md-attr-parser';
 import { Quote, Colors } from 'model/entity';
 
 export const ATTR_PREFIX = 'data-web-clipper';
-
-const LOCATOR_SPLITTER = '&';
-const encode = (s: string) => btoa(s);
-const decode = (s: string) => atob(s);
-const generateLocatorString = (s: [string, string]) =>
-  s.map(encode).join(LOCATOR_SPLITTER);
-const parseLocatorString = (str: string) =>
-  str.split(LOCATOR_SPLITTER).map(decode);
-
-const generateQuoteId = () => `quote${Date.now().toString(36)}`;
-const getTimestampFromQuoteId = (id: string) =>
-  parseInt(id.slice('quote'.length), 36) || 0;
 
 export default class MarkdownService {
   private readonly renderer: Processor;
@@ -47,7 +35,7 @@ export default class MarkdownService {
 
   getPureText(md: string) {
     const root = this.parser.parse(md);
-    return toPureText(root);
+    return MarkdownService.toPureText(root);
   }
 
   extractQuotes(md: string, contentType: 'pure' | 'html') {
@@ -74,21 +62,19 @@ export default class MarkdownService {
 
       const sourceUrl = metadata['cite'];
       const quoteId = metadata['id'] || '';
-      const locators = metadata[`${ATTR_PREFIX}-locators`] || '';
-      const [startLocator, endLocator] = parseLocatorString(locators);
       const color = (metadata[`${ATTR_PREFIX}-color`] ||
         Colors.Yellow) as Colors;
       const comment = metadata[`${ATTR_PREFIX}-comment`];
 
-      if (!sourceUrl || !startLocator || !endLocator) {
+      if (!sourceUrl) {
         return;
       }
 
-      const timestamp = getTimestampFromQuoteId(quoteId);
+      const timestamp = MarkdownService.getTimestampFromQuoteId(quoteId);
       const children = node.children.slice(0, -1);
       const contents =
         contentType === 'pure' // img will be replaced by its url in alt
-          ? children.map((child) => toPureText(child))
+          ? children.map((child) => MarkdownService.toPureText(child))
           : children.map((node) => {
               const { start, end } = node.position!;
               const rawText = md.slice(start.offset, end.offset);
@@ -99,7 +85,6 @@ export default class MarkdownService {
         sourceUrl,
         comment,
         color,
-        locators: [startLocator, endLocator],
         contents,
         createdAt: timestamp,
       });
@@ -118,14 +103,11 @@ export default class MarkdownService {
       );
     }
 
-    const locatorsStr = generateLocatorString(quote.locators);
-    const quoteId = generateQuoteId();
+    const quoteId = MarkdownService.generateQuoteId();
 
     return `${processedContents.join('\n>\n')}\n>\n> {#${quoteId} cite="${
       quote.sourceUrl
-    }" ${ATTR_PREFIX}-locators="${locatorsStr}" ${ATTR_PREFIX}-color="${
-      quote.color
-    }"}`;
+    }" ${ATTR_PREFIX}-color="${quote.color}"}`;
   }
 
   private async transform(md: string) {
@@ -146,5 +128,17 @@ export default class MarkdownService {
 
   static imgElToText(el: HTMLImageElement) {
     return `![${el.alt}](${el.src}${el.title ? ` "${el.title}"` : ''})`;
+  }
+
+  private static toPureText(node: unknown) {
+    return toString(node, { includeImageAlt: false });
+  }
+
+  private static generateQuoteId() {
+    return `quote${Date.now().toString(36)}`;
+  }
+
+  private static getTimestampFromQuoteId(id: string) {
+    return parseInt(id.slice('quote'.length), 36) || -Date.now();
   }
 }

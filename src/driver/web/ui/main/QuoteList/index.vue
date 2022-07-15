@@ -15,7 +15,7 @@ export default defineComponent({
 </script>
 <template>
   <ul>
-    <li v-for="quote of quotes" :key="quote.locators[0]">
+    <li v-for="quote of quotes" :key="quote.createdAt">
       <div v-if="quote.note">{{ quote.note.path }}</div>
       <template v-for="content of quote.contents">
         <div v-html="content"></div>

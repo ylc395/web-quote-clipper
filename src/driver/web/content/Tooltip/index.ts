@@ -115,7 +115,7 @@ export default class Tooltip {
       return;
     }
 
-    this.markManager.createMark(selection.range, quote);
+    this.markManager.highlightQuote(quote, selection.range);
     window.getSelection()?.empty();
   }
 

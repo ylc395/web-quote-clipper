@@ -1,33 +1,21 @@
 import highlightRange from 'dom-highlight-range';
+import Mark from 'mark.js';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/web/fetcher';
-import { findBoundary, warnPopup } from './highlight';
 import './style.scss';
 
 const MARK_CLASSNAME = 'web-clipper-mark';
-
-interface Maker {
-  remove: () => void;
-  quote: Quote;
-}
+let id = 0;
+const generateId = () => String(++id);
 
 export default class MarkManager {
-  private markers: Maker[] = [];
-  createMark(range: Range, quote: Quote) {
-    this.markers.push({
-      quote,
-      remove: highlightRange(range, 'mark', {
-        class: `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`,
-      }),
-    });
-  }
-
+  private readonly pen = new Mark(document.body);
   isAvailableRange(range: Range) {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASSNAME}`));
     return marks.every((el) => !range.intersectsNode(el));
   }
 
-  active = async () => {
+  private active = async () => {
     let quotes: Quote[];
 
     try {
@@ -48,34 +36,40 @@ export default class MarkManager {
     }
 
     if (failQuote > 0) {
-      warnPopup(`${failQuote} quotes failed to load.`);
+      alert(`${failQuote} quotes failed to load.`);
     }
   };
 
-  private highlightQuote(quote: Quote) {
-    const { locators, contents } = quote;
-    const startEl = document.querySelector(locators[0]);
-    const endEl = document.querySelector(locators[1]);
+  highlightQuote(quote: Quote, range?: Range) {
+    const quoteId = generateId();
+    const className = `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`;
 
-    if (!startEl || !endEl) {
-      return false;
+    if (range) {
+      highlightRange(range, 'mark', {
+        class: className,
+        'data-web-clipper-quote-id': quoteId,
+      });
+
+      return true;
     }
 
-    const startBoundary = findBoundary(contents[0], startEl);
-    const endBoundary =
-      startBoundary &&
-      findBoundary(contents[contents.length - 1], endEl, startBoundary);
+    let result = false;
+    const { contents } = quote;
 
-    if (!startBoundary || !endBoundary) {
-      return false;
-    }
+    this.pen.mark(contents, {
+      acrossElements: true,
+      diacritics: false,
+      separateWordSearch: false,
+      ignoreJoiners: true,
+      ignorePunctuation: ['\n'],
+      className,
+      each: (el: HTMLElement) => {
+        el.dataset.webClipperQuoteId = quoteId;
+        result = true;
+      },
+    });
 
-    const range = document.createRange();
-    range.setStart(...startBoundary);
-    range.setEnd(...endBoundary);
-    this.createMark(range, quote);
-
-    return true;
+    return result;
   }
 
   static init() {
