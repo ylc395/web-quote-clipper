@@ -9,35 +9,53 @@ let id = 0;
 const generateId = () => String(++id);
 
 export default class MarkManager {
-  private readonly pen = new Mark(document.body);
+  private pen = new Mark(document.body);
+  private quotesToConsumed?: Quote[];
+  private domMonitor?: MutationObserver;
+
   isAvailableRange(range: Range) {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASSNAME}`));
     return marks.every((el) => !range.intersectsNode(el));
   }
 
-  private active = async () => {
-    let quotes: Quote[];
-
-    try {
-      quotes = await getQuotes({ url: location.href, contentType: 'pure' });
-    } catch (error) {
-      // todo: handle error
-      alert(error);
-      return;
-    }
-
-    let failQuote = 0;
-    for (const quote of quotes) {
-      const isSuccessful = this.highlightQuote(quote);
-
-      if (!isSuccessful) {
-        failQuote += 1;
+  private activate = async () => {
+    if (!this.quotesToConsumed) {
+      try {
+        this.quotesToConsumed = await getQuotes({
+          url: location.href,
+          contentType: 'pure',
+        });
+      } catch (error) {
+        // todo: handle error
+        alert(error);
+        return;
       }
     }
 
-    if (failQuote > 0) {
-      alert(`${failQuote} quotes failed to load.`);
+    const failedQuotes: Quote[] = [];
+
+    for (const quote of this.quotesToConsumed) {
+      const isSuccessful = this.highlightQuote(quote);
+
+      if (!isSuccessful) {
+        failedQuotes.push(quote);
+      }
     }
+
+    if (failedQuotes.length > 0) {
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', this.activate);
+      } else {
+        this.monitorDomChanging();
+      }
+    }
+
+    if (failedQuotes.length === 0 && this.domMonitor) {
+      this.domMonitor.disconnect();
+      this.domMonitor = undefined;
+    }
+
+    this.quotesToConsumed = failedQuotes;
   };
 
   highlightQuote(quote: Quote, range?: Range) {
@@ -72,11 +90,33 @@ export default class MarkManager {
     return result;
   }
 
+  private monitorDomChanging() {
+    if (this.domMonitor) {
+      return;
+    }
+
+    this.domMonitor = new MutationObserver(async (mutationList) => {
+      if (!this.quotesToConsumed) {
+        throw new Error('no quotes to consume');
+      }
+
+      for (const { addedNodes } of mutationList) {
+        // we assumed that a quote won't cross existing node and added node
+        await this.changePen(addedNodes);
+      }
+    });
+
+    this.domMonitor.observe(document.body, { subtree: true, childList: true });
+  }
+
+  private async changePen(context: NodeList) {
+    this.pen = new Mark(context);
+    await this.activate();
+  }
+
   static init() {
     const markManager = new MarkManager();
-    // do not need to listen for the window.onload event, they are guaranteed to run after the DOM is complete
-    markManager.active();
-
+    markManager.activate();
     return markManager;
   }
 }
