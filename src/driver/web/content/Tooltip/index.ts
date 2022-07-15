@@ -1,3 +1,4 @@
+import EventEmitter from 'eventemitter3';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 import { Colors } from 'model/entity';
@@ -8,7 +9,7 @@ import {
   getSelectionEndPosition,
 } from './capture';
 import renderTooltip from './template.hbs';
-import type MarkManager from '../MarkManager';
+import type App from '../App';
 import './style.scss';
 
 const ROOT_ID = 'web-clipper-tooltip-container';
@@ -20,10 +21,18 @@ const COLORS = [
   Colors.Purple,
 ];
 
-export default class Tooltip {
+export enum TooltipEvents {
+  BeforeMount = 'BEFORE_MOUNT',
+  Mounted = 'MOUNTED',
+  BeforeUnmounted = 'BEFORE_UNMOUNT',
+  Unmounted = 'UNMOUNTED',
+}
+
+export default class Tooltip extends EventEmitter {
   private rootEl: HTMLElement;
   private currentSelectionEnd?: ReturnType<typeof getSelectionEndPosition>;
-  private constructor(private readonly markManager: MarkManager) {
+  private constructor(private readonly app: App) {
+    super();
     this.rootEl = document.createElement('div');
     this.rootEl.addEventListener('click', this.handleClick.bind(this));
     this.rootEl.id = ROOT_ID;
@@ -61,9 +70,13 @@ export default class Tooltip {
       return;
     }
 
+    this.emit(TooltipEvents.BeforeMount);
+
     this.currentSelectionEnd = getSelectionEndPosition();
     const { x, y, reversed } = this.currentSelectionEnd;
-    const tooltipDisabled = !this.markManager.isAvailableRange(selection.range);
+    const tooltipDisabled = !this.app.markManager.isAvailableRange(
+      selection.range,
+    );
 
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS,
@@ -79,6 +92,8 @@ export default class Tooltip {
     document.body.appendChild(this.rootEl);
     document.addEventListener('mousedown', this.handleClickOut);
     window.addEventListener('scroll', this.checkAndUnmount);
+
+    this.emit(TooltipEvents.Mounted);
   };
 
   private unmount = () => {
@@ -86,12 +101,16 @@ export default class Tooltip {
       return;
     }
 
+    this.emit(TooltipEvents.BeforeUnmounted);
+
     document.removeEventListener('mousedown', this.handleClickOut);
     window.removeEventListener('scroll', this.checkAndUnmount);
 
     this.rootEl.className = '';
     this.rootEl.remove();
     this.currentSelectionEnd = undefined;
+
+    this.emit(TooltipEvents.Unmounted);
   };
 
   private async capture(color: Colors) {
@@ -115,7 +134,7 @@ export default class Tooltip {
       return;
     }
 
-    this.markManager.highlightQuote(quote, selection.range);
+    this.app.markManager.highlightQuote(quote, selection.range);
     window.getSelection()?.empty();
   }
 
@@ -132,8 +151,8 @@ export default class Tooltip {
     }
   }, 500);
 
-  static init(markManager: MarkManager) {
-    const tooltip = new Tooltip(markManager);
+  static init(app: App) {
+    const tooltip = new Tooltip(app);
     document.addEventListener('selectionchange', tooltip.unmount);
     document.addEventListener('selectionchange', debounce(tooltip.mount, 500));
 

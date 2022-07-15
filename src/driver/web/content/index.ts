@@ -1,5 +1,3 @@
-import MarkManager from './MarkManager';
-import Tooltip from './Tooltip';
+import App from './App';
 
-const markManager = MarkManager.init();
-const tooltip = Tooltip.init(markManager);
+new App();

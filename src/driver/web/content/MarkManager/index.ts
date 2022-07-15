@@ -2,6 +2,8 @@ import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/web/fetcher';
+import type App from '../App';
+import { TooltipEvents } from '../Tooltip';
 import './style.scss';
 
 const MARK_CLASSNAME = 'web-clipper-mark';
@@ -12,6 +14,7 @@ export default class MarkManager {
   private pen = new Mark(document.body);
   private quotesToConsumed?: Quote[];
   private domMonitor?: MutationObserver;
+  private constructor(private readonly app: App) {}
 
   isAvailableRange(range: Range) {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASSNAME}`));
@@ -46,13 +49,12 @@ export default class MarkManager {
       if (document.readyState !== 'complete') {
         window.addEventListener('load', this.activate);
       } else {
-        this.monitorDomChanging();
+        this.initDomMonitor();
       }
     }
 
     if (failedQuotes.length === 0 && this.domMonitor) {
-      this.domMonitor.disconnect();
-      this.domMonitor = undefined;
+      this.destroyMonitor();
     }
 
     this.quotesToConsumed = failedQuotes;
@@ -62,12 +64,13 @@ export default class MarkManager {
     const quoteId = generateId();
     const className = `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`;
 
+    this.stopMonitor();
+
     if (range) {
       highlightRange(range, 'mark', {
         class: className,
         'data-web-clipper-quote-id': quoteId,
       });
-
       return true;
     }
 
@@ -87,10 +90,11 @@ export default class MarkManager {
       },
     });
 
+    this.startMonitor();
     return result;
   }
 
-  private monitorDomChanging() {
+  private initDomMonitor() {
     if (this.domMonitor) {
       return;
     }
@@ -100,22 +104,54 @@ export default class MarkManager {
         throw new Error('no quotes to consume');
       }
 
-      for (const { addedNodes } of mutationList) {
+      for (let { addedNodes } of mutationList) {
         // we assumed that a quote won't cross existing node and added node
-        await this.changePen(addedNodes);
+        if (addedNodes.length === 0) {
+          continue;
+        }
+
+        this.pen = new Mark(addedNodes);
+        await this.activate();
       }
     });
 
+    this.app.tooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
+    this.app.tooltip.on(TooltipEvents.BeforeUnmounted, this.stopMonitor);
+    this.app.tooltip.on(TooltipEvents.Mounted, this.startMonitor);
+    this.app.tooltip.on(TooltipEvents.Unmounted, this.startMonitor);
+
+    this.startMonitor();
+  }
+
+  private destroyMonitor() {
+    if (!this.domMonitor) {
+      throw new Error('no monitor');
+    }
+
+    this.stopMonitor();
+    this.domMonitor = undefined;
+    this.app.tooltip.off(TooltipEvents.BeforeMount, this.stopMonitor);
+    this.app.tooltip.off(TooltipEvents.Mounted, this.startMonitor);
+  }
+
+  private stopMonitor = () => {
+    if (!this.domMonitor) {
+      return;
+    }
+
+    this.domMonitor.disconnect();
+  };
+
+  private startMonitor = () => {
+    if (!this.domMonitor) {
+      return;
+    }
+
     this.domMonitor.observe(document.body, { subtree: true, childList: true });
-  }
+  };
 
-  private async changePen(context: NodeList) {
-    this.pen = new Mark(context);
-    await this.activate();
-  }
-
-  static init() {
-    const markManager = new MarkManager();
+  static init(app: App) {
+    const markManager = new MarkManager(app);
     markManager.activate();
     return markManager;
   }
