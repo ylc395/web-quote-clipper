@@ -90,6 +90,13 @@ export const getSelectionEndPosition = () => {
   } as const;
 };
 
+const pushContents = (contents: string[], content: string) => {
+  const trimmed = content.trim();
+  if (trimmed) {
+    contents.push(trimmed);
+  }
+};
+
 export async function generateQuote(
   range: Range,
   color: Colors,
@@ -131,7 +138,7 @@ export async function generateQuote(
 
     if (isElement(currentNode)) {
       if (isBlockElement(currentNode) && lastText) {
-        contents.push(lastText.trim());
+        pushContents(contents, lastText);
         lastText = '';
       }
 
@@ -215,7 +222,7 @@ export async function generateQuote(
   }
 
   if (lastText) {
-    contents.push(lastText.trim());
+    pushContents(contents, lastText);
   }
 
   return {
