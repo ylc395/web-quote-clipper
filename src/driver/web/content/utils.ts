@@ -22,7 +22,7 @@ export const isValidAnchorElement = (
 export const isCodeElement = (element: Element) =>
   element.tagName.toLowerCase() === 'code';
 
-export const getLastChildNode = (node: Element) => {
+export const getLastValidChild = (node: Element) => {
   for (let i = node.childNodes.length - 1; i >= 0; i--) {
     const child = node.childNodes[i];
 
@@ -36,7 +36,7 @@ export const getLastChildNode = (node: Element) => {
   return null;
 };
 
-export const isUnderPre = (el: Element) => {
+export const isUnderPre = (el: Node) => {
   let parent = el.parentElement;
 
   while (parent) {
@@ -48,4 +48,12 @@ export const isUnderPre = (el: Element) => {
   }
 
   return false;
+};
+
+export const getLastChildDeep = (node: Node): Node => {
+  if (node.lastChild) {
+    return getLastChildDeep(node.lastChild);
+  }
+
+  return node;
 };

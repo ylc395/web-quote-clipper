@@ -6,9 +6,10 @@ import {
   isImageElement,
   isTextNode,
   isValidAnchorElement,
-  getLastChildNode,
+  getLastValidChild,
   isCodeElement,
   isUnderPre,
+  getLastChildDeep,
 } from '../utils';
 
 export function getSelection() {
@@ -93,8 +94,7 @@ export async function generateQuote(
   range: Range,
   color: Colors,
 ): Promise<Quote | undefined> {
-  const { startContainer, endContainer } = range;
-  const fragment = range.cloneContents();
+  let { startContainer, endContainer } = range;
 
   if (
     (!isElement(startContainer) && !isTextNode(startContainer)) ||
@@ -103,15 +103,31 @@ export async function generateQuote(
     return;
   }
 
-  const treeWalker = document.createTreeWalker(fragment);
+  endContainer = getLastChildDeep(endContainer);
+
+  const treeWalker = document.createTreeWalker(range.commonAncestorContainer);
   const contents: string[] = [];
+  let hasStarted = false;
   let lastText = '';
   let lastAnchor: { root: HTMLAnchorElement; lastChild: Node } | null = null;
   let lastCode: { lastChild: Node; isBlock: boolean } | null = null;
 
   // todo: handle strong,em,del...
-  while (treeWalker.nextNode()) {
-    const { currentNode } = treeWalker;
+  for (
+    let currentNode: Node | null = treeWalker.currentNode;
+    currentNode;
+    currentNode = treeWalker.nextNode()
+  ) {
+    const isStartNode = currentNode === startContainer;
+    const isEndNode = currentNode === endContainer;
+
+    if (!hasStarted && isStartNode) {
+      hasStarted = true;
+    }
+
+    if (!hasStarted) {
+      continue;
+    }
 
     if (isElement(currentNode)) {
       if (isBlockElement(currentNode) && lastText) {
@@ -130,7 +146,7 @@ export async function generateQuote(
       }
 
       if (isValidAnchorElement(currentNode)) {
-        const lastChild = getLastChildNode(currentNode);
+        const lastChild = getLastValidChild(currentNode);
 
         if (lastChild) {
           lastAnchor = {
@@ -142,7 +158,7 @@ export async function generateQuote(
       }
 
       if (isCodeElement(currentNode)) {
-        const lastChild = getLastChildNode(currentNode);
+        const lastChild = getLastValidChild(currentNode);
 
         if (lastChild) {
           const isBlock = isUnderPre(currentNode);
@@ -152,7 +168,7 @@ export async function generateQuote(
       }
 
       if (lastAnchor?.lastChild === currentNode) {
-        const lastChild = getLastChildNode(currentNode);
+        const lastChild = getLastValidChild(currentNode);
 
         if (lastChild) {
           lastAnchor.lastChild = lastChild;
@@ -163,7 +179,7 @@ export async function generateQuote(
       }
 
       if (lastCode?.lastChild === currentNode) {
-        const lastChild = getLastChildNode(currentNode);
+        const lastChild = getLastValidChild(currentNode);
 
         if (lastChild) {
           lastCode.lastChild = lastChild;
@@ -175,7 +191,12 @@ export async function generateQuote(
     }
 
     if (isTextNode(currentNode) && currentNode.textContent) {
-      lastText += currentNode.textContent;
+      const text = currentNode.textContent.slice(
+        isStartNode ? range.startOffset : 0,
+        isEndNode ? range.endOffset : currentNode.textContent.length,
+      );
+
+      lastText += isUnderPre(currentNode) ? text : text.replaceAll(/\s+/g, ' ');
     }
 
     if (lastAnchor?.lastChild === currentNode) {
@@ -186,6 +207,10 @@ export async function generateQuote(
     if (lastCode?.lastChild === currentNode) {
       lastText += lastCode.isBlock ? '\n```' : '`';
       lastCode = null;
+    }
+
+    if (isEndNode) {
+      break;
     }
   }
 

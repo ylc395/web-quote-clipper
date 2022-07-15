@@ -56,7 +56,7 @@ export default class MarkManager {
     let result = false;
     const { contents } = quote;
 
-    this.pen.mark(contents, {
+    this.pen.mark(contents.join('\n'), {
       acrossElements: true,
       diacritics: false,
       separateWordSearch: false,
