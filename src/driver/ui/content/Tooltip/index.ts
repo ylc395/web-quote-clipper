@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 import { Colors } from 'model/entity';
-import { postQuote } from 'driver/web/fetcher';
+import { postQuote } from 'driver/ui/fetcher';
 import {
   generateQuote,
   getSelectionRange,

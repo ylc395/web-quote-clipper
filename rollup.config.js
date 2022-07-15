@@ -50,7 +50,7 @@ export default defineConfig([
     plugins,
   },
   {
-    input: 'src/driver/web/content/index.ts',
+    input: 'src/driver/ui/content/index.ts',
     output: {
       file: './dist/chrome-extension/content-script.js',
       format: 'iife',
@@ -62,7 +62,7 @@ export default defineConfig([
     ],
   },
   {
-    input: 'src/driver/web/ui/main/index.ts',
+    input: 'src/driver/ui/main/index.ts',
     output: {
       file: './dist/chrome-extension/popup.js',
       format: 'iife',

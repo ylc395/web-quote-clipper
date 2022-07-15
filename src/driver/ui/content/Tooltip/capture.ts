@@ -1,5 +1,5 @@
 import type { Colors, Quote } from 'model/entity';
-import { toDataUrl } from 'driver/web/fetcher';
+import { toDataUrl } from 'driver/ui/fetcher';
 import {
   isBlockElement,
   isElement,

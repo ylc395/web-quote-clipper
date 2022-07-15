@@ -1,7 +1,7 @@
 import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import type { Quote } from 'model/entity';
-import { getQuotes } from 'driver/web/fetcher';
+import { getQuotes } from 'driver/ui/fetcher';
 import type App from '../App';
 import { TooltipEvents } from '../Tooltip';
 import './style.scss';
