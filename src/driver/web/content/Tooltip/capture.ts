@@ -12,7 +12,7 @@ import {
   getLastChildDeep,
 } from '../utils';
 
-export function getSelection() {
+export function getSelectionRange() {
   const selection = document.getSelection();
 
   if (
@@ -25,26 +25,7 @@ export function getSelection() {
     return;
   }
 
-  const anchorEl = isElement(selection.anchorNode)
-    ? selection.anchorNode
-    : selection.anchorNode.parentElement;
-  const focusEl = isElement(selection.focusNode)
-    ? selection.focusNode
-    : selection.focusNode.parentElement;
-
-  if (!anchorEl || !focusEl) {
-    return;
-  }
-
-  const isFocusElPreceding =
-    anchorEl.compareDocumentPosition(focusEl) &
-    Node.DOCUMENT_POSITION_PRECEDING;
-
-  return {
-    startEl: isFocusElPreceding ? focusEl : anchorEl,
-    endEl: isFocusElPreceding ? anchorEl : focusEl,
-    range: selection.getRangeAt(0),
-  } as const;
+  return selection.getRangeAt(0);
 }
 
 export const getSelectionEndPosition = () => {

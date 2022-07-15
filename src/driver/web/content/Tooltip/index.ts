@@ -5,7 +5,7 @@ import { Colors } from 'model/entity';
 import { postQuote } from 'driver/web/fetcher';
 import {
   generateQuote,
-  getSelection,
+  getSelectionRange,
   getSelectionEndPosition,
 } from './capture';
 import renderTooltip from './template.hbs';
@@ -64,9 +64,9 @@ export default class Tooltip extends EventEmitter {
   };
 
   private mount = () => {
-    const selection = getSelection();
+    const range = getSelectionRange();
 
-    if (!selection) {
+    if (!range) {
       return;
     }
 
@@ -74,9 +74,7 @@ export default class Tooltip extends EventEmitter {
 
     this.currentSelectionEnd = getSelectionEndPosition();
     const { x, y, reversed } = this.currentSelectionEnd;
-    const tooltipDisabled = !this.app.markManager.isAvailableRange(
-      selection.range,
-    );
+    const tooltipDisabled = !this.app.markManager.isAvailableRange(range);
 
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS,
@@ -114,13 +112,13 @@ export default class Tooltip extends EventEmitter {
   };
 
   private async capture(color: Colors) {
-    const selection = getSelection();
+    const range = getSelectionRange();
 
-    if (!selection) {
+    if (!range) {
       return;
     }
 
-    const quote = await generateQuote(selection.range, color);
+    const quote = await generateQuote(range, color);
 
     if (!quote) {
       return;
@@ -134,7 +132,7 @@ export default class Tooltip extends EventEmitter {
       return;
     }
 
-    this.app.markManager.highlightQuote(quote, selection.range);
+    this.app.markManager.highlightQuote(quote, range);
     window.getSelection()?.empty();
   }
 
