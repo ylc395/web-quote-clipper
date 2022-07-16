@@ -69,6 +69,19 @@ export default class MarkManager {
     });
   };
 
+  private highlightRange(range: Range, className: string, quoteId: string) {
+    highlightRange(range, 'mark', {
+      class: className,
+      'data-web-clipper-quote-id': quoteId,
+    });
+    this.activeMarkCount += 1;
+    this.totalMarkCount += 1;
+    setBadgeText({
+      total: this.totalMarkCount,
+      active: this.activeMarkCount,
+    });
+  }
+
   highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
     const className = `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`;
@@ -76,12 +89,7 @@ export default class MarkManager {
     this.stopMonitor();
 
     if (range) {
-      highlightRange(range, 'mark', {
-        class: className,
-        'data-web-clipper-quote-id': quoteId,
-      });
-      this.activeMarkCount += 1;
-      this.totalMarkCount += 1;
+      this.highlightRange(range, className, quoteId);
       return true;
     }
 
