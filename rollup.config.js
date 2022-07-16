@@ -32,7 +32,7 @@ const plugins = [
         dest: 'dist/chrome-extension',
       },
       {
-        src: 'src/driver/web/ui/main/index.html',
+        src: 'src/driver/ui/main/index.html',
         dest: 'dist/chrome-extension',
         rename: 'popup.html',
       },
@@ -45,7 +45,7 @@ export default defineConfig([
     input: 'src/driver/background/index.ts',
     output: {
       file: './dist/chrome-extension/background.js',
-      format: 'iife',
+      format: 'module',
     },
     plugins,
   },

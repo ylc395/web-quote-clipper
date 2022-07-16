@@ -2,6 +2,7 @@ import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/ui/fetcher';
+import { setBadgeText } from 'driver/ui/extension/message';
 import type App from '../App';
 import { TooltipEvents } from '../Tooltip';
 import './style.scss';
@@ -15,6 +16,8 @@ export default class MarkManager {
   private quotesToConsumed?: Quote[];
   private domMonitor?: MutationObserver;
   private constructor(private readonly app: App) {}
+  private activeMarkCount = 0;
+  private totalMarkCount = 0;
 
   isAvailableRange(range: Range) {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASSNAME}`));
@@ -28,6 +31,8 @@ export default class MarkManager {
           url: location.href,
           contentType: 'pure',
         });
+
+        this.totalMarkCount = this.quotesToConsumed.length;
       } catch (error) {
         // todo: handle error
         alert(error);
@@ -58,6 +63,10 @@ export default class MarkManager {
     }
 
     this.quotesToConsumed = failedQuotes;
+    setBadgeText({
+      total: this.totalMarkCount,
+      active: this.activeMarkCount,
+    });
   };
 
   highlightQuote(quote: Quote, range?: Range) {
@@ -71,6 +80,8 @@ export default class MarkManager {
         class: className,
         'data-web-clipper-quote-id': quoteId,
       });
+      this.activeMarkCount += 1;
+      this.totalMarkCount += 1;
       return true;
     }
 
@@ -89,6 +100,10 @@ export default class MarkManager {
         result = true;
       },
     });
+
+    if (result) {
+      this.activeMarkCount += 1;
+    }
 
     this.startMonitor();
     return result;

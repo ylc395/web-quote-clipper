@@ -1,7 +1,8 @@
 import 'reflect-metadata';
 import { imgSrcToDataUrl } from './helper';
 import bootstrap from './bootstrap';
-import { Message, MessageEvents, Response } from '../message';
+import { Message, MessageEvents, Response } from 'driver/message';
+import 'driver/ui/extension';
 
 bootstrap(({ quoteService }) => {
   chrome.runtime.onMessage.addListener(
@@ -21,7 +22,7 @@ bootstrap(({ quoteService }) => {
           imgSrcToDataUrl(message.payload).then(success, fail);
           return true;
         default:
-          return true;
+          return;
       }
     },
   );
