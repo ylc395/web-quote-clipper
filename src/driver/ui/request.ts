@@ -1,5 +1,5 @@
 import { Message, MessageEvents, Response } from 'driver/message';
-import type { Fetcher } from 'model/client';
+import type { RequestClient } from 'model/client';
 import type { Quote } from 'model/entity';
 
 const postMessage = async <T = void>(message: Message) => {
@@ -14,11 +14,11 @@ const postMessage = async <T = void>(message: Message) => {
   return res!;
 };
 
-export const postQuote: Fetcher['postQuote'] = (quote: Quote) => {
+export const postQuote: RequestClient['postQuote'] = (quote: Quote) => {
   return postMessage({ event: MessageEvents.CreateQuote, payload: quote });
 };
 
-export const getQuotes: Fetcher['getQuotes'] = (options: {
+export const getQuotes: RequestClient['getQuotes'] = (options: {
   url?: string;
   contentType: 'pure' | 'html';
 }) => {
@@ -28,7 +28,7 @@ export const getQuotes: Fetcher['getQuotes'] = (options: {
   });
 };
 
-export const putQuote: Fetcher['putQuote'] = async (quote: Quote) => {};
+export const putQuote: RequestClient['putQuote'] = async (quote: Quote) => {};
 
 export const toDataUrl = (url: string) => {
   return postMessage<string>({

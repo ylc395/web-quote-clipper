@@ -1,7 +1,7 @@
 import type { InjectionToken } from 'tsyringe';
 import type { Quote } from './entity';
 
-export interface Fetcher {
+export interface RequestClient {
   putQuote: (quote: Quote) => Promise<void>; // update
   postQuote: (quote: Quote) => Promise<void>; // create
   getQuotes: (options: {
@@ -10,4 +10,5 @@ export interface Fetcher {
   }) => Promise<Quote[]>;
 }
 
-export const fetcherToken: InjectionToken<Fetcher> = Symbol('fetcherToken');
+export const requestClientToken: InjectionToken<RequestClient> =
+  Symbol('fetcherToken');
