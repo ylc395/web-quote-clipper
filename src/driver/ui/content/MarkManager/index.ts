@@ -15,7 +15,10 @@ export default class MarkManager {
   private pen = new Mark(document.body);
   private quotesToConsumed?: Quote[];
   private domMonitor?: MutationObserver;
-  private constructor(private readonly app: App) {}
+  constructor(private readonly app: App) {
+    this.activate();
+  }
+
   private activeMarkCount = 0;
   private totalMarkCount = 0;
 
@@ -172,10 +175,4 @@ export default class MarkManager {
 
     this.domMonitor.observe(document.body, { subtree: true, childList: true });
   };
-
-  static init(app: App) {
-    const markManager = new MarkManager(app);
-    markManager.activate();
-    return markManager;
-  }
 }

@@ -5,7 +5,7 @@ export default class App {
   readonly markManager: MarkManager;
   readonly tooltip: Tooltip;
   constructor() {
-    this.markManager = MarkManager.init(this);
-    this.tooltip = Tooltip.init(this);
+    this.markManager = new MarkManager(this);
+    this.tooltip = new Tooltip(this);
   }
 }

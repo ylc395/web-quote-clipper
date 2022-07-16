@@ -7,7 +7,7 @@ import {
   generateQuote,
   getSelectionRange,
   getSelectionEndPosition,
-} from './capture';
+} from './selection';
 import renderTooltip from './template.hbs';
 import type App from '../App';
 import './style.scss';
@@ -31,11 +31,14 @@ export enum TooltipEvents {
 export default class Tooltip extends EventEmitter {
   private rootEl: HTMLElement;
   private currentSelectionEnd?: ReturnType<typeof getSelectionEndPosition>;
-  private constructor(private readonly app: App) {
+  constructor(private readonly app: App) {
     super();
     this.rootEl = document.createElement('div');
     this.rootEl.addEventListener('click', this.handleClick.bind(this));
     this.rootEl.id = ROOT_ID;
+
+    document.addEventListener('selectionchange', this.unmount);
+    document.addEventListener('selectionchange', debounce(this.mount, 500));
   }
 
   private handleClick(e: MouseEvent) {
@@ -148,12 +151,4 @@ export default class Tooltip extends EventEmitter {
       this.unmount();
     }
   }, 500);
-
-  static init(app: App) {
-    const tooltip = new Tooltip(app);
-    document.addEventListener('selectionchange', tooltip.unmount);
-    document.addEventListener('selectionchange', debounce(tooltip.mount, 500));
-
-    return tooltip;
-  }
 }
