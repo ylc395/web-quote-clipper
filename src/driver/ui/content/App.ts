@@ -1,11 +1,11 @@
 import MarkManager from './MarkManager';
-import Tooltip from './Tooltip';
+import HighlightTooltip from './HighlightTooltip';
 
 export default class App {
   readonly markManager: MarkManager;
-  readonly tooltip: Tooltip;
+  readonly highlightTooltip: HighlightTooltip;
   constructor() {
     this.markManager = new MarkManager(this);
-    this.tooltip = new Tooltip(this);
+    this.highlightTooltip = new HighlightTooltip(this);
   }
 }

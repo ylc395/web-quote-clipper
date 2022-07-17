@@ -2,6 +2,7 @@ import type { Quote } from 'model/entity';
 export type Message =
   | CaptureQuoteMessage
   | RequestQuotesMessage
+  | DeleteQuotesMessage
   | DataUrlMessage;
 
 export interface Response<T = unknown> {
@@ -12,6 +13,7 @@ export interface Response<T = unknown> {
 export enum MessageEvents {
   CreateQuote = 'CREATE_QUOTE',
   RequestQuotes = 'REQUEST',
+  DeleteQuote = 'DELETE_QUOTE',
   GetDataUrl = 'GET_DATA_URL',
 }
 
@@ -26,6 +28,11 @@ interface RequestQuotesMessage {
     url?: string;
     contentType: 'pure' | 'html';
   };
+}
+
+interface DeleteQuotesMessage {
+  event: MessageEvents.DeleteQuote;
+  payload: Quote;
 }
 
 interface DataUrlMessage {

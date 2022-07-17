@@ -24,7 +24,8 @@ export default class QuoteService {
   }
 
   async createQuote(quote: Quote) {
-    await this.db!.postQuote(quote);
+    const createdQuote = await this.db!.postQuote(quote);
+    return createdQuote;
   }
 
   private initDb() {
@@ -35,5 +36,9 @@ export default class QuoteService {
     const comment = quote.comment.replace(/\n/g, '\n>\n');
     quote.comment = comment;
     await this.db!.putQuote(quote);
+  }
+
+  async deleteQuote(quote: Quote) {
+    return this.db!.deleteQuote(quote);
   }
 }

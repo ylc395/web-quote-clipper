@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@popperjs/core": "^2.11.5",
     "@vue/reactivity": "^3.2.37",
     "block-elements": "^1.2.0",
     "dom-highlight-range": "^3.0.1",

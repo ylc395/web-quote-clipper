@@ -62,6 +62,10 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
     quotes.push(quote);
 
     await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
+    return quote;
   }
+
   async putQuote(quote: Quote) {}
+
+  async deleteQuote(quote: Quote) {}
 }

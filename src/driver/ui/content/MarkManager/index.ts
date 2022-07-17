@@ -4,30 +4,72 @@ import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/ui/request';
 import { setBadgeText } from 'driver/ui/extension/message';
 import type App from '../App';
-import { TooltipEvents } from '../Tooltip';
+import { TooltipEvents } from '../HighlightTooltip';
+import MarkTooltip from './MarkTooltip';
 import './style.scss';
 
-const MARK_CLASSNAME = 'web-clipper-mark';
+const MARK_CLASS_NAME = 'web-clipper-mark';
+const MARK_QUOTE_ID_DATASET_KEY = 'data-web-clipper-quote-id';
+const MARK_QUOTE_ID_DATASET_KEY_CAMEL = 'webClipperQuoteId';
+
 let id = 0;
 const generateId = () => String(++id);
 
 export default class MarkManager {
   private pen = new Mark(document.body);
+  private readonly quoteMap: Record<string, Quote> = {};
+  private readonly markTooltipMap: Record<string, MarkTooltip> = {};
   private quotesToConsumed?: Quote[];
   private domMonitor?: MutationObserver;
   constructor(private readonly app: App) {
-    this.activate();
+    this.highlightAll();
+    document.body.addEventListener('mouseover', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains(MARK_CLASS_NAME)) {
+        this.mountTooltip(target);
+      }
+    });
   }
 
   private activeMarkCount = 0;
   private totalMarkCount = 0;
 
   isAvailableRange(range: Range) {
-    const marks = Array.from(document.querySelectorAll(`.${MARK_CLASSNAME}`));
+    const marks = Array.from(document.querySelectorAll(`.${MARK_CLASS_NAME}`));
     return marks.every((el) => !range.intersectsNode(el));
   }
 
-  private activate = async () => {
+  private mountTooltip(markEl: HTMLElement) {
+    const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL];
+
+    if (!quoteId || !this.quoteMap[quoteId]) {
+      throw new Error('no quote');
+    }
+
+    if (this.markTooltipMap[quoteId]) {
+      return;
+    }
+
+    const relatedMarks = Array.from(
+      document.querySelectorAll(`[${MARK_QUOTE_ID_DATASET_KEY}="${quoteId}"]`),
+    ) as HTMLElement[];
+
+    this.markTooltipMap[quoteId] = new MarkTooltip({
+      quote: this.quoteMap[quoteId],
+      relatedEls: relatedMarks,
+      baseEl: markEl,
+      onUnmount: () => {
+        delete this.markTooltipMap[quoteId];
+      },
+      onDelete: () => {
+        relatedMarks.forEach((el) =>
+          el.replaceWith(...Array.from(el.childNodes)),
+        );
+      },
+    });
+  }
+
+  private highlightAll = async () => {
     if (!this.quotesToConsumed) {
       try {
         this.quotesToConsumed = await getQuotes({
@@ -55,7 +97,7 @@ export default class MarkManager {
 
     if (failedQuotes.length > 0) {
       if (document.readyState !== 'complete') {
-        window.addEventListener('load', this.activate);
+        window.addEventListener('load', this.highlightAll);
       } else {
         this.initDomMonitor();
       }
@@ -75,7 +117,7 @@ export default class MarkManager {
   private highlightRange(range: Range, className: string, quoteId: string) {
     highlightRange(range, 'mark', {
       class: className,
-      'data-web-clipper-quote-id': quoteId,
+      [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
     });
     this.activeMarkCount += 1;
     this.totalMarkCount += 1;
@@ -87,12 +129,13 @@ export default class MarkManager {
 
   highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
-    const className = `${MARK_CLASSNAME} ${MARK_CLASSNAME}-${quote.color}`;
+    const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
 
     this.stopMonitor();
 
     if (range) {
       this.highlightRange(range, className, quoteId);
+      this.quoteMap[quoteId] = quote;
       return true;
     }
 
@@ -107,12 +150,13 @@ export default class MarkManager {
       ignorePunctuation: ['\n'],
       className,
       each: (el: HTMLElement) => {
-        el.dataset.webClipperQuoteId = quoteId;
+        el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
         result = true;
       },
     });
 
     if (result) {
+      this.quoteMap[quoteId] = quote;
       this.activeMarkCount += 1;
     }
 
@@ -137,14 +181,17 @@ export default class MarkManager {
         }
 
         this.pen = new Mark(addedNodes);
-        await this.activate();
+        await this.highlightAll();
       }
     });
 
-    this.app.tooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
-    this.app.tooltip.on(TooltipEvents.BeforeUnmounted, this.stopMonitor);
-    this.app.tooltip.on(TooltipEvents.Mounted, this.startMonitor);
-    this.app.tooltip.on(TooltipEvents.Unmounted, this.startMonitor);
+    this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
+    this.app.highlightTooltip.on(
+      TooltipEvents.BeforeUnmounted,
+      this.stopMonitor,
+    );
+    this.app.highlightTooltip.on(TooltipEvents.Mounted, this.startMonitor);
+    this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.startMonitor);
 
     this.startMonitor();
   }
@@ -156,8 +203,8 @@ export default class MarkManager {
 
     this.stopMonitor();
     this.domMonitor = undefined;
-    this.app.tooltip.off(TooltipEvents.BeforeMount, this.stopMonitor);
-    this.app.tooltip.off(TooltipEvents.Mounted, this.startMonitor);
+    this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopMonitor);
+    this.app.highlightTooltip.off(TooltipEvents.Mounted, this.startMonitor);
   }
 
   private stopMonitor = () => {

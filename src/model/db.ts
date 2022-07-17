@@ -4,8 +4,9 @@ import type { Quote } from './entity';
 
 export interface QuoteDatabase {
   putQuote: (quote: Quote) => Promise<void>; // update
-  postQuote: (quote: Quote) => Promise<void>; // create
+  postQuote: (quote: Quote) => Promise<Quote>; // create
   getAllQuotes: (contentType: 'pure' | 'html') => Promise<Quote[]>;
+  deleteQuote: (quote: Quote) => Promise<void>;
 }
 
 export enum StorageEvents {

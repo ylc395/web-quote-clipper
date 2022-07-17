@@ -128,15 +128,14 @@ export default class Tooltip extends EventEmitter {
     }
 
     try {
-      await postQuote(quote);
+      const createdQuote = await postQuote(quote);
+      this.app.markManager.highlightQuote(createdQuote, range);
+      window.getSelection()?.empty();
     } catch (error) {
       // todo: handle error
       alert(error);
       return;
     }
-
-    this.app.markManager.highlightQuote(quote, range);
-    window.getSelection()?.empty();
   }
 
   private checkAndUnmount = throttle(() => {

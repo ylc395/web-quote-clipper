@@ -21,6 +21,9 @@ bootstrap(({ quoteService }) => {
         case MessageEvents.GetDataUrl:
           imgSrcToDataUrl(message.payload).then(success, fail);
           return true;
+        case MessageEvents.DeleteQuote:
+          quoteService.deleteQuote(message.payload).then(success, fail);
+          return true;
         default:
           return;
       }

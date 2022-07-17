@@ -210,6 +210,7 @@ export async function generateQuote(
     sourceUrl: location.href,
     color,
     contents,
+    mdContents: contents,
     comment: '',
     createdAt: Date.now(),
   };

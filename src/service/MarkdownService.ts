@@ -38,27 +38,39 @@ export default class MarkdownService {
     return MarkdownService.toPureText(root);
   }
 
+  private static getBlockquoteMeta(node: unknown) {
+    if (!MarkdownService.isBlockquote(node)) {
+      return;
+    }
+
+    const lastChild = node.children[node.children.length - 1];
+
+    if (
+      lastChild.type !== 'paragraph' ||
+      lastChild.children.length !== 1 ||
+      lastChild.children[0].type !== 'text'
+    ) {
+      return;
+    }
+
+    const metadata: Record<string, string> = parseAttr(
+      lastChild.children[0].value,
+    ).prop;
+
+    return { metadata, contentNodes: node.children.slice(0, -1) };
+  }
+
   extractQuotes(md: string, contentType: 'pure' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     visit(root, (node) => {
-      if (!MarkdownService.isBlockquote(node)) {
+      const blockquote = MarkdownService.getBlockquoteMeta(node);
+
+      if (!blockquote) {
         return;
       }
 
-      const lastChild = node.children[node.children.length - 1];
-
-      if (
-        lastChild.type !== 'paragraph' ||
-        lastChild.children.length !== 1 ||
-        lastChild.children[0].type !== 'text'
-      ) {
-        return;
-      }
-
-      const metadata: Record<string, string> = parseAttr(
-        lastChild.children[0].value,
-      ).prop;
+      const { metadata, contentNodes } = blockquote;
 
       const sourceUrl = metadata['cite'];
       const quoteId = metadata['id'] || '';
@@ -71,21 +83,27 @@ export default class MarkdownService {
       }
 
       const timestamp = MarkdownService.getTimestampFromQuoteId(quoteId);
-      const children = node.children.slice(0, -1);
-      const contents =
-        contentType === 'pure' // img will be replaced by its url in alt
-          ? children.map((child) => MarkdownService.toPureText(child))
-          : children.map((node) => {
-              const { start, end } = node.position!;
-              const rawText = md.slice(start.offset, end.offset);
-              return this.renderSync(rawText.replaceAll(/^>/gm, ''));
-            });
+      const contents: string[] = [];
+      const mdContents: string[] = [];
+
+      for (const node of contentNodes) {
+        const { start, end } = node.position!;
+        const rawText = md.slice(start.offset, end.offset);
+
+        mdContents.push(rawText);
+        contents.push(
+          contentType === 'pure'
+            ? MarkdownService.toPureText(node)
+            : this.renderSync(rawText.replaceAll(/^>/gm, '')),
+        );
+      }
 
       quotes.push({
         sourceUrl,
         comment,
         color,
         contents,
+        mdContents,
         createdAt: timestamp,
       });
     });
@@ -108,6 +126,40 @@ export default class MarkdownService {
     return `${processedContents.join('\n>\n')}\n>\n> {#${quoteId} cite="${
       quote.sourceUrl
     }" ${ATTR_PREFIX}-color="${quote.color}"}`;
+  }
+
+  removeBlockquote(quote: Quote, noteContent: string) {
+    const root = this.parser.parse(noteContent);
+    let range: [number, number] | null = null;
+
+    visit(root, (node) => {
+      if (range) {
+        return;
+      }
+
+      const blockquote = MarkdownService.getBlockquoteMeta(node);
+
+      if (!blockquote) {
+        return;
+      }
+
+      const { contentNodes } = blockquote;
+
+      const isEqual = contentNodes.every((node, i) => {
+        const { start, end } = node.position!;
+        const rawText = noteContent.slice(start.offset, end.offset);
+
+        return rawText === quote.mdContents[i];
+      });
+
+      if (isEqual) {
+        range = [node.position!.start.offset!, node.position!.end.offset!];
+      }
+    });
+
+    if (range) {
+      return `${noteContent.slice(0, range[0])}${noteContent.slice(range[1])}`;
+    }
   }
 
   private async transform(md: string) {

@@ -166,6 +166,14 @@ export default class Joplin implements QuoteDatabase {
     await this.storage.set(AUTH_TOKEN_KEY, this.authToken);
   }
 
+  private updateNoteContent(id: string, content: string) {
+    return this.request({
+      method: 'PUT',
+      url: `/notes/${id}`,
+      body: { body: content },
+    });
+  }
+
   async putQuote(quote: Quote) {}
   async postQuote(quote: Quote) {
     const noteId = await this.config.get('targetId');
@@ -174,11 +182,12 @@ export default class Joplin implements QuoteDatabase {
     const blockquote = await this.md.generateBlockquote(quote);
     const noteContent = `${note.content}\n\n${blockquote}`;
 
-    await this.request({
-      method: 'PUT',
-      url: `/notes/${note.id}`,
-      body: { body: noteContent },
-    });
+    await this.updateNoteContent(noteId, noteContent);
+
+    return {
+      ...quote,
+      note: { id: noteId },
+    };
   }
 
   private async getNoteById(id: string): Promise<Required<Note>> {
@@ -308,6 +317,7 @@ export default class Joplin implements QuoteDatabase {
 
     return notebooksIndex;
   }
+
   private getPathOfNote(note: { parent_id: string; title: string }) {
     if (!this.notebooksIndex) {
       throw new Error('no index');
@@ -323,5 +333,20 @@ export default class Joplin implements QuoteDatabase {
     }
 
     return `${path}/${note.title}`;
+  }
+
+  async deleteQuote(quote: Quote) {
+    if (!quote.note) {
+      throw new Error('no note in quote');
+    }
+
+    const note = await this.getNoteById(quote.note.id);
+    const content = this.md.removeBlockquote(quote, note.content);
+
+    if (!content) {
+      throw new Error('delete failed');
+    }
+
+    await this.updateNoteContent(quote.note.id, content);
   }
 }

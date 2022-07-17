@@ -15,7 +15,10 @@ const postMessage = async <T = void>(message: Message) => {
 };
 
 export const postQuote: RequestClient['postQuote'] = (quote: Quote) => {
-  return postMessage({ event: MessageEvents.CreateQuote, payload: quote });
+  return postMessage<Quote>({
+    event: MessageEvents.CreateQuote,
+    payload: quote,
+  });
 };
 
 export const getQuotes: RequestClient['getQuotes'] = (options: {
@@ -29,6 +32,15 @@ export const getQuotes: RequestClient['getQuotes'] = (options: {
 };
 
 export const putQuote: RequestClient['putQuote'] = async (quote: Quote) => {};
+
+export const deleteQuote: RequestClient['deleteQuote'] = async (
+  quote: Quote,
+) => {
+  return postMessage({
+    event: MessageEvents.DeleteQuote,
+    payload: quote,
+  });
+};
 
 export const toDataUrl = (url: string) => {
   return postMessage<string>({
