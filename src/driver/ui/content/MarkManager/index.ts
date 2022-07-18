@@ -57,7 +57,7 @@ export default class MarkManager {
     this.markTooltipMap[quoteId] = new MarkTooltip({
       quote: this.quoteMap[quoteId],
       relatedEls: relatedMarks,
-      baseEl: markEl,
+      targetEl: markEl,
       onUnmount: () => {
         delete this.markTooltipMap[quoteId];
       },
@@ -152,6 +152,9 @@ export default class MarkManager {
       each: (el: HTMLElement) => {
         el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
         result = true;
+      },
+      filter: (textNode) => {
+        return !textNode.parentElement?.classList.contains(MARK_CLASS_NAME);
       },
     });
 

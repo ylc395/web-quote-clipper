@@ -7,7 +7,7 @@ const TOOLTIP_CLASS_NAME = 'web-clipper-mark-tooltip';
 
 interface Options {
   quote: Quote;
-  baseEl: HTMLElement;
+  targetEl: HTMLElement;
   relatedEls: HTMLElement[];
   onUnmount: () => void;
   onDelete: () => void;
@@ -16,6 +16,7 @@ interface Options {
 export default class MarkTooltip {
   private rootEl;
   private popper?: Instance;
+  private baseEl?: HTMLElement;
   private readonly options: Options;
   constructor(options: Options) {
     this.options = options;
@@ -27,12 +28,25 @@ export default class MarkTooltip {
   }
 
   private mount() {
+    this.baseEl = this.findBaseEl();
     this.rootEl.innerHTML = renderTooltip({});
     document.body.appendChild(this.rootEl);
-    this.popper = createPopper(this.options.baseEl, this.rootEl, {
+    this.popper = createPopper(this.baseEl, this.rootEl, {
       placement: 'top',
     });
     document.addEventListener('mouseout', this.handleMouseout);
+  }
+
+  private findBaseEl() {
+    const { targetEl, relatedEls } = this.options;
+    const firstEl = relatedEls[0];
+
+    return Math.abs(
+      firstEl.getBoundingClientRect().top -
+        targetEl.getBoundingClientRect().top,
+    ) > 200
+      ? targetEl
+      : firstEl;
   }
 
   private unmount() {
@@ -63,13 +77,13 @@ export default class MarkTooltip {
   }
 
   private handleMouseout = (e: MouseEvent) => {
-    if (!this.popper) {
-      throw new Error('no tippy');
+    if (!this.popper || !this.baseEl) {
+      throw new Error('not mounted');
     }
 
     const relatedTarget = e.relatedTarget as HTMLElement;
     const isStillInMark =
-      this.options.baseEl.contains(relatedTarget) ||
+      this.baseEl.contains(relatedTarget) ||
       this.popper.state.elements.popper.contains(relatedTarget) ||
       this.options.relatedEls.some((el) => el.contains(relatedTarget));
 
