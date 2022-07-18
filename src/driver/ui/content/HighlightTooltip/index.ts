@@ -30,7 +30,7 @@ export enum TooltipEvents {
 
 export default class Tooltip extends EventEmitter {
   private rootEl: HTMLElement;
-  private currentSelectionEnd?: ReturnType<typeof getSelectionEndPosition>;
+  private rootElRect?: DOMRect;
   private currentRange?: ReturnType<typeof getSelectionRange>;
   private mouseEvent?: MouseEvent;
 
@@ -85,8 +85,7 @@ export default class Tooltip extends EventEmitter {
     this.emit(TooltipEvents.BeforeMount);
 
     const { range, reversed } = this.currentRange;
-    this.currentSelectionEnd = getSelectionEndPosition(reversed);
-    const { x, y } = this.currentSelectionEnd;
+    const { x, y } = getSelectionEndPosition(range, reversed);
     const tooltipDisabled = !this.app.markManager.isAvailableRange(range);
 
     this.rootEl.innerHTML = renderTooltip({
@@ -101,26 +100,23 @@ export default class Tooltip extends EventEmitter {
     }
 
     document.body.appendChild(this.rootEl);
+    this.rootElRect = this.rootEl.getBoundingClientRect();
 
     document.addEventListener(
       'selectionchange',
       this.unmountWhenSelectionChange,
     );
     document.addEventListener('mousedown', this.handleMousedown);
-    document.addEventListener('scroll', this.unmountWhenScroll, true);
+    document.addEventListener('scroll', this.toggleWhenScroll, true);
 
     this.emit(TooltipEvents.Mounted);
   };
 
   private unmount = () => {
-    if (!this.currentSelectionEnd) {
-      throw new Error('no range when unmount');
-    }
-
     this.emit(TooltipEvents.BeforeUnmounted);
 
     document.removeEventListener('mousedown', this.handleMousedown);
-    document.removeEventListener('scroll', this.unmountWhenScroll, true);
+    document.removeEventListener('scroll', this.toggleWhenScroll, true);
     document.removeEventListener(
       'selectionchange',
       this.unmountWhenSelectionChange,
@@ -128,8 +124,10 @@ export default class Tooltip extends EventEmitter {
 
     this.rootEl.className = '';
     this.rootEl.remove();
-    this.currentSelectionEnd = undefined;
+    this.rootEl.removeAttribute('style');
+
     this.currentRange = undefined;
+    this.rootElRect = undefined;
 
     this.emit(TooltipEvents.Unmounted);
   };
@@ -168,13 +166,12 @@ export default class Tooltip extends EventEmitter {
     this.unmount();
   };
 
-  private unmountWhenScroll = throttle(() => {
-    if (!this.currentRange) {
-      return;
+  private toggleWhenScroll = throttle(() => {
+    if (!this.rootElRect || !this.currentRange) {
+      throw new Error('no rootElRect');
     }
 
-    const { height: tooltipHeight, y: tooltipY } =
-      this.rootEl.getBoundingClientRect();
+    const { height: tooltipHeight, y: tooltipY } = this.rootElRect;
     const { height: rangeHeight, y: rangeY } =
       this.currentRange.range.getBoundingClientRect();
 
@@ -182,7 +179,9 @@ export default class Tooltip extends EventEmitter {
       rangeY - (tooltipHeight + tooltipY) > 80 ||
       tooltipY - (rangeY + rangeHeight) > 80
     ) {
-      this.unmount();
+      this.rootEl.style.display = 'none';
+    } else {
+      this.rootEl.style.display = 'block';
     }
   }, 300);
 }

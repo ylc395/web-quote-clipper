@@ -45,14 +45,11 @@ export function getSelectionRange() {
   return { range: selection.getRangeAt(0), reversed: collapseToStart };
 }
 
-export const getSelectionEndPosition = (collapseToStart: boolean) => {
-  const selection = window.getSelection();
-
-  if (!selection) {
-    throw new Error('no selection');
-  }
-
-  const range = selection.getRangeAt(0).cloneRange();
+export const getSelectionEndPosition = (
+  range: Range,
+  collapseToStart: boolean,
+) => {
+  range = range.cloneRange();
   const tmpEl = document.createElement('span');
 
   range.collapse(collapseToStart);
