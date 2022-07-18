@@ -67,5 +67,17 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
 
   async putQuote(quote: Quote) {}
 
-  async deleteQuote(quote: Quote) {}
+  async deleteQuote(quote: Quote) {
+    const quotes = await this.getAllQuotes('md');
+    const index = quotes.findIndex(
+      ({ createdAt }) => quote.createdAt === createdAt,
+    );
+
+    if (index < 0) {
+      throw new Error('delete failed');
+    }
+
+    quotes.splice(index, 1);
+    await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
+  }
 }
