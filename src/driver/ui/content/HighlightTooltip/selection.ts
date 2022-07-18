@@ -82,7 +82,7 @@ export async function generateQuote(
   range: Range,
   color: Colors,
 ): Promise<Quote | undefined> {
-  let { startContainer, endContainer } = range;
+  let { startContainer, endContainer, endOffset } = range;
 
   if (
     (!isElement(startContainer) && !isTextNode(startContainer)) ||
@@ -91,7 +91,9 @@ export async function generateQuote(
     return;
   }
 
-  endContainer = getLastChildDeep(endContainer);
+  if (isElement(endContainer) && endOffset > 0) {
+    endContainer = getLastChildDeep(endContainer);
+  }
 
   const treeWalker = document.createTreeWalker(range.commonAncestorContainer);
   const contents: string[] = [];
@@ -131,6 +133,10 @@ export async function generateQuote(
         lastText += `![${imgEl.alt}](${imgEl.src}${
           imgEl.title ? ` "${imgEl.title}"` : ''
         })`;
+      }
+
+      if (isEndNode) {
+        break;
       }
 
       if (isValidAnchorElement(currentNode)) {
