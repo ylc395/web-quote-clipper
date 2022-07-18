@@ -9,7 +9,6 @@ const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
-const TIME_INTERVAL = 1 * 60 * 1000;
 
 interface Notebook {
   id: string;
@@ -33,7 +32,6 @@ export default class Joplin implements QuoteDatabase {
 
   constructor() {
     this.init();
-    setInterval(() => this.init.bind(this), TIME_INTERVAL);
   }
 
   private async init() {
