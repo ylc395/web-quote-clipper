@@ -2,13 +2,28 @@ import { unified, PluggableList, Processor } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import remarkHtml from 'remark-html';
-import type { Image, Parent, Blockquote } from 'mdast';
+import type {
+  Image,
+  Parent,
+  Blockquote,
+  BlockContent,
+  DefinitionContent,
+} from 'mdast';
 import { visit } from 'unist-util-visit';
 import { toString } from 'mdast-util-to-string';
 import parseAttr from 'md-attr-parser';
-import { Quote, Colors } from 'model/entity';
+import type { Quote, Colors } from 'model/entity';
 
 export const ATTR_PREFIX = 'data-web-clipper';
+const COLOR_ATTR = `${ATTR_PREFIX}-color` as const;
+const COMMENT_ATTR = `${ATTR_PREFIX}-comment` as const;
+
+interface BlockQuoteMetadata {
+  id: string;
+  [COLOR_ATTR]: Colors;
+  [COMMENT_ATTR]?: string;
+  cite: string;
+}
 
 export default class MarkdownService {
   private readonly renderer: Processor;
@@ -38,7 +53,12 @@ export default class MarkdownService {
     return MarkdownService.toPureText(root);
   }
 
-  private static getBlockquoteMeta(node: unknown) {
+  private static parseBlockquote(node: unknown):
+    | {
+        metadata: BlockQuoteMetadata;
+        contentNodes: (BlockContent | DefinitionContent)[];
+      }
+    | undefined {
     if (!MarkdownService.isBlockquote(node)) {
       return;
     }
@@ -53,9 +73,11 @@ export default class MarkdownService {
       return;
     }
 
-    const metadata: Record<string, string> = parseAttr(
-      lastChild.children[0].value,
-    ).prop;
+    const metadata = parseAttr(lastChild.children[0].value).prop;
+
+    if (!metadata.cite || !metadata.id || !metadata[COLOR_ATTR]) {
+      return;
+    }
 
     return { metadata, contentNodes: node.children.slice(0, -1) };
   }
@@ -64,46 +86,36 @@ export default class MarkdownService {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     visit(root, (node) => {
-      const blockquote = MarkdownService.getBlockquoteMeta(node);
+      const blockquote = MarkdownService.parseBlockquote(node);
 
       if (!blockquote) {
         return;
       }
 
       const { metadata, contentNodes } = blockquote;
-
-      const sourceUrl = metadata['cite'];
-      const quoteId = metadata['id'] || '';
-      const color = (metadata[`${ATTR_PREFIX}-color`] ||
-        Colors.Yellow) as Colors;
-      const comment = metadata[`${ATTR_PREFIX}-comment`];
-
-      if (!sourceUrl) {
-        return;
-      }
-
+      const {
+        cite: sourceUrl,
+        id: quoteId,
+        [COLOR_ATTR]: color,
+        [COMMENT_ATTR]: comment = '',
+      } = metadata;
       const timestamp = MarkdownService.getTimestampFromQuoteId(quoteId);
-      const contents: string[] = [];
-      const mdContents: string[] = [];
+      const contents = contentNodes.map((node) => {
+        if (contentType === 'pure') {
+          return MarkdownService.toPureText(node);
+        }
 
-      for (const node of contentNodes) {
         const { start, end } = node.position!;
         const rawText = md.slice(start.offset, end.offset);
 
-        mdContents.push(rawText);
-        contents.push(
-          contentType === 'pure'
-            ? MarkdownService.toPureText(node)
-            : this.renderSync(rawText.replaceAll(/^>/gm, '')),
-        );
-      }
+        return this.renderSync(rawText.replaceAll(/^>/gm, ''));
+      });
 
       quotes.push({
         sourceUrl,
         comment,
         color,
         contents,
-        mdContents,
         createdAt: timestamp,
       });
     });
@@ -137,20 +149,16 @@ export default class MarkdownService {
         return;
       }
 
-      const blockquote = MarkdownService.getBlockquoteMeta(node);
+      const blockquote = MarkdownService.parseBlockquote(node);
 
       if (!blockquote) {
         return;
       }
 
-      const { contentNodes } = blockquote;
-
-      const isEqual = contentNodes.every((node, i) => {
-        const { start, end } = node.position!;
-        const rawText = noteContent.slice(start.offset, end.offset);
-
-        return rawText === quote.mdContents[i];
-      });
+      const { metadata } = blockquote;
+      const isEqual =
+        MarkdownService.getTimestampFromQuoteId(metadata.id) ===
+        quote.createdAt;
 
       if (isEqual) {
         range = [node.position!.start.offset!, node.position!.end.offset!];

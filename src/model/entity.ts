@@ -12,7 +12,6 @@ export interface Quote {
   comment: string;
   color: Colors;
   createdAt: number;
-  mdContents: string[];
   note?: Note;
 }
 

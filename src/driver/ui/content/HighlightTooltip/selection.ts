@@ -82,6 +82,8 @@ export async function generateQuote(
   range: Range,
   color: Colors,
 ): Promise<Quote | undefined> {
+  // todo: too little case this function for
+
   let { startContainer, endContainer, endOffset } = range;
 
   if (
@@ -216,7 +218,6 @@ export async function generateQuote(
     sourceUrl: location.href,
     color,
     contents,
-    mdContents: contents,
     comment: '',
     createdAt: Date.now(),
   };
