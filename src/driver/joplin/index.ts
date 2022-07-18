@@ -27,29 +27,25 @@ export default class Joplin implements QuoteDatabase {
   private apiToken = '';
   private authToken = '';
   private notebooksIndex?: Record<Notebook['id'], Notebook>;
-  private isInitializing = false;
-  private isReady = false;
+  private initializing?: Promise<void>;
 
   constructor() {
-    this.init();
+    this.initializing = this.init();
   }
 
   private async init() {
-    if (this.isInitializing) {
-      return;
+    if (this.initializing) {
+      return this.initializing;
     }
 
-    this.isReady = false;
-    this.isInitializing = true;
     this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
     this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
-      this.notebooksIndex = await this.buildNotebookIndex();
-      this.isReady = true;
+      await this.buildNotebookIndex();
     } finally {
-      this.isInitializing = false;
+      this.initializing = undefined;
     }
   }
 
@@ -61,8 +57,8 @@ export default class Joplin implements QuoteDatabase {
     },
     fromRequest = false,
   ): Promise<T> {
-    if (!this.isInitializing && !this.isReady) {
-      throw new Error('joplin not ready');
+    if (!this.apiToken) {
+      await this.init();
     }
 
     let { method, url, body } = options;
@@ -295,6 +291,10 @@ export default class Joplin implements QuoteDatabase {
   };
 
   private async buildNotebookIndex() {
+    if (this.notebooksIndex) {
+      return;
+    }
+
     const notebooksIndex: Record<Notebook['id'], Notebook> = {};
     const notebooks = await this.request<Notebook[]>({
       url: '/folders',
@@ -312,8 +312,7 @@ export default class Joplin implements QuoteDatabase {
     };
 
     buildIndex(notebooks);
-
-    return notebooksIndex;
+    this.notebooksIndex = notebooksIndex;
   }
 
   private getPathOfNote(note: { parent_id: string; title: string }) {
