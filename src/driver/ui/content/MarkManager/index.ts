@@ -72,11 +72,13 @@ export default class MarkManager {
   private highlightAll = async () => {
     if (!this.quotesToConsumed) {
       try {
-        this.quotesToConsumed = await getQuotes({
+        const quotes = await getQuotes({
           url: location.href,
           contentType: 'pure',
+          orderBy: 'contentLength',
         });
 
+        this.quotesToConsumed = quotes;
         this.totalMarkCount = this.quotesToConsumed.length;
       } catch (error) {
         // todo: handle error

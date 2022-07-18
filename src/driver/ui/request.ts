@@ -1,5 +1,5 @@
 import { Message, MessageEvents, Response } from 'driver/message';
-import type { RequestClient } from 'model/client';
+import type { RequestClient, FetchOptions } from 'model/client';
 import type { Quote } from 'model/entity';
 
 const postMessage = async <T = void>(message: Message) => {
@@ -21,10 +21,9 @@ export const postQuote: RequestClient['postQuote'] = (quote: Quote) => {
   });
 };
 
-export const getQuotes: RequestClient['getQuotes'] = (options: {
-  url?: string;
-  contentType: 'pure' | 'html';
-}) => {
+export const getQuotes: RequestClient['getQuotes'] = (
+  options: FetchOptions,
+) => {
   return postMessage<Required<Quote>[]>({
     event: MessageEvents.RequestQuotes,
     payload: options,

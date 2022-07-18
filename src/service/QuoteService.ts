@@ -1,6 +1,7 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
 import { databaseToken, QuoteDatabase } from 'model/db';
+import type { FetchOptions } from 'model/client';
 
 @singleton()
 export default class QuoteService {
@@ -10,16 +11,25 @@ export default class QuoteService {
     this.initDb();
   }
 
-  async fetchQuotes({
-    url,
-    contentType,
-  }: {
-    url?: string;
-    contentType: 'pure' | 'html';
-  }) {
+  async fetchQuotes({ url, contentType, orderBy }: FetchOptions) {
     const quotes = await this.db!.getAllQuotes(contentType);
 
-    // todo: emit a event here
+    if (orderBy === 'contentLength') {
+      quotes.sort((a, b) => {
+        const sum = (length: number, text: string) => length + text.length;
+        const aLength = a.contents.reduce(sum, 0);
+        const bLength = b.contents.reduce(sum, 0);
+
+        return bLength - aLength;
+      });
+    }
+
+    if (orderBy === 'createdAt') {
+      quotes.sort((a, b) => {
+        return b.createdAt - a.createdAt;
+      });
+    }
+
     return url ? quotes.filter((q) => q.sourceUrl === url) : quotes;
   }
 
