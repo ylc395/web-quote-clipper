@@ -25,19 +25,6 @@ export function getSelectionRange() {
     return;
   }
 
-  return selection.getRangeAt(0);
-}
-
-export const getSelectionEndPosition = () => {
-  const selection = window.getSelection();
-
-  if (!selection) {
-    throw new Error('no selection');
-  }
-
-  const range = selection.getRangeAt(0).cloneRange();
-  const tmpEl = document.createElement('span');
-
   const collapseToStart = (() => {
     const { focusNode, focusOffset, anchorNode, anchorOffset } = selection;
 
@@ -55,6 +42,19 @@ export const getSelectionEndPosition = () => {
     );
   })();
 
+  return { range: selection.getRangeAt(0), reversed: collapseToStart };
+}
+
+export const getSelectionEndPosition = (collapseToStart: boolean) => {
+  const selection = window.getSelection();
+
+  if (!selection) {
+    throw new Error('no selection');
+  }
+
+  const range = selection.getRangeAt(0).cloneRange();
+  const tmpEl = document.createElement('span');
+
   range.collapse(collapseToStart);
   range.insertNode(tmpEl);
 
@@ -65,7 +65,6 @@ export const getSelectionEndPosition = () => {
   return {
     x,
     y,
-    reversed: collapseToStart,
     tmpEl,
   } as const;
 };

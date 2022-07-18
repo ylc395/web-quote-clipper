@@ -31,13 +31,15 @@ export enum TooltipEvents {
 export default class Tooltip extends EventEmitter {
   private rootEl: HTMLElement;
   private currentSelectionEnd?: ReturnType<typeof getSelectionEndPosition>;
+  private currentRange?: ReturnType<typeof getSelectionRange>;
+  private mouseEvent?: MouseEvent;
+
   constructor(private readonly app: App) {
     super();
     this.rootEl = document.createElement('div');
     this.rootEl.addEventListener('click', this.handleClick);
     this.rootEl.id = ROOT_ID;
 
-    document.addEventListener('selectionchange', this.unmount);
     document.addEventListener('selectionchange', debounce(this.mount, 500));
   }
 
@@ -48,6 +50,8 @@ export default class Tooltip extends EventEmitter {
       return;
     }
 
+    this.mouseEvent = undefined;
+
     switch (true) {
       case target.matches('button[data-web-clipper-color]'):
         return this.capture(target.dataset.webClipperColor as Colors);
@@ -56,27 +60,33 @@ export default class Tooltip extends EventEmitter {
     }
   };
 
-  private handleClickOut = (e: MouseEvent) => {
-    if (!this.rootEl) {
-      throw new Error('no root el');
-    }
-
-    if (!this.rootEl.contains(e.target as HTMLElement)) {
+  private handleMousedown = (e: MouseEvent) => {
+    if (this.rootEl.contains(e.target as HTMLElement)) {
+      this.mouseEvent = e;
+      setTimeout(() => {
+        if (this.mouseEvent) {
+          // if `handleClick` is not triggered (probably caused by origin web page's script)
+          // trigger it manually
+          this.handleClick(e);
+        }
+      }, 200);
+    } else {
       this.unmount();
     }
   };
 
   private mount = () => {
-    const range = getSelectionRange();
+    this.currentRange = getSelectionRange();
 
-    if (!range) {
+    if (!this.currentRange) {
       return;
     }
 
     this.emit(TooltipEvents.BeforeMount);
 
-    this.currentSelectionEnd = getSelectionEndPosition();
-    const { x, y, reversed } = this.currentSelectionEnd;
+    const { range, reversed } = this.currentRange;
+    this.currentSelectionEnd = getSelectionEndPosition(reversed);
+    const { x, y } = this.currentSelectionEnd;
     const tooltipDisabled = !this.app.markManager.isAvailableRange(range);
 
     this.rootEl.innerHTML = renderTooltip({
@@ -91,37 +101,46 @@ export default class Tooltip extends EventEmitter {
     }
 
     document.body.appendChild(this.rootEl);
-    document.addEventListener('mousedown', this.handleClickOut);
-    document.addEventListener('scroll', this.checkAndUnmount, true);
+
+    document.addEventListener(
+      'selectionchange',
+      this.unmountWhenSelectionChange,
+    );
+    document.addEventListener('mousedown', this.handleMousedown);
+    document.addEventListener('scroll', this.unmountWhenScroll, true);
 
     this.emit(TooltipEvents.Mounted);
   };
 
   private unmount = () => {
     if (!this.currentSelectionEnd) {
-      return;
+      throw new Error('no range when unmount');
     }
 
     this.emit(TooltipEvents.BeforeUnmounted);
 
-    document.removeEventListener('mousedown', this.handleClickOut);
-    document.removeEventListener('scroll', this.checkAndUnmount, true);
+    document.removeEventListener('mousedown', this.handleMousedown);
+    document.removeEventListener('scroll', this.unmountWhenScroll, true);
+    document.removeEventListener(
+      'selectionchange',
+      this.unmountWhenSelectionChange,
+    );
 
     this.rootEl.className = '';
     this.rootEl.remove();
     this.currentSelectionEnd.tmpEl.remove();
     this.currentSelectionEnd = undefined;
+    this.currentRange = undefined;
 
     this.emit(TooltipEvents.Unmounted);
   };
 
   private async capture(color: Colors) {
-    const range = getSelectionRange();
-
-    if (!range) {
-      return;
+    if (!this.currentRange) {
+      throw new Error('no range');
     }
 
+    const { range } = this.currentRange;
     const quote = await generateQuote(range, color);
 
     if (!quote) {
@@ -131,7 +150,7 @@ export default class Tooltip extends EventEmitter {
     try {
       const createdQuote = await postQuote(quote);
       this.app.markManager.highlightQuote(createdQuote, range);
-      window.getSelection()?.empty();
+      window.getSelection()?.empty(); // tip: this will trigger `unmountWhenSelectionChange`
     } catch (error) {
       // todo: handle error
       alert(error);
@@ -139,7 +158,18 @@ export default class Tooltip extends EventEmitter {
     }
   }
 
-  private checkAndUnmount = throttle(() => {
+  private unmountWhenSelectionChange = () => {
+    if (this.mouseEvent) {
+      // mousedown on tooltip has been just emitted while selection has changed.
+      // this means selectionChange event is not triggered by user
+      // so we won't unmount.
+      return;
+    }
+
+    this.unmount();
+  };
+
+  private unmountWhenScroll = throttle(() => {
     if (!this.currentSelectionEnd) {
       return;
     }
