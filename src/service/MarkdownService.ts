@@ -133,7 +133,7 @@ export default class MarkdownService {
       );
     }
 
-    const quoteId = MarkdownService.generateQuoteId();
+    const quoteId = MarkdownService.generateQuoteId(quote);
 
     return `${processedContents.join('\n>\n')}\n>\n> {#${quoteId} cite="${
       quote.sourceUrl
@@ -194,11 +194,17 @@ export default class MarkdownService {
     return toString(node, { includeImageAlt: false });
   }
 
-  private static generateQuoteId() {
-    return `quote${Date.now().toString(36)}`;
+  private static generateQuoteId(quote: Quote) {
+    return `quote${quote.createdAt.toString(36)}`;
   }
 
   private static getTimestampFromQuoteId(id: string) {
-    return parseInt(id.slice('quote'.length), 36) || -Date.now();
+    const timestamp = parseInt(id.slice('quote'.length), 36);
+
+    if (!timestamp) {
+      throw new Error('parse timestamp failed');
+    }
+
+    return timestamp;
   }
 }
