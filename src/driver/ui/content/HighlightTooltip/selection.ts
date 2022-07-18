@@ -62,11 +62,9 @@ export const getSelectionEndPosition = (collapseToStart: boolean) => {
   const x = rect.left;
   const y = rect.top;
 
-  return {
-    x,
-    y,
-    tmpEl,
-  } as const;
+  tmpEl.remove();
+
+  return { x, y } as const;
 };
 
 const pushContents = (contents: string[], content: string) => {

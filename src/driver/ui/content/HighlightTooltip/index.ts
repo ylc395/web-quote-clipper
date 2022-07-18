@@ -128,7 +128,6 @@ export default class Tooltip extends EventEmitter {
 
     this.rootEl.className = '';
     this.rootEl.remove();
-    this.currentSelectionEnd.tmpEl.remove();
     this.currentSelectionEnd = undefined;
     this.currentRange = undefined;
 
@@ -170,16 +169,20 @@ export default class Tooltip extends EventEmitter {
   };
 
   private unmountWhenScroll = throttle(() => {
-    if (!this.currentSelectionEnd) {
+    if (!this.currentRange) {
       return;
     }
 
-    const { y: tooltipY } = this.rootEl.getBoundingClientRect();
-    const { y: selectionY } =
-      this.currentSelectionEnd.tmpEl.getBoundingClientRect();
+    const { height: tooltipHeight, y: tooltipY } =
+      this.rootEl.getBoundingClientRect();
+    const { height: rangeHeight, y: rangeY } =
+      this.currentRange.range.getBoundingClientRect();
 
-    if (Math.abs(tooltipY - selectionY) > 100) {
+    if (
+      rangeY - (tooltipHeight + tooltipY) > 80 ||
+      tooltipY - (rangeY + rangeHeight) > 80
+    ) {
       this.unmount();
     }
-  }, 500);
+  }, 300);
 }
