@@ -61,13 +61,12 @@ export const getSelectionEndPosition = () => {
   const rect = tmpEl.getBoundingClientRect();
   const x = rect.left;
   const y = rect.top;
-  tmpEl.remove();
 
   return {
     x,
     y,
     reversed: collapseToStart,
-    offsetY: y + window.scrollY,
+    tmpEl,
   } as const;
 };
 

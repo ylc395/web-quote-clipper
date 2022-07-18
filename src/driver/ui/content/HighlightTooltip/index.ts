@@ -34,14 +34,14 @@ export default class Tooltip extends EventEmitter {
   constructor(private readonly app: App) {
     super();
     this.rootEl = document.createElement('div');
-    this.rootEl.addEventListener('click', this.handleClick.bind(this));
+    this.rootEl.addEventListener('click', this.handleClick);
     this.rootEl.id = ROOT_ID;
 
     document.addEventListener('selectionchange', this.unmount);
     document.addEventListener('selectionchange', debounce(this.mount, 500));
   }
 
-  private handleClick(e: MouseEvent) {
+  private handleClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement | null;
 
     if (!target) {
@@ -54,7 +54,7 @@ export default class Tooltip extends EventEmitter {
       default:
         break;
     }
-  }
+  };
 
   private handleClickOut = (e: MouseEvent) => {
     if (!this.rootEl) {
@@ -92,7 +92,7 @@ export default class Tooltip extends EventEmitter {
 
     document.body.appendChild(this.rootEl);
     document.addEventListener('mousedown', this.handleClickOut);
-    window.addEventListener('scroll', this.checkAndUnmount);
+    document.addEventListener('scroll', this.checkAndUnmount, true);
 
     this.emit(TooltipEvents.Mounted);
   };
@@ -105,10 +105,11 @@ export default class Tooltip extends EventEmitter {
     this.emit(TooltipEvents.BeforeUnmounted);
 
     document.removeEventListener('mousedown', this.handleClickOut);
-    window.removeEventListener('scroll', this.checkAndUnmount);
+    document.removeEventListener('scroll', this.checkAndUnmount, true);
 
     this.rootEl.className = '';
     this.rootEl.remove();
+    this.currentSelectionEnd.tmpEl.remove();
     this.currentSelectionEnd = undefined;
 
     this.emit(TooltipEvents.Unmounted);
@@ -143,10 +144,11 @@ export default class Tooltip extends EventEmitter {
       return;
     }
 
-    const { y } = this.rootEl.getBoundingClientRect();
-    const tooltipOffsetY = y + window.scrollY;
+    const { y: tooltipY } = this.rootEl.getBoundingClientRect();
+    const { y: selectionY } =
+      this.currentSelectionEnd.tmpEl.getBoundingClientRect();
 
-    if (Math.abs(tooltipOffsetY - this.currentSelectionEnd.offsetY) > 100) {
+    if (Math.abs(tooltipY - selectionY) > 100) {
       this.unmount();
     }
   }, 500);
