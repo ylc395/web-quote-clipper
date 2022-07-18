@@ -62,9 +62,7 @@ export default class MarkManager {
         delete this.markTooltipMap[quoteId];
       },
       onDelete: () => {
-        relatedMarks.forEach((el) =>
-          el.replaceWith(...Array.from(el.childNodes)),
-        );
+        relatedMarks.forEach((el) => el.replaceWith(...el.childNodes));
       },
     });
   }
@@ -191,11 +189,11 @@ export default class MarkManager {
     });
 
     this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
+    this.app.highlightTooltip.on(TooltipEvents.Mounted, this.startMonitor);
     this.app.highlightTooltip.on(
       TooltipEvents.BeforeUnmounted,
       this.stopMonitor,
     );
-    this.app.highlightTooltip.on(TooltipEvents.Mounted, this.startMonitor);
     this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.startMonitor);
 
     this.startMonitor();
