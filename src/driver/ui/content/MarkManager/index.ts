@@ -1,5 +1,6 @@
 import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
+import debounce from 'lodash.debounce';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/ui/request';
 import { setBadgeText } from 'driver/ui/extension/message';
@@ -7,6 +8,7 @@ import type App from '../App';
 import { TooltipEvents } from '../HighlightTooltip';
 import MarkTooltip from './MarkTooltip';
 import './style.scss';
+import { isElement } from '../utils';
 
 const MARK_CLASS_NAME = 'web-clipper-mark';
 const MARK_QUOTE_ID_DATASET_KEY = 'data-web-clipper-quote-id';
@@ -16,22 +18,33 @@ let id = 0;
 const generateId = () => String(++id);
 
 export default class MarkManager {
-  private pen = new Mark(document.body);
-  private readonly quoteMap: Record<string, Quote> = {};
+  private readonly pen = new Mark(document.body);
+  private readonly matchedQuotesMap: Record<string, Quote> = {};
   private readonly markTooltipMap: Record<string, MarkTooltip> = {};
-  private quotesToConsumed?: Quote[];
-  private domMonitor?: MutationObserver;
+  private unmatchedQuotes?: Quote[];
+  private stopMonitor = () => {
+    this.domMonitor.disconnect();
+  };
+
+  private startMonitor = () => {
+    this.domMonitor.observe(document.body, { subtree: true, childList: true });
+  };
+  private readonly domMonitor = this.createDomMonitor();
   constructor(private readonly app: App) {
     this.highlightAll();
-    document.body.addEventListener('mouseover', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains(MARK_CLASS_NAME)) {
-        this.mountTooltip(target);
-      }
-    });
   }
 
-  private activeMarkCount = 0;
+  private handleMouseover = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains(MARK_CLASS_NAME)) {
+      this.mountTooltip(target);
+    }
+  };
+
+  private get activeMarkCount() {
+    return Object.keys(this.matchedQuotesMap).length;
+  }
+
   private totalMarkCount = 0;
 
   isAvailableRange(range: Range) {
@@ -42,7 +55,7 @@ export default class MarkManager {
   private mountTooltip(markEl: HTMLElement) {
     const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL];
 
-    if (!quoteId || !this.quoteMap[quoteId]) {
+    if (!quoteId || !this.matchedQuotesMap[quoteId]) {
       throw new Error('no quote');
     }
 
@@ -50,25 +63,23 @@ export default class MarkManager {
       return;
     }
 
-    const relatedMarks = Array.from(
-      document.querySelectorAll(`[${MARK_QUOTE_ID_DATASET_KEY}="${quoteId}"]`),
-    ) as HTMLElement[];
+    const relatedMarks = MarkManager.getMarkElsByQuoteId(quoteId);
 
     this.markTooltipMap[quoteId] = new MarkTooltip({
-      quote: this.quoteMap[quoteId],
+      quote: this.matchedQuotesMap[quoteId],
       relatedEls: relatedMarks,
       targetEl: markEl,
       onUnmount: () => {
         delete this.markTooltipMap[quoteId];
       },
       onDelete: () => {
-        relatedMarks.forEach((el) => el.replaceWith(...el.childNodes));
+        this.removeQuoteById(quoteId, relatedMarks);
       },
     });
   }
 
-  private highlightAll = async () => {
-    if (!this.quotesToConsumed) {
+  private highlightAll = debounce(async () => {
+    if (!this.unmatchedQuotes) {
       try {
         const quotes = await getQuotes({
           url: location.href,
@@ -76,8 +87,8 @@ export default class MarkManager {
           orderBy: 'contentLength',
         });
 
-        this.quotesToConsumed = quotes;
-        this.totalMarkCount = this.quotesToConsumed.length;
+        this.unmatchedQuotes = quotes;
+        this.totalMarkCount = quotes.length;
       } catch (error) {
         // todo: handle error
         alert(error);
@@ -85,9 +96,14 @@ export default class MarkManager {
       }
     }
 
-    const failedQuotes: Quote[] = [];
+    if (this.unmatchedQuotes.length > 0) {
+      this.stopMonitor();
+    }
 
-    for (const quote of this.quotesToConsumed) {
+    console.log(this.unmatchedQuotes);
+
+    const failedQuotes: Quote[] = [];
+    for (const quote of this.unmatchedQuotes) {
       const isSuccessful = this.highlightQuote(quote);
 
       if (!isSuccessful) {
@@ -95,31 +111,26 @@ export default class MarkManager {
       }
     }
 
-    if (failedQuotes.length > 0) {
-      if (document.readyState !== 'complete') {
-        window.addEventListener('load', this.highlightAll);
-      } else {
-        this.initDomMonitor();
-      }
+    if (this.unmatchedQuotes.length > 0) {
+      this.startMonitor();
     }
 
-    if (failedQuotes.length === 0 && this.domMonitor) {
-      this.destroyMonitor();
-    }
+    this.unmatchedQuotes = failedQuotes;
 
-    this.quotesToConsumed = failedQuotes;
     setBadgeText({
       total: this.totalMarkCount,
       active: this.activeMarkCount,
     });
-  };
+  }, 500);
 
   private highlightRange(range: Range, className: string, quoteId: string) {
+    this.stopMonitor();
     highlightRange(range, 'mark', {
       class: className,
       [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
     });
-    this.activeMarkCount += 1;
+    this.startMonitor();
+
     this.totalMarkCount += 1;
     setBadgeText({
       total: this.totalMarkCount,
@@ -130,64 +141,42 @@ export default class MarkManager {
   highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
-
-    this.stopMonitor();
+    let result = false;
 
     if (range) {
       this.highlightRange(range, className, quoteId);
-      this.quoteMap[quoteId] = quote;
-      return true;
+      result = true;
+    } else {
+      const { contents } = quote;
+
+      this.pen.mark(contents.join('\n'), {
+        acrossElements: true,
+        diacritics: false,
+        separateWordSearch: false,
+        ignoreJoiners: true,
+        ignorePunctuation: ['\n'],
+        className,
+        each: (el: HTMLElement) => {
+          el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
+          result = true;
+        },
+        filter: (textNode) => {
+          return !textNode.parentElement?.classList.contains(MARK_CLASS_NAME);
+        },
+      });
     }
-
-    let result = false;
-    const { contents } = quote;
-
-    this.pen.mark(contents.join('\n'), {
-      acrossElements: true,
-      diacritics: false,
-      separateWordSearch: false,
-      ignoreJoiners: true,
-      ignorePunctuation: ['\n'],
-      className,
-      each: (el: HTMLElement) => {
-        el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
-        result = true;
-      },
-      filter: (textNode) => {
-        return !textNode.parentElement?.classList.contains(MARK_CLASS_NAME);
-      },
-    });
 
     if (result) {
-      this.quoteMap[quoteId] = quote;
-      this.activeMarkCount += 1;
+      if (this.activeMarkCount === 0) {
+        document.addEventListener('mouseover', this.handleMouseover);
+      }
+      this.matchedQuotesMap[quoteId] = quote;
     }
 
-    this.startMonitor();
     return result;
   }
 
-  private initDomMonitor() {
-    if (this.domMonitor) {
-      return;
-    }
-
-    this.domMonitor = new MutationObserver(async (mutationList) => {
-      if (!this.quotesToConsumed) {
-        throw new Error('no quotes to consume');
-      }
-
-      for (let { addedNodes } of mutationList) {
-        // we assumed that a quote won't cross existing node and added node
-        if (addedNodes.length === 0) {
-          continue;
-        }
-
-        this.pen = new Mark(addedNodes);
-        await this.highlightAll();
-      }
-    });
-
+  private createDomMonitor() {
     this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
     this.app.highlightTooltip.on(TooltipEvents.Mounted, this.startMonitor);
     this.app.highlightTooltip.on(
@@ -196,33 +185,59 @@ export default class MarkManager {
     );
     this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.startMonitor);
 
-    this.startMonitor();
+    return new MutationObserver((mutationList) => {
+      if (!this.unmatchedQuotes) {
+        throw new Error('no unmatchedQuotes');
+      }
+
+      const selector = `.${MARK_CLASS_NAME}`;
+      const addedElements = mutationList.flatMap(({ addedNodes }) =>
+        Array.from(addedNodes).filter(isElement),
+      );
+      const removedElements = mutationList.flatMap(({ removedNodes }) =>
+        Array.from(removedNodes).filter(isElement),
+      );
+
+      for (const el of removedElements) {
+        const markEls = el.matches(selector)
+          ? Array.of(el)
+          : (Array.from(el.querySelectorAll(selector)) as HTMLElement[]);
+
+        for (const markEl of markEls) {
+          const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY];
+
+          if (!quoteId) {
+            continue;
+          }
+
+          const quote = this.removeQuoteById(quoteId);
+          this.unmatchedQuotes.push(quote);
+        }
+      }
+
+      if (addedElements.length > 0) {
+        this.highlightAll();
+      }
+    });
   }
 
-  private destroyMonitor() {
-    if (!this.domMonitor) {
-      throw new Error('no monitor');
+  private removeQuoteById(id: string, relatedEls?: HTMLElement[]) {
+    const quote = this.matchedQuotesMap[id];
+    delete this.matchedQuotesMap[id];
+
+    if (this.activeMarkCount > 0) {
+      document.removeEventListener('mouseover', this.handleMouseover);
     }
 
-    this.stopMonitor();
-    this.domMonitor = undefined;
-    this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopMonitor);
-    this.app.highlightTooltip.off(TooltipEvents.Mounted, this.startMonitor);
+    relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);
+    relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
+
+    return quote;
   }
 
-  private stopMonitor = () => {
-    if (!this.domMonitor) {
-      return;
-    }
-
-    this.domMonitor.disconnect();
-  };
-
-  private startMonitor = () => {
-    if (!this.domMonitor) {
-      return;
-    }
-
-    this.domMonitor.observe(document.body, { subtree: true, childList: true });
-  };
+  private static getMarkElsByQuoteId(id: string) {
+    return Array.from(
+      document.querySelectorAll(`[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`),
+    ) as HTMLElement[];
+  }
 }

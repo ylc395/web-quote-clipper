@@ -3,7 +3,7 @@ import BLOCK_ELEMENTS from 'block-elements';
 export const isTextNode = (node: Node): node is Text =>
   node.nodeType === document.TEXT_NODE;
 
-export const isElement = (node: Node): node is Element =>
+export const isElement = (node: Node): node is HTMLElement =>
   node.nodeType === document.ELEMENT_NODE;
 
 export const isBlockElement = (element: Element) =>
