@@ -9,7 +9,8 @@ interface Options {
   quote: Quote;
   targetEl: HTMLElement;
   relatedEls: HTMLElement[];
-  onUnmount: () => void;
+  onBeforeUnmount: () => void;
+  onUnmounted: () => void;
   onDelete: () => void;
 }
 
@@ -53,11 +54,12 @@ export default class MarkTooltip {
     if (!this.popper) {
       throw new Error('no tippy');
     }
+    this.options.onBeforeUnmount();
     this.popper.destroy();
     this.popper = undefined;
-
+    this.rootEl.remove();
     document.removeEventListener('mouseout', this.handleMouseout);
-    this.options.onUnmount();
+    this.options.onUnmounted();
   }
 
   private handleClick = async (e: MouseEvent) => {

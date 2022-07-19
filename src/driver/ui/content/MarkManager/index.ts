@@ -65,17 +65,23 @@ export default class MarkManager {
 
     const relatedMarks = MarkManager.getMarkElsByQuoteId(quoteId);
 
+    this.stopMonitor();
     this.markTooltipMap[quoteId] = new MarkTooltip({
       quote: this.matchedQuotesMap[quoteId],
       relatedEls: relatedMarks,
       targetEl: markEl,
-      onUnmount: () => {
+      onBeforeUnmount: () => {
+        this.stopMonitor();
+      },
+      onUnmounted: () => {
         delete this.markTooltipMap[quoteId];
+        this.startMonitor();
       },
       onDelete: () => {
         this.removeQuoteById(quoteId, relatedMarks);
       },
     });
+    this.startMonitor();
   }
 
   private highlightAll = debounce(async () => {
@@ -88,7 +94,6 @@ export default class MarkManager {
         });
 
         this.unmatchedQuotes = quotes;
-        this.totalMarkCount = quotes.length;
       } catch (error) {
         // todo: handle error
         console.error(error);
@@ -109,17 +114,20 @@ export default class MarkManager {
       }
     }
 
-    if (this.unmatchedQuotes.length > 0) {
-      this.startMonitor();
-    }
-
+    this.updateBadgeText();
     this.unmatchedQuotes = failedQuotes;
 
+    if (this.unmatchedQuotes.length > 0 || this.activeMarkCount > 0) {
+      this.startMonitor();
+    }
+  }, 500);
+
+  private updateBadgeText() {
     setBadgeText({
       total: this.totalMarkCount,
       active: this.activeMarkCount,
     });
-  }, 500);
+  }
 
   private highlightRange(range: Range, className: string, quoteId: string) {
     this.stopMonitor();
@@ -128,18 +136,14 @@ export default class MarkManager {
       [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
     });
     this.startMonitor();
-
-    this.totalMarkCount += 1;
-    setBadgeText({
-      total: this.totalMarkCount,
-      active: this.activeMarkCount,
-    });
   }
 
   highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
     let result = false;
+
+    this.totalMarkCount += 1;
 
     if (range) {
       this.highlightRange(range, className, quoteId);
@@ -169,6 +173,10 @@ export default class MarkManager {
         document.addEventListener('mouseover', this.handleMouseover);
       }
       this.matchedQuotesMap[quoteId] = quote;
+    }
+
+    if (range) {
+      this.updateBadgeText();
     }
 
     return result;
@@ -202,10 +210,10 @@ export default class MarkManager {
           : (Array.from(el.querySelectorAll(selector)) as HTMLElement[]);
 
         for (const markEl of markEls) {
-          const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY];
+          const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL];
 
           if (!quoteId) {
-            continue;
+            throw new Error('no quote id');
           }
 
           const quote = this.removeQuoteById(quoteId);
@@ -221,14 +229,27 @@ export default class MarkManager {
 
   private removeQuoteById(id: string, relatedEls?: HTMLElement[]) {
     const quote = this.matchedQuotesMap[id];
+
+    if (!quote) {
+      throw Error('no quote when delete');
+    }
+
     delete this.matchedQuotesMap[id];
 
-    if (this.activeMarkCount > 0) {
+    if (this.activeMarkCount === 0) {
       document.removeEventListener('mouseover', this.handleMouseover);
     }
 
+    this.totalMarkCount -= 1;
     relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);
+    this.stopMonitor();
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
+
+    if (this.totalMarkCount > 0) {
+      this.startMonitor();
+    }
+
+    this.updateBadgeText();
 
     return quote;
   }
