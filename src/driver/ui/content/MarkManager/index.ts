@@ -91,7 +91,7 @@ export default class MarkManager {
         this.totalMarkCount = quotes.length;
       } catch (error) {
         // todo: handle error
-        alert(error);
+        console.error(error);
         return;
       }
     }
@@ -99,8 +99,6 @@ export default class MarkManager {
     if (this.unmatchedQuotes.length > 0) {
       this.stopMonitor();
     }
-
-    console.log(this.unmatchedQuotes);
 
     const failedQuotes: Quote[] = [];
     for (const quote of this.unmatchedQuotes) {

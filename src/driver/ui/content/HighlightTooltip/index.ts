@@ -150,7 +150,7 @@ export default class Tooltip extends EventEmitter {
       window.getSelection()?.empty(); // tip: this will trigger `unmountWhenSelectionChange`
     } catch (error) {
       // todo: handle error
-      alert(error);
+      console.error(error);
       return;
     }
   }
