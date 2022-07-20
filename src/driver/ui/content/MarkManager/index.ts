@@ -45,6 +45,7 @@ export default class MarkManager {
 
       this.unmatchedQuotes = quotes;
       this.totalMarkCount = quotes.length;
+      this.updateBadgeText();
     } catch (error) {
       // todo: handle error
       console.error(error);
