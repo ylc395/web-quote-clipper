@@ -131,8 +131,7 @@ export default class MarkManager {
     this.unmatchedQuotes = failedQuotes;
 
     if (this.totalMarkCount > 0) {
-      this.domMonitor.start();
-      this.domMonitor.listenHighlightTooltip();
+      this.domMonitor.start(true);
     }
   }, 500);
 
@@ -212,7 +211,7 @@ export default class MarkManager {
     if (this.totalMarkCount > 0) {
       this.domMonitor.start();
     } else {
-      this.domMonitor.stopListeningHighlightTooltip();
+      this.domMonitor.stop(true);
     }
 
     this.updateBadgeText();

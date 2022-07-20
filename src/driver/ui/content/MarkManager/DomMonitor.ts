@@ -17,36 +17,28 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
     super();
   }
 
-  listenHighlightTooltip() {
-    if (this.isListeningHighlightTooltip) {
-      return;
-    }
-
-    this.isListeningHighlightTooltip = true;
-    this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stop);
-    this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
-    this.app.highlightTooltip.on(TooltipEvents.BeforeUnmounted, this.stop);
-    this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
-  }
-
-  stopListeningHighlightTooltip() {
-    if (!this.isListeningHighlightTooltip) {
-      return;
-    }
-
-    this.isListeningHighlightTooltip = false;
-    this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stop);
-    this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
-    this.app.highlightTooltip.off(TooltipEvents.BeforeUnmounted, this.stop);
-    this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
-  }
-
-  start = () => {
+  start = (needListener = false) => {
     this.domMonitor.observe(document.body, { subtree: true, childList: true });
+
+    if (needListener && !this.isListeningHighlightTooltip) {
+      this.isListeningHighlightTooltip = true;
+      this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stop);
+      this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
+      this.app.highlightTooltip.on(TooltipEvents.BeforeUnmounted, this.stop);
+      this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
+    }
   };
 
-  stop = () => {
+  stop = (needRemoveListener = false) => {
     this.domMonitor.disconnect();
+
+    if (needRemoveListener && this.isListeningHighlightTooltip) {
+      this.isListeningHighlightTooltip = false;
+      this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stop);
+      this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
+      this.app.highlightTooltip.off(TooltipEvents.BeforeUnmounted, this.stop);
+      this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
+    }
   };
 
   private createDomMonitor() {
