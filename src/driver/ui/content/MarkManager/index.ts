@@ -5,32 +5,52 @@ import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/ui/request';
 import { setBadgeText } from 'driver/ui/extension/message';
 import type App from '../App';
-import { TooltipEvents } from '../HighlightTooltip';
 import MarkTooltip from './MarkTooltip';
+import DomMonitor, { DomMonitorEvents } from './DomMonitor';
+import {
+  MARK_CLASS_NAME,
+  MARK_QUOTE_ID_DATASET_KEY,
+  MARK_QUOTE_ID_DATASET_KEY_CAMEL,
+} from './constants';
 import './style.scss';
-import { isElement } from '../utils';
-
-const MARK_CLASS_NAME = 'web-clipper-mark';
-const MARK_QUOTE_ID_DATASET_KEY = 'data-web-clipper-quote-id';
-const MARK_QUOTE_ID_DATASET_KEY_CAMEL = 'webClipperQuoteId';
 
 let id = 0;
 const generateId = () => String(++id);
+
+export enum MarkManagerEvents {}
 
 export default class MarkManager {
   private readonly pen = new Mark(document.body);
   private readonly matchedQuotesMap: Record<string, Quote> = {};
   private readonly markTooltipMap: Record<string, MarkTooltip> = {};
+  private readonly domMonitor: DomMonitor;
   private unmatchedQuotes?: Quote[];
-  private stopMonitor = () => {
-    this.domMonitor.disconnect();
-  };
+  private totalMarkCount = 0;
 
-  private startMonitor = () => {
-    this.domMonitor.observe(document.body, { subtree: true, childList: true });
-  };
-  private readonly domMonitor = this.createDomMonitor();
-  constructor(private readonly app: App) {
+  constructor(app: App) {
+    this.domMonitor = new DomMonitor(app);
+    this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll);
+    this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
+
+    this.initQuotes();
+  }
+
+  private async initQuotes() {
+    try {
+      const quotes = await getQuotes({
+        url: location.href,
+        contentType: 'pure',
+        orderBy: 'contentLength',
+      });
+
+      this.unmatchedQuotes = quotes;
+      this.totalMarkCount = quotes.length;
+    } catch (error) {
+      // todo: handle error
+      console.error(error);
+      return;
+    }
+
     this.highlightAll();
   }
 
@@ -44,8 +64,6 @@ export default class MarkManager {
   private get activeMarkCount() {
     return Object.keys(this.matchedQuotesMap).length;
   }
-
-  private totalMarkCount = 0;
 
   isAvailableRange(range: Range) {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASS_NAME}`));
@@ -65,44 +83,38 @@ export default class MarkManager {
 
     const relatedMarks = MarkManager.getMarkElsByQuoteId(quoteId);
 
-    this.stopMonitor();
+    this.domMonitor.stop();
     this.markTooltipMap[quoteId] = new MarkTooltip({
       quote: this.matchedQuotesMap[quoteId],
       relatedEls: relatedMarks,
       targetEl: markEl,
       onBeforeUnmount: () => {
-        this.stopMonitor();
+        this.domMonitor.stop();
       },
       onUnmounted: () => {
         delete this.markTooltipMap[quoteId];
-        this.startMonitor();
+        if (this.totalMarkCount > 0) {
+          this.domMonitor.start();
+        }
       },
       onDelete: () => {
         this.removeQuoteById(quoteId, relatedMarks);
       },
     });
-    this.startMonitor();
+    this.domMonitor.start();
   }
 
   private highlightAll = debounce(async () => {
     if (!this.unmatchedQuotes) {
-      try {
-        const quotes = await getQuotes({
-          url: location.href,
-          contentType: 'pure',
-          orderBy: 'contentLength',
-        });
+      throw new Error('no unmatchedQuotes');
+    }
 
-        this.unmatchedQuotes = quotes;
-      } catch (error) {
-        // todo: handle error
-        console.error(error);
-        return;
-      }
+    if (this.unmatchedQuotes.length === 0) {
+      return;
     }
 
     if (this.unmatchedQuotes.length > 0) {
-      this.stopMonitor();
+      this.domMonitor.stop();
     }
 
     const failedQuotes: Quote[] = [];
@@ -117,8 +129,9 @@ export default class MarkManager {
     this.updateBadgeText();
     this.unmatchedQuotes = failedQuotes;
 
-    if (this.unmatchedQuotes.length > 0 || this.activeMarkCount > 0) {
-      this.startMonitor();
+    if (this.totalMarkCount > 0) {
+      this.domMonitor.start();
+      this.domMonitor.listenHighlightTooltip();
     }
   }, 500);
 
@@ -129,24 +142,19 @@ export default class MarkManager {
     });
   }
 
-  private highlightRange(range: Range, className: string, quoteId: string) {
-    this.stopMonitor();
-    highlightRange(range, 'mark', {
-      class: className,
-      [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
-    });
-    this.startMonitor();
-  }
-
   highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
     let result = false;
 
-    this.totalMarkCount += 1;
-
     if (range) {
-      this.highlightRange(range, className, quoteId);
+      this.domMonitor.stop();
+      highlightRange(range, 'mark', {
+        class: className,
+        [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
+      });
+      this.domMonitor.start();
+      this.totalMarkCount += 1;
       result = true;
     } else {
       const { contents } = quote;
@@ -182,52 +190,7 @@ export default class MarkManager {
     return result;
   }
 
-  private createDomMonitor() {
-    this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopMonitor);
-    this.app.highlightTooltip.on(TooltipEvents.Mounted, this.startMonitor);
-    this.app.highlightTooltip.on(
-      TooltipEvents.BeforeUnmounted,
-      this.stopMonitor,
-    );
-    this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.startMonitor);
-
-    return new MutationObserver((mutationList) => {
-      if (!this.unmatchedQuotes) {
-        throw new Error('no unmatchedQuotes');
-      }
-
-      const selector = `.${MARK_CLASS_NAME}`;
-      const addedElements = mutationList.flatMap(({ addedNodes }) =>
-        Array.from(addedNodes).filter(isElement),
-      );
-      const removedElements = mutationList.flatMap(({ removedNodes }) =>
-        Array.from(removedNodes).filter(isElement),
-      );
-
-      for (const el of removedElements) {
-        const markEls = el.matches(selector)
-          ? Array.of(el)
-          : (Array.from(el.querySelectorAll(selector)) as HTMLElement[]);
-
-        for (const markEl of markEls) {
-          const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL];
-
-          if (!quoteId) {
-            throw new Error('no quote id');
-          }
-
-          const quote = this.removeQuoteById(quoteId);
-          this.unmatchedQuotes.push(quote);
-        }
-      }
-
-      if (addedElements.length > 0) {
-        this.highlightAll();
-      }
-    });
-  }
-
-  private removeQuoteById(id: string, relatedEls?: HTMLElement[]) {
+  private removeQuoteById = (id: string, relatedEls?: HTMLElement[]) => {
     const quote = this.matchedQuotesMap[id];
 
     if (!quote) {
@@ -242,17 +205,19 @@ export default class MarkManager {
 
     this.totalMarkCount -= 1;
     relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);
-    this.stopMonitor();
+    this.domMonitor.stop();
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
     if (this.totalMarkCount > 0) {
-      this.startMonitor();
+      this.domMonitor.start();
+    } else {
+      this.domMonitor.stopListeningHighlightTooltip();
     }
 
     this.updateBadgeText();
 
     return quote;
-  }
+  };
 
   private static getMarkElsByQuoteId(id: string) {
     return Array.from(

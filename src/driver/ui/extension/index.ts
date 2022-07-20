@@ -37,7 +37,12 @@ function setBadgeText(
   }
 
   chrome.action.setBadgeText({
-    text: String(tabMarkRecord.active),
+    text: String(tabMarkRecord.total),
+    tabId,
+  });
+
+  chrome.action.setBadgeBackgroundColor({
+    color: tabMarkRecord.active === tabMarkRecord.total ? 'blue' : 'red',
     tabId,
   });
 }
