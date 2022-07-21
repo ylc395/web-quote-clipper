@@ -110,7 +110,7 @@ export default class MarkManager {
       throw new Error('no unmatchedQuotes');
     }
 
-    console.log('highlightAll');
+    console.log(`💡 ${this.unmatchedQuotes.length} to highlight`);
 
     if (this.unmatchedQuotes.length === 0) {
       return;
@@ -127,7 +127,11 @@ export default class MarkManager {
       }
     }
 
-    console.log(`highlightAll failed: ${failedQuotes.length}`);
+    console.log(
+      `${failedQuotes.length > 0 ? '💔' : '🎉'} highlightAll failed: ${
+        failedQuotes.length
+      }`,
+    );
 
     this.updateBadgeText();
     this.unmatchedQuotes = failedQuotes;
@@ -211,8 +215,6 @@ export default class MarkManager {
     if (this.activeMarkCount === 0) {
       document.removeEventListener('mouseover', this.handleMouseover);
     }
-
-    console.log('delete');
 
     this.totalMarkCount -= 1;
     relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);

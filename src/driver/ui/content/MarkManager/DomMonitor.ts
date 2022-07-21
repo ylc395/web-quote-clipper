@@ -12,7 +12,7 @@ export enum DomMonitorEvents {
 export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   private isListeningHighlightTooltip = false;
   private readonly domMonitor = this.createDomMonitor();
-
+  private readonly removedQuoteIds: string[] = [];
   constructor(private readonly app: App) {
     super();
   }
@@ -43,32 +43,37 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
   private createDomMonitor() {
     return new MutationObserver((mutationList) => {
-      console.log('DOM monitor call');
+      console.log('👀 DOM monitor call');
 
       const selector = `.${MARK_CLASS_NAME}`;
       const addedElements = mutationList.flatMap(({ addedNodes }) =>
         Array.from(addedNodes).filter(isElement),
       );
+
+      console.log('➕ nodes added:', addedElements);
+      console.log('🚮 nodes removed:', addedElements);
+
       const removedElements = mutationList.flatMap(({ removedNodes }) =>
         Array.from(removedNodes).filter(isElement),
       );
-
-      console.log('nodes added:', addedElements);
-      console.log('nodes removed:', removedElements);
-
       for (const el of removedElements) {
         const markEls = el.matches(selector)
           ? Array.of(el)
           : (Array.from(el.querySelectorAll(selector)) as HTMLElement[]);
 
         for (const markEl of markEls) {
+          console.log('🚮 markEl removed:', markEl);
           const quoteId = markEl.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL];
 
           if (!quoteId) {
             throw new Error('no quote id');
           }
 
-          this.emit(DomMonitorEvents.QuoteRemoved, quoteId);
+          if (!this.removedQuoteIds.includes(quoteId)) {
+            console.log(`🚮 quote removed: ${quoteId}`);
+            this.emit(DomMonitorEvents.QuoteRemoved, quoteId);
+            this.removedQuoteIds.push(quoteId);
+          }
         }
       }
 
