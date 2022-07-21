@@ -36,18 +36,18 @@ export const getLastValidChild = (node: Element) => {
   return null;
 };
 
-export const isUnderPre = (el: Node) => {
+export const getAncestor = (el: Node, selector: string, until?: Element) => {
   let parent = el.parentElement;
 
-  while (parent) {
-    if (parent.tagName.toLowerCase() === 'pre') {
-      return true;
+  while (parent && parent !== until) {
+    if (parent.matches(selector)) {
+      return parent;
     }
 
     parent = parent.parentElement;
   }
 
-  return false;
+  return null;
 };
 
 export const getLastChildDeep = (node: Node): Node => {

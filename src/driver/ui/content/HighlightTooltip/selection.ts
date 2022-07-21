@@ -8,8 +8,8 @@ import {
   isValidAnchorElement,
   getLastValidChild,
   isCodeElement,
-  isUnderPre,
   getLastChildDeep,
+  getAncestor,
 } from '../utils';
 
 export function getSelectionRange() {
@@ -150,7 +150,7 @@ export async function generateQuote(
         const lastChild = getLastValidChild(currentNode);
 
         if (lastChild) {
-          const isBlock = isUnderPre(currentNode);
+          const isBlock = Boolean(getAncestor(currentNode, 'pre'));
           lastCode = { lastChild, isBlock };
           lastText += isBlock ? '```\n' : '`';
         }
@@ -185,7 +185,9 @@ export async function generateQuote(
         isEndNode ? range.endOffset : currentNode.textContent.length,
       );
 
-      lastText += isUnderPre(currentNode) ? text : text.replaceAll(/\s+/g, ' ');
+      lastText += Boolean(getAncestor(currentNode, 'pre'))
+        ? text
+        : text.replaceAll(/\s+/g, ' ');
     }
 
     if (lastAnchor?.lastChild === currentNode) {

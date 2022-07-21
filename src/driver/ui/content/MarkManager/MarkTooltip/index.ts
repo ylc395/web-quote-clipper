@@ -2,8 +2,10 @@ import { createPopper, Instance } from '@popperjs/core';
 import type { Quote } from 'model/entity';
 import { deleteQuote } from 'driver/ui/request';
 import renderTooltip from './template.hbs';
+import { getAncestor } from '../../utils';
 
-const TOOLTIP_CLASS_NAME = 'web-clipper-mark-tooltip';
+const TOOLTIP_CLASS_NAME = 'web-clipper-mark-manager-tooltip';
+const BUTTON_CLASS_NAME = 'web-clipper-mark-manager-tooltip-button';
 
 interface Options {
   quote: Quote;
@@ -63,12 +65,19 @@ export default class MarkTooltip {
   }
 
   private handleClick = async (e: MouseEvent) => {
-    // todo: if e.target is child of button
-    switch ((e.target as HTMLElement).className) {
-      case 'web-clipper-delete-button':
+    const target = e.target as HTMLElement;
+    const mainButtonEl = target.matches(`.${BUTTON_CLASS_NAME}`)
+      ? target
+      : getAncestor(target, `.${BUTTON_CLASS_NAME}`, this.rootEl);
+
+    if (!mainButtonEl) {
+      return;
+    }
+
+    switch (mainButtonEl.dataset.type) {
+      case 'delete':
         await this.deleteQuote();
-        this.unmount();
-        return;
+        return this.unmount();
       default:
         break;
     }
