@@ -5,29 +5,24 @@ import ConfigService, { DbTypes } from 'service/ConfigService';
 import { BrowserQuoteDatabase, BrowserStorage } from 'driver/browserStorage';
 import Joplin from '../joplin';
 
+container.registerSingleton(storageToken, BrowserStorage);
+
+const DbMap = {
+  [DbTypes.Browser]: BrowserQuoteDatabase,
+  [DbTypes.Github]: BrowserQuoteDatabase,
+  [DbTypes.Joplin]: Joplin,
+} as const;
+
 export default async function bootstrap(
   cb: (services: {
     quoteService: QuoteService;
     configService: ConfigService;
   }) => void,
 ) {
-  container.registerSingleton(storageToken, BrowserStorage);
-
   const configService = container.resolve(ConfigService);
   const dbType = await configService.get('db');
-
-  switch (dbType) {
-    case DbTypes.Browser:
-      container.registerSingleton(databaseToken, BrowserQuoteDatabase);
-      break;
-    case DbTypes.Joplin:
-      container.registerSingleton(databaseToken, Joplin);
-      break;
-    default:
-      break;
-  }
+  container.registerSingleton(databaseToken, DbMap[dbType]);
 
   const quoteService = container.resolve(QuoteService);
-
   cb({ configService, quoteService });
 }

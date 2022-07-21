@@ -29,7 +29,7 @@ export default class MarkManager {
 
   constructor(app: App) {
     this.domMonitor = new DomMonitor(app);
-    this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll);
+    this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
 
     this.initQuotes();
