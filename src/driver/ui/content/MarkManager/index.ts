@@ -190,6 +190,7 @@ export default class MarkManager {
     });
 
     if (result) {
+      console.log('🐮 highlight success');
       if (this.activeMarkCount === 0) {
         document.addEventListener('mouseover', this.handleMouseover);
       }
@@ -223,8 +224,6 @@ export default class MarkManager {
 
     if (this.totalMarkCount > 0) {
       this.domMonitor.start();
-    } else {
-      this.domMonitor.stop();
     }
 
     this.updateBadgeText();

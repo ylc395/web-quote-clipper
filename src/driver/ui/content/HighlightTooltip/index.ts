@@ -24,11 +24,11 @@ const COLORS = [
 export enum TooltipEvents {
   BeforeMount = 'BEFORE_MOUNT',
   Mounted = 'MOUNTED',
-  BeforeUnmounted = 'BEFORE_UNMOUNT',
+  BeforeUnmount = 'BEFORE_UNMOUNT',
   Unmounted = 'UNMOUNTED',
 }
 
-export default class Tooltip extends EventEmitter {
+export default class HighlightTooltip extends EventEmitter {
   private rootEl: HTMLElement;
   private rootElRect?: DOMRect;
   private currentRange?: ReturnType<typeof getSelectionRange>;
@@ -86,6 +86,8 @@ export default class Tooltip extends EventEmitter {
 
     const { range, reversed } = this.currentRange;
     const { x, y } = getSelectionEndPosition(range, reversed);
+
+    // todo: disabled if content is empty
     const tooltipDisabled = !this.app.markManager.isAvailableRange(range);
 
     this.rootEl.innerHTML = renderTooltip({
@@ -113,7 +115,7 @@ export default class Tooltip extends EventEmitter {
   };
 
   private unmount = () => {
-    this.emit(TooltipEvents.BeforeUnmounted);
+    this.emit(TooltipEvents.BeforeUnmount);
 
     document.removeEventListener('mousedown', this.handleMousedown);
     document.removeEventListener('scroll', this.toggleWhenScroll, true);

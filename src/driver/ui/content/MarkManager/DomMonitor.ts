@@ -17,16 +17,26 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
     super();
   }
 
+  private stopSimply = () => {
+    console.log('👀 DOM monitor stop simply');
+    this.domMonitor.disconnect();
+  };
+
   start = () => {
     this.domMonitor.observe(document.body, { subtree: true, childList: true });
 
     if (!this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = true;
-      this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stop);
+      this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopSimply);
       this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
-      this.app.highlightTooltip.on(TooltipEvents.BeforeUnmounted, this.stop);
+      this.app.highlightTooltip.on(
+        TooltipEvents.BeforeUnmount,
+        this.stopSimply,
+      );
       this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
     }
+
+    console.log('👀 DOM monitor start');
   };
 
   stop = () => {
@@ -34,17 +44,20 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
     if (this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = false;
-      this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stop);
+      this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopSimply);
       this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
-      this.app.highlightTooltip.off(TooltipEvents.BeforeUnmounted, this.stop);
+      this.app.highlightTooltip.off(
+        TooltipEvents.BeforeUnmount,
+        this.stopSimply,
+      );
       this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
     }
+
+    console.log('👀 DOM monitor stop');
   };
 
   private createDomMonitor() {
     return new MutationObserver((mutationList) => {
-      console.log('👀 DOM monitor call');
-
       const selector = `.${MARK_CLASS_NAME}`;
       const addedElements = mutationList.flatMap(({ addedNodes }) =>
         Array.from(addedNodes).filter(isElement),
