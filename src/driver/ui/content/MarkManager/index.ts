@@ -110,28 +110,30 @@ export default class MarkManager {
       throw new Error('no unmatchedQuotes');
     }
 
+    console.log('highlightAll');
+
     if (this.unmatchedQuotes.length === 0) {
       return;
     }
 
-    if (this.unmatchedQuotes.length > 0) {
-      this.domMonitor.stop();
-    }
-
+    this.domMonitor.stop();
     const failedQuotes: Quote[] = [];
+
     for (const quote of this.unmatchedQuotes) {
-      const isSuccessful = this.highlightQuote(quote);
+      const isSuccessful = await this.highlightQuote(quote);
 
       if (!isSuccessful) {
         failedQuotes.push(quote);
       }
     }
 
+    console.log(`highlightAll failed: ${failedQuotes.length}`);
+
     this.updateBadgeText();
     this.unmatchedQuotes = failedQuotes;
 
     if (this.totalMarkCount > 0) {
-      this.domMonitor.start(true);
+      this.domMonitor.start();
     }
   }, 500);
 
@@ -142,39 +144,46 @@ export default class MarkManager {
     });
   }
 
-  highlightQuote(quote: Quote, range?: Range) {
+  async highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
-    let result = false;
 
-    if (range) {
-      this.domMonitor.stop();
-      highlightRange(range, 'mark', {
-        class: className,
-        [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
-      });
-      this.domMonitor.start();
-      this.totalMarkCount += 1;
-      result = true;
-    } else {
-      const { contents } = quote;
-
-      this.pen.mark(contents.join('\n'), {
-        acrossElements: true,
-        diacritics: false,
-        separateWordSearch: false,
-        ignoreJoiners: true,
-        ignorePunctuation: ['\n'],
-        className,
-        each: (el: HTMLElement) => {
-          el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
-          result = true;
-        },
-        filter: (textNode) => {
-          return !textNode.parentElement?.classList.contains(MARK_CLASS_NAME);
-        },
-      });
-    }
+    const result = await new Promise<boolean>((resolve) => {
+      if (range) {
+        window.requestAnimationFrame(() => {
+          this.domMonitor.stop();
+          highlightRange(range, 'mark', {
+            class: className,
+            [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
+          });
+          this.domMonitor.start();
+          this.totalMarkCount += 1;
+          resolve(true);
+        });
+      } else {
+        window.requestAnimationFrame(() => {
+          this.pen.mark(quote.contents.join('\n'), {
+            acrossElements: true,
+            diacritics: false,
+            separateWordSearch: false,
+            ignoreJoiners: true,
+            ignorePunctuation: ['\n'],
+            className,
+            each: (el: HTMLElement) => {
+              el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
+            },
+            filter: (textNode) => {
+              return !textNode.parentElement?.classList.contains(
+                MARK_CLASS_NAME,
+              );
+            },
+            done: (count) => {
+              resolve(count > 0);
+            },
+          });
+        });
+      }
+    });
 
     if (result) {
       if (this.activeMarkCount === 0) {
@@ -203,6 +212,8 @@ export default class MarkManager {
       document.removeEventListener('mouseover', this.handleMouseover);
     }
 
+    console.log('delete');
+
     this.totalMarkCount -= 1;
     relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);
     this.domMonitor.stop();
@@ -211,7 +222,7 @@ export default class MarkManager {
     if (this.totalMarkCount > 0) {
       this.domMonitor.start();
     } else {
-      this.domMonitor.stop(true);
+      this.domMonitor.stop();
     }
 
     this.updateBadgeText();

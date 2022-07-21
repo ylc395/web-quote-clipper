@@ -17,10 +17,10 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
     super();
   }
 
-  start = (needListener = false) => {
+  start = () => {
     this.domMonitor.observe(document.body, { subtree: true, childList: true });
 
-    if (needListener && !this.isListeningHighlightTooltip) {
+    if (!this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = true;
       this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stop);
       this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
@@ -29,10 +29,10 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
     }
   };
 
-  stop = (needRemoveListener = false) => {
+  stop = () => {
     this.domMonitor.disconnect();
 
-    if (needRemoveListener && this.isListeningHighlightTooltip) {
+    if (this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = false;
       this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stop);
       this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
@@ -43,6 +43,8 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
   private createDomMonitor() {
     return new MutationObserver((mutationList) => {
+      console.log('DOM monitor call');
+
       const selector = `.${MARK_CLASS_NAME}`;
       const addedElements = mutationList.flatMap(({ addedNodes }) =>
         Array.from(addedNodes).filter(isElement),
@@ -50,6 +52,9 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
       const removedElements = mutationList.flatMap(({ removedNodes }) =>
         Array.from(removedNodes).filter(isElement),
       );
+
+      console.log('nodes added:', addedElements);
+      console.log('nodes removed:', removedElements);
 
       for (const el of removedElements) {
         const markEls = el.matches(selector)

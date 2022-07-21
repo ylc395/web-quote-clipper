@@ -63,6 +63,7 @@ export default class MarkTooltip {
   }
 
   private handleClick = async (e: MouseEvent) => {
+    // todo: if e.target is child of button
     switch ((e.target as HTMLElement).className) {
       case 'web-clipper-delete-button':
         await this.deleteQuote();
