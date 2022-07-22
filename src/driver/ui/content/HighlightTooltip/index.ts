@@ -91,7 +91,7 @@ export default class HighlightTooltip extends EventEmitter {
       !this.app.markManager.isAvailableRange(range) || !range.toString().trim();
 
     this.rootEl.innerHTML = renderTooltip({
-      colors: COLORS,
+      colors: COLORS.map((s) => s.toLowerCase()),
       disabled: tooltipDisabled,
     });
     this.rootEl.style.left = `${x + (reversed ? -10 : 10)}px`;

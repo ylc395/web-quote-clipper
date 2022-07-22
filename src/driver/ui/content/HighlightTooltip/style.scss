@@ -25,19 +25,9 @@
     }
   }
 
-  button[data-web-clipper-color='GREEN'] {
-    background-color: constants.$green;
-  }
-  button[data-web-clipper-color='YELLOW'] {
-    background-color: constants.$yellow;
-  }
-  button[data-web-clipper-color='PINK'] {
-    background-color: constants.$pink;
-  }
-  button[data-web-clipper-color='BLUE'] {
-    background-color: constants.$blue;
-  }
-  button[data-web-clipper-color='PURPLE'] {
-    background-color: constants.$purple;
+  @each $key, $value in constants.$mark-colors {
+    button[data-web-clipper-color='#{$key}'] {
+      background-color: $value;
+    }
   }
 }

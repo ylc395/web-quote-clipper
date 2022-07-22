@@ -6,6 +6,7 @@ import { getAncestor } from '../../utils';
 
 const TOOLTIP_CLASS_NAME = 'web-clipper-mark-manager-tooltip';
 const BUTTON_CLASS_NAME = 'web-clipper-mark-manager-tooltip-button';
+const MARK_HOVER_CLASS_NAME = 'web-clipper-mark-hover';
 
 interface Options {
   quote: Quote;
@@ -33,6 +34,9 @@ export default class MarkTooltip {
   private mount() {
     this.baseEl = this.findBaseEl();
     this.rootEl.innerHTML = renderTooltip({});
+    this.options.relatedEls.forEach((el) =>
+      el.classList.add(MARK_HOVER_CLASS_NAME),
+    );
     document.body.appendChild(this.rootEl);
     this.popper = createPopper(this.baseEl, this.rootEl, {
       placement: 'top',
@@ -60,6 +64,9 @@ export default class MarkTooltip {
     this.popper.destroy();
     this.popper = undefined;
     this.rootEl.remove();
+    this.options.relatedEls.forEach((el) =>
+      el.classList.remove(MARK_HOVER_CLASS_NAME),
+    );
     document.removeEventListener('mouseout', this.handleMouseout);
     this.options.onUnmounted();
   }

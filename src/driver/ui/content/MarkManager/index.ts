@@ -150,7 +150,7 @@ export default class MarkManager {
 
   async highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
-    const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
+    const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color.toLocaleLowerCase()}`;
 
     const result = await new Promise<boolean>((resolve) => {
       if (range) {
