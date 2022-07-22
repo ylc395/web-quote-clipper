@@ -87,8 +87,8 @@ export default class HighlightTooltip extends EventEmitter {
     const { range, reversed } = this.currentRange;
     const { x, y } = getSelectionEndPosition(range, reversed);
 
-    // todo: disabled if content is empty
-    const tooltipDisabled = !this.app.markManager.isAvailableRange(range);
+    const tooltipDisabled =
+      !this.app.markManager.isAvailableRange(range) || !range.toString().trim();
 
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS,

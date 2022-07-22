@@ -50,6 +50,33 @@ export const getSelectionEndPosition = (
   collapseToStart: boolean,
 ) => {
   range = range.cloneRange();
+
+  if (isElement(range.endContainer) && range.endOffset === 0) {
+    const walker = document.createTreeWalker(range.commonAncestorContainer);
+    let currentNode = walker.currentNode;
+    let textNode: Text | null = null;
+
+    while (currentNode) {
+      const nextNode = walker.nextNode();
+      if (nextNode === range.endContainer || !nextNode) {
+        break;
+      }
+
+      currentNode = nextNode;
+
+      if (isTextNode(currentNode) && currentNode.textContent?.trim()) {
+        textNode = currentNode;
+      }
+    }
+
+    if (textNode) {
+      range.setEndAfter(textNode);
+    } else {
+      range.setEndBefore(range.endContainer);
+    }
+    collapseToStart = false;
+  }
+
   const tmpEl = document.createElement('span');
 
   range.collapse(collapseToStart);
