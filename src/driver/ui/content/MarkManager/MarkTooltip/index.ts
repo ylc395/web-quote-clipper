@@ -1,11 +1,14 @@
-import { createPopper, Instance, main } from '@popperjs/core';
+import { createPopper, Instance } from '@popperjs/core';
 import { Quote, COLORS, Colors } from 'model/entity';
 import renderTooltip from './template.hbs';
 import { getAncestor } from '../../utils';
 import './style.scss';
+import Comment from './Comment';
+import ColorPicker from './ColorPicker';
 
 const TOOLTIP_CLASS_NAME = 'web-clipper-mark-manager-tooltip';
 const BUTTON_CLASS_NAME = 'web-clipper-mark-manager-main-button';
+const BUTTON_HOVER_CLASS_NAME = `${BUTTON_CLASS_NAME}-hover`;
 const COLORS_CLASS_NAME = 'web-clipper-mark-manager-colors';
 const COMMENT_CLASS_NAME = 'web-clipper-mark-manager-comment';
 const MARK_HOVER_CLASS_NAME = 'web-clipper-mark-hover';
@@ -25,9 +28,10 @@ export default class MarkTooltip {
   private rootEl;
   private popper?: Instance;
   private baseEl?: HTMLElement;
-  private submenuRoots?: {
-    color: HTMLElement;
-    comment: HTMLElement;
+
+  private submenus?: {
+    comment: Comment;
+    color: ColorPicker;
   };
 
   private readonly options: Options;
@@ -41,21 +45,29 @@ export default class MarkTooltip {
   }
 
   private mount() {
+    const { quote, relatedEls } = this.options;
+
     this.baseEl = this.findBaseEl();
     this.rootEl.innerHTML = renderTooltip({
-      colors: COLORS.filter((c) => c !== this.options.quote.color),
+      colors: COLORS.filter((c) => c !== quote.color),
+      comment: quote.comment,
     });
-    this.submenuRoots = {
-      color: this.rootEl.querySelector(`.${COLORS_CLASS_NAME}`)!,
-      comment: this.rootEl.querySelector(`.${COMMENT_CLASS_NAME}`)!,
+
+    this.submenus = {
+      comment: new Comment(
+        this.rootEl.querySelector(`.${COMMENT_CLASS_NAME}`)!,
+        this.handleComment,
+      ),
+      color: new ColorPicker(
+        this.rootEl.querySelector(`.${COLORS_CLASS_NAME}`)!,
+        this.handleColorPicked,
+      ),
     };
-    this.options.relatedEls.forEach((el) =>
-      el.classList.add(MARK_HOVER_CLASS_NAME),
-    );
+
+    relatedEls.forEach((el) => el.classList.add(MARK_HOVER_CLASS_NAME));
     document.body.appendChild(this.rootEl);
-    this.popper = createPopper(this.baseEl, this.rootEl, {
-      placement: 'top',
-    });
+    this.popper = createPopper(this.baseEl, this.rootEl, { placement: 'top' });
+
     document.addEventListener('mouseout', this.handleMouseout);
   }
 
@@ -71,15 +83,25 @@ export default class MarkTooltip {
       : firstEl;
   }
 
-  private unmount() {
-    if (!this.popper) {
-      throw new Error('no tippy');
+  private unmount(forced = false) {
+    if (!this.popper || !this.submenus) {
+      throw new Error('unmount failed');
     }
+
+    if (!forced && this.submenus.comment.isDisplayed) {
+      return;
+    }
+
     this.options.onBeforeUnmount();
+
+    for (const submenu of Object.values(this.submenus)) {
+      submenu.destroy();
+    }
+
     this.popper.destroy();
     this.popper = undefined;
     this.rootEl.remove();
-    this.submenuRoots = undefined;
+    this.submenus = undefined;
     this.options.relatedEls.forEach((el) =>
       el.classList.remove(MARK_HOVER_CLASS_NAME),
     );
@@ -87,18 +109,30 @@ export default class MarkTooltip {
     this.options.onUnmounted();
   }
 
-  private handleClick = async (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
+  private handleColorPicked = async (color: Colors) => {
     const { id, quote } = this.options;
 
-    if (target.dataset.webClipperColor) {
-      await this.options.onUpdate(id, {
-        ...quote,
-        color: target.dataset.webClipperColor as Colors,
-      });
-      return this.unmount();
-    }
+    await this.options.onUpdate(id, {
+      ...quote,
+      color,
+    });
 
+    this.unmount();
+  };
+
+  private handleComment = async (comment: string) => {
+    const { id, quote } = this.options;
+
+    await this.options.onUpdate(id, {
+      ...quote,
+      comment,
+    });
+
+    this.unmount(true);
+  };
+
+  private handleClick = async (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
     const mainButtonEl = target.matches(`.${BUTTON_CLASS_NAME}`)
       ? target
       : getAncestor(target, `.${BUTTON_CLASS_NAME}`, this.rootEl);
@@ -120,18 +154,28 @@ export default class MarkTooltip {
   };
 
   private toggleSubmenu(type: 'color' | 'comment') {
-    if (!this.submenuRoots) {
-      throw new Error('no submenuRoots');
+    if (!this.submenus) {
+      throw new Error('no submenu');
     }
 
-    const rootEl = this.submenuRoots[type];
-    const display = rootEl.style.display === 'none' ? 'block' : 'none';
-    rootEl.style.display = display;
+    const submenu = this.submenus[type];
+    const buttonEl = this.rootEl.querySelector(
+      `.${BUTTON_CLASS_NAME}[data-type="${type}"]`,
+    )!;
 
-    for (const el of Object.values(this.submenuRoots).filter(
-      (el) => el !== rootEl,
-    )) {
-      el.style.display = 'none';
+    submenu.toggle();
+    buttonEl.classList.toggle(BUTTON_HOVER_CLASS_NAME);
+
+    for (const menu of Object.values(this.submenus)) {
+      if (menu !== submenu) {
+        menu.hide();
+      }
+    }
+
+    for (const el of this.rootEl.querySelectorAll(`.${BUTTON_CLASS_NAME}`)) {
+      if (el !== buttonEl) {
+        el.classList.remove(BUTTON_HOVER_CLASS_NAME);
+      }
     }
   }
 

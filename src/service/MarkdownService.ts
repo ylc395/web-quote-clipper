@@ -136,7 +136,7 @@ export default class MarkdownService {
 
       quotes.push({
         sourceUrl,
-        comment,
+        comment: MarkdownService.unescape(comment),
         color,
         contents,
         createdAt: timestamp,
@@ -164,7 +164,10 @@ export default class MarkdownService {
   }
 
   private static stringifyMetadata(quote: Quote, id: string) {
-    return `{#${id} cite="${quote.sourceUrl}" ${ATTR_PREFIX}-color="${quote.color}"}`;
+    const comment = quote.comment
+      ? ` ${COMMENT_ATTR}="${MarkdownService.escape(quote.comment)}"`
+      : '';
+    return `{#${id} cite="${quote.sourceUrl}" ${ATTR_PREFIX}-color="${quote.color}"${comment}}`;
   }
 
   removeBlockquote(quote: Quote, noteContent: string) {
@@ -225,5 +228,17 @@ export default class MarkdownService {
     }
 
     return timestamp;
+  }
+
+  private static escape(text: string) {
+    return text.replace(/[<>&"'\n]/gim, (i) => {
+      return '&#' + i.charCodeAt(0) + ';';
+    });
+  }
+
+  private static unescape(text: string) {
+    return text.replace(/&#(\d+);/gim, (_, code) =>
+      String.fromCharCode(Number(code)),
+    );
   }
 }
