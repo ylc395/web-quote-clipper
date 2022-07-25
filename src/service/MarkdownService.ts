@@ -24,6 +24,10 @@ interface BlockQuoteMetadata {
   cite: string;
 }
 
+export function generateQuoteId(quote: Quote) {
+  return `quote${quote.createdAt.toString(36)}`;
+}
+
 export default class MarkdownService {
   private readonly renderer: Processor; // ast/md to html
   private readonly transformer: Processor; // ast/md to md
@@ -156,7 +160,7 @@ export default class MarkdownService {
       );
     }
 
-    const quoteId = MarkdownService.generateQuoteId(quote);
+    const quoteId = generateQuoteId(quote);
 
     return `${processedContents.join(
       '\n>\n',
@@ -214,10 +218,6 @@ export default class MarkdownService {
 
   private static toPureText(node: unknown) {
     return toString(node, { includeImageAlt: false });
-  }
-
-  static generateQuoteId(quote: Quote) {
-    return `quote${quote.createdAt.toString(36)}`;
   }
 
   private static getTimestampFromQuoteId(id: string) {

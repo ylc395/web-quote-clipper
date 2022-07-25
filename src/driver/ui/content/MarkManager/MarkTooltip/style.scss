@@ -26,6 +26,11 @@
     &-hover {
       color: #fff;
     }
+
+    & > svg {
+      height: 18px;
+      width: 18px;
+    }
   }
 
   .web-clipper-mark-manager-colors {

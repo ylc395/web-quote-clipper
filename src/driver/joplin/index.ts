@@ -3,7 +3,10 @@ import type { Transformer } from 'unified';
 import type { Quote, Note } from 'model/entity';
 import { storageToken, QuoteDatabase } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import Markdown, { ATTR_PREFIX } from 'service/MarkdownService';
+import Markdown, {
+  ATTR_PREFIX,
+  generateQuoteId,
+} from 'service/MarkdownService';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
@@ -169,7 +172,7 @@ export default class Joplin implements QuoteDatabase {
   }
 
   async putQuote(quote: Quote) {
-    const notes = await this.searchNotes(Markdown.generateQuoteId(quote));
+    const notes = await this.searchNotes(generateQuoteId(quote));
     const note = notes[0];
 
     const newContent = this.md.updateByQuote(note.content, quote);

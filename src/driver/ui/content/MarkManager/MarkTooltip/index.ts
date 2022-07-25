@@ -51,6 +51,7 @@ export default class MarkTooltip {
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS.filter((c) => c !== quote.color),
       comment: quote.comment,
+      isJoplin: Boolean(quote.note),
     });
 
     this.submenus = {
@@ -145,6 +146,9 @@ export default class MarkTooltip {
       case 'delete':
         await this.options.onDelete(this.options.id);
         return this.unmount();
+      case 'jump':
+        this.jump();
+        return this.unmount();
       case 'color':
       case 'comment':
         return this.toggleSubmenu(mainButtonEl.dataset.type);
@@ -152,6 +156,14 @@ export default class MarkTooltip {
         break;
     }
   };
+
+  private jump() {
+    if (this.options.quote.note?.id) {
+      window.open(
+        `joplin://x-callback-url/openNote?id=${this.options.quote.note.id}`,
+      );
+    }
+  }
 
   private toggleSubmenu(type: 'color' | 'comment') {
     if (!this.submenus) {
