@@ -51,10 +51,6 @@
   }
 
   .web-clipper-mark-manager-comment > textarea {
-    all: initial;
-    width: 280px;
-    height: 120px;
-    resize: both;
-    background-color: #fff;
+    @include constants.textarea;
   }
 }

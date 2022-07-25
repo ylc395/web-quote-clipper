@@ -7,6 +7,7 @@ import { setBadgeText } from 'driver/ui/extension/message';
 import { deleteQuote, updateQuote } from 'driver/ui/request';
 import type App from '../App';
 import MarkTooltip from './MarkTooltip';
+import CommentTip from './CommentTip';
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
 import {
   MARK_CLASS_NAME,
@@ -24,6 +25,7 @@ export default class MarkManager {
   private readonly pen = new Mark(document.body);
   private readonly matchedQuotesMap: Record<string, Quote> = {};
   private readonly markTooltipMap: Record<string, MarkTooltip> = {};
+  readonly commentMap: Record<string, CommentTip> = {};
   private readonly domMonitor: DomMonitor;
   private unmatchedQuotes?: Quote[];
   private totalMarkCount = 0;
@@ -86,23 +88,26 @@ export default class MarkManager {
     const relatedMarks = MarkManager.getMarkElsByQuoteId(quoteId);
 
     this.domMonitor.stop();
-    this.markTooltipMap[quoteId] = new MarkTooltip({
-      id: quoteId,
-      quote: this.matchedQuotesMap[quoteId],
-      relatedEls: relatedMarks,
-      targetEl: markEl,
-      onBeforeUnmount: () => {
-        this.domMonitor.stop();
+    this.markTooltipMap[quoteId] = new MarkTooltip(
+      {
+        id: quoteId,
+        quote: this.matchedQuotesMap[quoteId],
+        relatedEls: relatedMarks,
+        targetEl: markEl,
+        onBeforeUnmount: () => {
+          this.domMonitor.stop();
+        },
+        onUnmounted: () => {
+          delete this.markTooltipMap[quoteId];
+          if (this.totalMarkCount > 0) {
+            this.domMonitor.start();
+          }
+        },
+        onDelete: this.deleteQuote,
+        onUpdate: this.updateQuote,
       },
-      onUnmounted: () => {
-        delete this.markTooltipMap[quoteId];
-        if (this.totalMarkCount > 0) {
-          this.domMonitor.start();
-        }
-      },
-      onDelete: this.deleteQuote,
-      onUpdate: this.updateQuote,
-    });
+      this,
+    );
     this.domMonitor.start();
   }
 
@@ -195,6 +200,7 @@ export default class MarkManager {
         document.addEventListener('mouseover', this.handleMouseover);
       }
       this.matchedQuotesMap[quoteId] = quote;
+      this.attachComment(quoteId, quote);
     }
 
     if (range) {
@@ -202,6 +208,26 @@ export default class MarkManager {
     }
 
     return result;
+  }
+
+  private attachComment(quoteId: string, quote: Quote) {
+    if (this.commentMap[quoteId]) {
+      this.commentMap[quoteId].destroy();
+    }
+
+    if (quote.comment) {
+      this.commentMap[quoteId] = new CommentTip({
+        relatedEls: MarkManager.getMarkElsByQuoteId(quoteId),
+        quote,
+        quoteId,
+        onUpdate: (comment: string) => {
+          this.updateQuote(quoteId, { comment });
+        },
+        onDestroy: () => {
+          delete this.commentMap[quoteId];
+        },
+      });
+    }
   }
 
   private removeQuoteById = (id: string) => {
@@ -220,6 +246,11 @@ export default class MarkManager {
     this.totalMarkCount -= 1;
     const relatedEls = MarkManager.getMarkElsByQuoteId(id);
     this.domMonitor.stop();
+
+    if (this.commentMap[id]) {
+      this.commentMap[id].destroy();
+    }
+
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
     if (this.totalMarkCount > 0) {
@@ -231,17 +262,24 @@ export default class MarkManager {
     return quote;
   };
 
-  private updateQuote = async (quoteId: string, newQuote: Quote) => {
+  private updateQuote = async (quoteId: string, quote: Partial<Quote>) => {
+    const oldQuote = this.matchedQuotesMap[quoteId];
+    const newQuote = { ...oldQuote, ...quote };
+
     await updateQuote(newQuote);
 
-    const oldQuote = this.matchedQuotesMap[quoteId];
+    this.matchedQuotesMap[quoteId] = newQuote;
+    this.domMonitor.stop();
+
     if (oldQuote.color !== newQuote.color) {
       MarkManager.getMarkElsByQuoteId(quoteId).forEach((el) => {
         el.classList.remove(`${MARK_CLASS_NAME}-${oldQuote.color}`);
         el.classList.add(`${MARK_CLASS_NAME}-${newQuote.color}`);
       });
     }
-    this.matchedQuotesMap[quoteId] = newQuote;
+
+    this.attachComment(quoteId, newQuote);
+    this.domMonitor.start();
   };
 
   private deleteQuote = async (quoteId: string) => {
@@ -251,7 +289,9 @@ export default class MarkManager {
 
   private static getMarkElsByQuoteId(id: string) {
     return Array.from(
-      document.querySelectorAll(`[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`),
+      document.querySelectorAll(
+        `.${MARK_CLASS_NAME}[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`,
+      ),
     ) as HTMLElement[];
   }
 }

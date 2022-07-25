@@ -5,3 +5,16 @@ $mark-colors: (
   'green': #8ec573,
   'purple': #be89d5,
 );
+
+@mixin textarea {
+  all: initial;
+  width: 280px;
+  height: 120px;
+  resize: both;
+  border: 1px solid #ababab;
+  padding: 0.5em 0.8em;
+  border-radius: 5px;
+  font-size: 15px;
+  background-color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+}

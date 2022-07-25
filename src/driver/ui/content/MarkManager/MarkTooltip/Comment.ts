@@ -1,14 +1,18 @@
 export default class Comment {
   constructor(
-    private readonly el: HTMLTextAreaElement,
+    private readonly el: HTMLElement,
     private readonly handleComment: (text: string) => void,
   ) {
     this.el.addEventListener('keydown', this.handleKeydown);
   }
 
+  private get textarea() {
+    return this.el.querySelector('textarea')!;
+  }
+
   private show() {
     this.el.style.display = 'block';
-    this.el.focus();
+    this.textarea.focus();
   }
 
   hide() {
@@ -28,11 +32,13 @@ export default class Comment {
   }
 
   private handleKeydown = (e: KeyboardEvent) => {
-    const target = e.target as HTMLTextAreaElement;
+    if (e.target !== this.textarea) {
+      return;
+    }
 
     switch (e.code) {
       case 'Enter':
-        (e.ctrlKey || e.metaKey) && this.handleComment(target.value);
+        (e.ctrlKey || e.metaKey) && this.handleComment(this.textarea.value);
         break;
       case 'Escape':
         this.hide();

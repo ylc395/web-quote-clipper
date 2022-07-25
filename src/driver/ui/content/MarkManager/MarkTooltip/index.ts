@@ -5,6 +5,7 @@ import { getAncestor } from '../../utils';
 import './style.scss';
 import Comment from './Comment';
 import ColorPicker from './ColorPicker';
+import type MarkManager from '../index';
 
 const TOOLTIP_CLASS_NAME = 'web-clipper-mark-manager-tooltip';
 const BUTTON_CLASS_NAME = 'web-clipper-mark-manager-main-button';
@@ -28,6 +29,7 @@ export default class MarkTooltip {
   private rootEl;
   private popper?: Instance;
   private baseEl?: HTMLElement;
+  private readonly markManager: MarkManager;
 
   private submenus?: {
     comment: Comment;
@@ -35,7 +37,8 @@ export default class MarkTooltip {
   };
 
   private readonly options: Options;
-  constructor(options: Options) {
+  constructor(options: Options, markManager: MarkManager) {
+    this.markManager = markManager;
     this.options = options;
     this.rootEl = document.createElement('div');
     this.rootEl.classList.add(TOOLTIP_CLASS_NAME);
@@ -142,9 +145,11 @@ export default class MarkTooltip {
       return;
     }
 
+    const { id } = this.options;
+
     switch (mainButtonEl.dataset.type) {
       case 'delete':
-        await this.options.onDelete(this.options.id);
+        await this.options.onDelete(id);
         return this.unmount();
       case 'jump':
         this.jump();
@@ -168,6 +173,14 @@ export default class MarkTooltip {
   private toggleSubmenu(type: 'color' | 'comment') {
     if (!this.submenus) {
       throw new Error('no submenu');
+    }
+
+    const { id } = this.options;
+
+    if (type === 'comment' && this.markManager.commentMap[id]) {
+      this.markManager.commentMap[id].toggle();
+      this.unmount();
+      return;
     }
 
     const submenu = this.submenus[type];

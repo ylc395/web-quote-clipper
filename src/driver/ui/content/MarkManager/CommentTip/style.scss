@@ -1,0 +1,22 @@
+@use '../../constants';
+
+.web-clipper-comment-container {
+  position: relative;
+}
+
+.web-clipper-comment-button {
+  all: initial;
+  display: flex;
+  cursor: pointer;
+}
+
+.web-clipper-comment-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+
+  & > textarea {
+    @include constants.textarea;
+  }
+}
