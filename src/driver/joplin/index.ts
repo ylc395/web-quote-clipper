@@ -168,7 +168,20 @@ export default class Joplin implements QuoteDatabase {
     });
   }
 
-  async putQuote(quote: Quote) {}
+  async putQuote(quote: Quote) {
+    const notes = await this.searchNotes(Markdown.generateQuoteId(quote));
+    const note = notes[0];
+
+    const newContent = this.md.updateByQuote(note.content, quote);
+
+    if (!newContent) {
+      throw new Error('put quote failed');
+    }
+
+    await this.updateNoteContent(note.id, newContent);
+    return quote;
+  }
+
   async postQuote(quote: Quote) {
     const noteId = await this.config.get('targetId');
     // set note body

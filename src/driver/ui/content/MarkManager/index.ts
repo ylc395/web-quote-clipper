@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 import type { Quote } from 'model/entity';
 import { getQuotes } from 'driver/ui/request';
 import { setBadgeText } from 'driver/ui/extension/message';
+import { deleteQuote, updateQuote } from 'driver/ui/request';
 import type App from '../App';
 import MarkTooltip from './MarkTooltip';
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
@@ -86,6 +87,7 @@ export default class MarkManager {
 
     this.domMonitor.stop();
     this.markTooltipMap[quoteId] = new MarkTooltip({
+      id: quoteId,
       quote: this.matchedQuotesMap[quoteId],
       relatedEls: relatedMarks,
       targetEl: markEl,
@@ -98,9 +100,8 @@ export default class MarkManager {
           this.domMonitor.start();
         }
       },
-      onDelete: () => {
-        this.removeQuoteById(quoteId, relatedMarks);
-      },
+      onDelete: this.deleteQuote,
+      onUpdate: this.updateQuote,
     });
     this.domMonitor.start();
   }
@@ -150,7 +151,7 @@ export default class MarkManager {
 
   async highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
-    const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color.toLocaleLowerCase()}`;
+    const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
 
     const result = await new Promise<boolean>((resolve) => {
       if (range) {
@@ -173,13 +174,12 @@ export default class MarkManager {
             ignoreJoiners: true,
             ignorePunctuation: ['\n'],
             className,
+            exclude: [`.${MARK_CLASS_NAME}`],
             each: (el: HTMLElement) => {
               el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
             },
             filter: (textNode) => {
-              return !textNode.parentElement?.classList.contains(
-                MARK_CLASS_NAME,
-              );
+              return Boolean(textNode.parentElement?.offsetParent);
             },
             done: (count) => {
               resolve(count > 0);
@@ -204,7 +204,7 @@ export default class MarkManager {
     return result;
   }
 
-  private removeQuoteById = (id: string, relatedEls?: HTMLElement[]) => {
+  private removeQuoteById = (id: string) => {
     const quote = this.matchedQuotesMap[id];
 
     if (!quote) {
@@ -218,7 +218,7 @@ export default class MarkManager {
     }
 
     this.totalMarkCount -= 1;
-    relatedEls = relatedEls || MarkManager.getMarkElsByQuoteId(id);
+    const relatedEls = MarkManager.getMarkElsByQuoteId(id);
     this.domMonitor.stop();
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
@@ -230,6 +230,24 @@ export default class MarkManager {
 
     return quote;
   };
+
+  private updateQuote = async (quoteId: string, newQuote: Quote) => {
+    await updateQuote(newQuote);
+
+    const oldQuote = this.matchedQuotesMap[quoteId];
+    if (oldQuote.color !== newQuote.color) {
+      MarkManager.getMarkElsByQuoteId(quoteId).forEach((el) => {
+        el.classList.remove(`${MARK_CLASS_NAME}-${oldQuote.color}`);
+        el.classList.add(`${MARK_CLASS_NAME}-${newQuote.color}`);
+      });
+    }
+    this.matchedQuotesMap[quoteId] = newQuote;
+  };
+
+  private async deleteQuote(quoteId: string) {
+    await deleteQuote(this.matchedQuotesMap[quoteId]);
+    this.removeQuoteById(quoteId);
+  }
 
   private static getMarkElsByQuoteId(id: string) {
     return Array.from(

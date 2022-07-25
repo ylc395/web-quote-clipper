@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
-import { Colors } from 'model/entity';
+import { Colors, COLORS } from 'model/entity';
 import { postQuote } from 'driver/ui/request';
 import {
   generateQuote,
@@ -13,13 +13,6 @@ import type App from '../App';
 import './style.scss';
 
 const ROOT_ID = 'web-clipper-tooltip-container';
-const COLORS = [
-  Colors.Yellow,
-  Colors.Green,
-  Colors.Blue,
-  Colors.Pink,
-  Colors.Purple,
-];
 
 export enum TooltipEvents {
   BeforeMount = 'BEFORE_MOUNT',
@@ -91,7 +84,7 @@ export default class HighlightTooltip extends EventEmitter {
       !this.app.markManager.isAvailableRange(range) || !range.toString().trim();
 
     this.rootEl.innerHTML = renderTooltip({
-      colors: COLORS.map((s) => s.toLowerCase()),
+      colors: COLORS,
       disabled: tooltipDisabled,
     });
     this.rootEl.style.left = `${x + (reversed ? -10 : 10)}px`;

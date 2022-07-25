@@ -8,6 +8,7 @@ import type {
   Blockquote,
   BlockContent,
   DefinitionContent,
+  Paragraph,
 } from 'mdast';
 import { visit } from 'unist-util-visit';
 import { toString } from 'mdast-util-to-string';
@@ -53,16 +54,12 @@ export default class MarkdownService {
     return MarkdownService.toPureText(root);
   }
 
-  private static parseBlockquote(node: unknown):
+  private static parseBlockquote(node: Blockquote):
     | {
         metadata: BlockQuoteMetadata;
         contentNodes: (BlockContent | DefinitionContent)[];
       }
     | undefined {
-    if (!MarkdownService.isBlockquote(node)) {
-      return;
-    }
-
     const lastChild = node.children[node.children.length - 1];
 
     if (
@@ -82,10 +79,41 @@ export default class MarkdownService {
     return { metadata, contentNodes: node.children.slice(0, -1) };
   }
 
+  updateByQuote(md: string, quote: Quote) {
+    const root = this.parser.parse(md);
+    const { getResult, finder } = this.createBlockquoteFinder(quote);
+
+    visit(root, finder);
+
+    const { range, metadata, blockquoteNode } = getResult();
+
+    if (blockquoteNode && range && metadata) {
+      const lastNode: Paragraph = {
+        type: 'paragraph',
+        children: [
+          {
+            type: 'text',
+            value: MarkdownService.stringifyMetadata(quote, metadata.id),
+          },
+        ],
+      };
+
+      blockquoteNode.children[blockquoteNode.children.length - 1] = lastNode;
+
+      return `${md.slice(0, range[0])}${
+        this.transformer.stringify(blockquoteNode) as string
+      }${md.slice(range[1])}`;
+    }
+  }
+
   extractQuotes(md: string, contentType: 'pure' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     visit(root, (node) => {
+      if (!MarkdownService.isBlockquote(node)) {
+        return;
+      }
+
       const blockquote = MarkdownService.parseBlockquote(node);
 
       if (!blockquote) {
@@ -127,7 +155,7 @@ export default class MarkdownService {
     const processedContents: string[] = [];
 
     for (const content of quote.contents) {
-      const transformed = await this.transform(content);
+      const transformed = (await this.transformer.process(content)).toString();
       processedContents.push(
         `> ${transformed.trim().replaceAll('\n', '\n> ')}`,
       );
@@ -135,17 +163,33 @@ export default class MarkdownService {
 
     const quoteId = MarkdownService.generateQuoteId(quote);
 
-    return `${processedContents.join('\n>\n')}\n>\n> {#${quoteId} cite="${
-      quote.sourceUrl
-    }" ${ATTR_PREFIX}-color="${quote.color}"}`;
+    return `${processedContents.join(
+      '\n>\n',
+    )}\n>\n> ${MarkdownService.stringifyMetadata(quote, quoteId)}`;
+  }
+
+  private static stringifyMetadata(quote: Quote, id: string) {
+    return `{#${id} cite="${quote.sourceUrl}" ${ATTR_PREFIX}-color="${quote.color}"}`;
   }
 
   removeBlockquote(quote: Quote, noteContent: string) {
     const root = this.parser.parse(noteContent);
-    let range: [number, number] | null = null;
+    const { getResult, finder } = this.createBlockquoteFinder(quote);
 
-    visit(root, (node) => {
-      if (range) {
+    visit(root, finder);
+    const { range } = getResult();
+
+    if (range) {
+      return `${noteContent.slice(0, range[0])}${noteContent.slice(range[1])}`;
+    }
+  }
+
+  private createBlockquoteFinder(quote: Quote) {
+    let range: [number, number] | null = null;
+    let targetMetadata: BlockQuoteMetadata | null = null;
+    let blockquoteNode: Blockquote | null = null;
+    const finder: Parameters<typeof visit>[1] = (node) => {
+      if (range || !MarkdownService.isBlockquote(node)) {
         return;
       }
 
@@ -162,16 +206,15 @@ export default class MarkdownService {
 
       if (isEqual) {
         range = [node.position!.start.offset!, node.position!.end.offset!];
+        targetMetadata = metadata;
+        blockquoteNode = node;
       }
-    });
+    };
 
-    if (range) {
-      return `${noteContent.slice(0, range[0])}${noteContent.slice(range[1])}`;
-    }
-  }
-
-  private async transform(md: string) {
-    return (await this.transformer.process(md)).toString();
+    return {
+      getResult: () => ({ range, metadata: targetMetadata, blockquoteNode }),
+      finder,
+    };
   }
 
   private static isBlockquote(node: any): node is Blockquote {
@@ -186,15 +229,11 @@ export default class MarkdownService {
     return Array.isArray(node.children);
   }
 
-  static imgElToText(el: HTMLImageElement) {
-    return `![${el.alt}](${el.src}${el.title ? ` "${el.title}"` : ''})`;
-  }
-
   private static toPureText(node: unknown) {
     return toString(node, { includeImageAlt: false });
   }
 
-  private static generateQuoteId(quote: Quote) {
+  static generateQuoteId(quote: Quote) {
     return `quote${quote.createdAt.toString(36)}`;
   }
 

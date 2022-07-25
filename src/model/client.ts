@@ -8,7 +8,7 @@ export interface FetchOptions {
 }
 
 export interface RequestClient {
-  putQuote: (quote: Quote) => Promise<void>; // update
+  updateQuote: (quote: Quote) => Promise<Quote>; // update
   postQuote: (quote: Quote) => Promise<Quote>; // create
   getQuotes: (options: FetchOptions) => Promise<Quote[]>;
   deleteQuote: (quote: Quote) => Promise<void>;

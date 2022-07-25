@@ -1,10 +1,18 @@
 export enum Colors {
-  Yellow = 'YELLOW',
-  Green = 'GREEN',
-  Blue = 'BLUE',
-  Pink = 'PINK',
-  Purple = 'PURPLE',
+  Yellow = 'yellow',
+  Green = 'green',
+  Blue = 'blue',
+  Pink = 'pink',
+  Purple = 'purple',
 }
+
+export const COLORS = [
+  Colors.Yellow,
+  Colors.Green,
+  Colors.Blue,
+  Colors.Pink,
+  Colors.Purple,
+];
 
 export interface Quote {
   sourceUrl: string;

@@ -65,7 +65,9 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
     return quote;
   }
 
-  async putQuote(quote: Quote) {}
+  async putQuote(quote: Quote) {
+    return quote;
+  }
 
   async deleteQuote(quote: Quote) {
     const quotes = await this.getAllQuotes('md');

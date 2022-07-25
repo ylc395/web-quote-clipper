@@ -42,10 +42,9 @@ export default class QuoteService {
     this.db = container.resolve(databaseToken);
   }
 
-  async updateQuote(quote: Required<Quote>) {
-    const comment = quote.comment.replace(/\n/g, '\n>\n');
-    quote.comment = comment;
-    await this.db!.putQuote(quote);
+  async updateQuote(quote: Quote) {
+    const newQuote = await this.db!.putQuote(quote);
+    return newQuote;
   }
 
   async deleteQuote(quote: Quote) {

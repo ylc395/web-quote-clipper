@@ -24,13 +24,20 @@ export const postQuote: RequestClient['postQuote'] = (quote: Quote) => {
 export const getQuotes: RequestClient['getQuotes'] = (
   options: FetchOptions,
 ) => {
-  return postMessage<Required<Quote>[]>({
+  return postMessage<Quote[]>({
     event: MessageEvents.RequestQuotes,
     payload: options,
   });
 };
 
-export const putQuote: RequestClient['putQuote'] = async (quote: Quote) => {};
+export const updateQuote: RequestClient['updateQuote'] = async (
+  quote: Quote,
+) => {
+  return postMessage<Quote>({
+    event: MessageEvents.UpdateQuote,
+    payload: quote,
+  });
+};
 
 export const deleteQuote: RequestClient['deleteQuote'] = async (
   quote: Quote,

@@ -3,6 +3,7 @@ export type Message =
   | CaptureQuoteMessage
   | RequestQuotesMessage
   | DeleteQuotesMessage
+  | PutQuotesMessage
   | DataUrlMessage;
 
 export interface Response<T = unknown> {
@@ -13,6 +14,7 @@ export interface Response<T = unknown> {
 export enum MessageEvents {
   CreateQuote = 'CREATE_QUOTE',
   RequestQuotes = 'REQUEST',
+  UpdateQuote = 'UPDATE_QUOTE',
   DeleteQuote = 'DELETE_QUOTE',
   GetDataUrl = 'GET_DATA_URL',
 }
@@ -32,6 +34,11 @@ interface RequestQuotesMessage {
 
 interface DeleteQuotesMessage {
   event: MessageEvents.DeleteQuote;
+  payload: Quote;
+}
+
+interface PutQuotesMessage {
+  event: MessageEvents.UpdateQuote;
   payload: Quote;
 }
 

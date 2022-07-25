@@ -1,0 +1,49 @@
+@use '../../constants';
+
+.web-clipper-mark-manager-tooltip {
+  display: flex;
+  flex-direction: column-reverse;
+
+  .web-clipper-mark-manager-buttons {
+    display: flex;
+    background-color: rgba(56, 64, 73, 0.8);
+    border-radius: 6px;
+    padding: 0 8px;
+  }
+
+  .web-clipper-mark-manager-main-button {
+    all: initial;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    color: #d0d7de;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  .web-clipper-mark-manager-colors {
+    display: flex;
+  }
+
+  button[data-web-clipper-color] {
+    all: initial;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+
+    &[disabled] {
+      opacity: 0.7;
+    }
+  }
+
+  @each $key, $value in constants.$mark-colors {
+    button[data-web-clipper-color='#{$key}'] {
+      background-color: $value;
+    }
+  }
+}

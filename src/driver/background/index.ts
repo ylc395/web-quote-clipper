@@ -24,6 +24,9 @@ bootstrap(({ quoteService }) => {
         case MessageEvents.DeleteQuote:
           quoteService.deleteQuote(message.payload).then(success, fail);
           return true;
+        case MessageEvents.UpdateQuote:
+          quoteService.updateQuote(message.payload).then(success, fail);
+          return true;
         default:
           return;
       }
