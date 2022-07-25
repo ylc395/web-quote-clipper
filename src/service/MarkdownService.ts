@@ -27,9 +27,10 @@ interface BlockQuoteMetadata {
 }
 
 export default class MarkdownService {
-  private readonly renderer: Processor;
-  private readonly transformer: Processor;
+  private readonly renderer: Processor; // ast/md to html
+  private readonly transformer: Processor; // ast/md to md
   private readonly parser = unified().use(remarkParse);
+  readonly visit = visit;
   constructor(options?: {
     renderPlugins?: PluggableList;
     transformPlugins?: PluggableList;
@@ -83,7 +84,7 @@ export default class MarkdownService {
     const root = this.parser.parse(md);
     const { getResult, finder } = this.createBlockquoteFinder(quote);
 
-    visit(root, finder);
+    this.visit(root, 'blockquote', finder);
 
     const { range, metadata, blockquoteNode } = getResult();
 
@@ -109,11 +110,7 @@ export default class MarkdownService {
   extractQuotes(md: string, contentType: 'pure' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
-    visit(root, (node) => {
-      if (!MarkdownService.isBlockquote(node)) {
-        return;
-      }
-
+    this.visit(root, 'blockquote', (node) => {
       const blockquote = MarkdownService.parseBlockquote(node);
 
       if (!blockquote) {
@@ -176,7 +173,7 @@ export default class MarkdownService {
     const root = this.parser.parse(noteContent);
     const { getResult, finder } = this.createBlockquoteFinder(quote);
 
-    visit(root, finder);
+    this.visit(root, 'blockquote', finder);
     const { range } = getResult();
 
     if (range) {
@@ -188,8 +185,8 @@ export default class MarkdownService {
     let range: [number, number] | null = null;
     let targetMetadata: BlockQuoteMetadata | null = null;
     let blockquoteNode: Blockquote | null = null;
-    const finder: Parameters<typeof visit>[1] = (node) => {
-      if (range || !MarkdownService.isBlockquote(node)) {
+    const finder = (node: Blockquote) => {
+      if (range) {
         return;
       }
 
@@ -215,18 +212,6 @@ export default class MarkdownService {
       getResult: () => ({ range, metadata: targetMetadata, blockquoteNode }),
       finder,
     };
-  }
-
-  private static isBlockquote(node: any): node is Blockquote {
-    return node.type === 'blockquote';
-  }
-
-  static isImageNode(node: any): node is Image {
-    return node.type === 'image';
-  }
-
-  static isParent(node: any): node is Parent {
-    return Array.isArray(node.children);
   }
 
   private static toPureText(node: unknown) {

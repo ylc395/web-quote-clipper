@@ -244,10 +244,10 @@ export default class MarkManager {
     this.matchedQuotesMap[quoteId] = newQuote;
   };
 
-  private async deleteQuote(quoteId: string) {
+  private deleteQuote = async (quoteId: string) => {
     await deleteQuote(this.matchedQuotesMap[quoteId]);
     this.removeQuoteById(quoteId);
-  }
+  };
 
   private static getMarkElsByQuoteId(id: string) {
     return Array.from(

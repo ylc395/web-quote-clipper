@@ -187,7 +187,9 @@ export default class Joplin implements QuoteDatabase {
     // set note body
     const note = await this.getNoteById(noteId);
     const blockquote = await this.md.generateBlockquote(quote);
-    const noteContent = `${note.content}\n\n${blockquote}`;
+    const noteContent = `${note.content}${
+      note.content.endsWith('\n') ? '\n' : '\n\n'
+    }${blockquote}`;
 
     await this.updateNoteContent(noteId, noteContent);
 
@@ -267,39 +269,29 @@ export default class Joplin implements QuoteDatabase {
   // alt is url in quote markdown text.
   //  see `generateQuote` in capture,js
   private replaceSrcWithAlt: Transformer = (node) => {
-    const replacer = async (_node: typeof node) => {
-      if (Markdown.isImageNode(_node)) {
-        _node.url = _node.alt || _node.url;
-      }
+    this.md.visit(node, 'image', (_node: { url: string; alt: string }) => {
+      _node.url = _node.alt || _node.url;
+    });
 
-      if (Markdown.isParent(_node)) {
-        for (const child of _node.children) {
-          replacer(child);
-        }
-      }
-    };
-
-    replacer(node);
     return node;
   };
 
   private replaceImageWithResource: Transformer = async (node) => {
-    const replacer = async (_node: typeof node) => {
-      if (
-        Markdown.isImageNode(_node) &&
-        !JOPLIN_RESOURCE_URL_REGEX.test(_node.url)
-      ) {
-        _node.url = await this.postResource(_node.url);
+    const tasks: Promise<void>[] = [];
+    this.md.visit(node, 'image', (_node: { url: string }) => {
+      if (JOPLIN_RESOURCE_URL_REGEX.test(_node.url)) {
+        return;
       }
 
-      if (Markdown.isParent(_node)) {
-        for (const child of _node.children) {
-          await replacer(child);
-        }
-      }
-    };
+      tasks.push(
+        this.postResource(_node.url).then((resourceUrl) => {
+          _node.url = resourceUrl;
+          return;
+        }),
+      );
+    });
 
-    await replacer(node);
+    await Promise.all(tasks);
     return node;
   };
 
