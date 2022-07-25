@@ -66,6 +66,13 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   }
 
   async putQuote(quote: Quote) {
+    const quotes = await this.getAllQuotes('md');
+    const index = quotes.findIndex(
+      ({ createdAt }) => quote.createdAt === createdAt,
+    );
+    quotes[index] = quote;
+    await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
+
     return quote;
   }
 

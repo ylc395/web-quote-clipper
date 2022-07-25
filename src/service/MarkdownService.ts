@@ -3,14 +3,12 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import remarkHtml from 'remark-html';
 import type {
-  Image,
-  Parent,
   Blockquote,
   BlockContent,
   DefinitionContent,
   Paragraph,
 } from 'mdast';
-import { visit } from 'unist-util-visit';
+import { visit, EXIT } from 'unist-util-visit';
 import { toString } from 'mdast-util-to-string';
 import parseAttr from 'md-attr-parser';
 import type { Quote, Colors } from 'model/entity';
@@ -186,10 +184,6 @@ export default class MarkdownService {
     let targetMetadata: BlockQuoteMetadata | null = null;
     let blockquoteNode: Blockquote | null = null;
     const finder = (node: Blockquote) => {
-      if (range) {
-        return;
-      }
-
       const blockquote = MarkdownService.parseBlockquote(node);
 
       if (!blockquote) {
@@ -205,6 +199,7 @@ export default class MarkdownService {
         range = [node.position!.start.offset!, node.position!.end.offset!];
         targetMetadata = metadata;
         blockquoteNode = node;
+        return EXIT;
       }
     };
 
