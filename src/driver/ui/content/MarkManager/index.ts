@@ -81,7 +81,7 @@ export default class MarkManager {
       throw new Error('no quote');
     }
 
-    if (this.markTooltipMap[quoteId]) {
+    if (this.markTooltipMap[quoteId] || this.commentMap[quoteId]?.isExpanded) {
       return;
     }
 
@@ -212,7 +212,8 @@ export default class MarkManager {
 
   private attachComment(quoteId: string, quote: Quote) {
     if (this.commentMap[quoteId]) {
-      this.commentMap[quoteId].destroy();
+      this.commentMap[quoteId].updateQuote(quote);
+      return;
     }
 
     if (quote.comment) {

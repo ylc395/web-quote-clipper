@@ -47,26 +47,54 @@ export default class CommentTip {
     this.rootEl.dataset.quoteId = this.option.quoteId;
     this.textarea.addEventListener('keydown', this.handleKeydown);
     this.button.addEventListener('click', this.toggle);
+    this.rootEl.addEventListener('mouseenter', this.expand);
+    this.rootEl.addEventListener('mouseleave', this.collapse);
+  }
+
+  get isExpanded() {
+    return this.inputArea.style.display === 'block';
   }
 
   toggle = () => {
-    const display = this.inputArea.style.display === 'block' ? 'none' : 'block';
+    if (this.isExpanded) {
+      this.collapse(true);
+    } else {
+      this.expand(true);
+    }
+  };
 
-    this.inputArea.style.display = display;
-    this.button.classList.toggle(ACTIVE_BUTTON_CLASS_NAME);
+  private expand = (e: true | MouseEvent) => {
+    const needFocus = e === true || e.type === 'click';
 
-    if (display === 'block') {
+    this.inputArea.style.display = 'block';
+    this.button.classList.add(ACTIVE_BUTTON_CLASS_NAME);
+
+    if (needFocus) {
       this.textarea.focus();
     }
+  };
+
+  private collapse = (e: true | MouseEvent) => {
+    const forced = e === true || e.type === 'keydown' || e.type === 'click';
+
+    if (!forced && document.activeElement === this.textarea) {
+      return;
+    }
+
+    this.inputArea.style.display = 'none';
+    this.button.classList.remove(ACTIVE_BUTTON_CLASS_NAME);
   };
 
   private handleKeydown = (e: KeyboardEvent) => {
     switch (e.code) {
       case 'Enter':
-        (e.ctrlKey || e.metaKey) && this.option.onUpdate(this.textarea.value);
-        break;
+        (e.ctrlKey || e.metaKey) &&
+          this.textarea.value !== this.option.quote.comment &&
+          this.option.onUpdate(this.textarea.value);
+
+        return this.collapse(true);
       case 'Escape':
-        this.toggle();
+        this.collapse(true);
         break;
       default:
         break;
@@ -101,6 +129,11 @@ export default class CommentTip {
       rootEl.style.zIndex = `${idIndexes[id]}`;
     }
   }, 1000);
+
+  updateQuote(quote: Quote) {
+    this.option.quote = quote;
+    this.textarea.textContent = quote.comment;
+  }
 
   destroy() {
     this.popper!.destroy();
