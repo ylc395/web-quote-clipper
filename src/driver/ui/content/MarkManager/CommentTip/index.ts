@@ -14,6 +14,7 @@ export interface Option {
 }
 
 const BUTTON_CLASS_NAME = 'web-clipper-comment-button';
+const ACTIVE_BUTTON_CLASS_NAME = 'web-clipper-comment-button-active';
 const INPUT_CLASS_NAME = 'web-clipper-comment-input';
 const CONTAINER_CLASS_NAME = 'web-clipper-comment-container';
 
@@ -40,7 +41,7 @@ export default class CommentTip {
     document.body.appendChild(this.rootEl);
     this.popper = createPopper(baseEl, this.rootEl, {
       placement: 'left-start',
-      modifiers: [{ name: 'offset', options: { offset: [0, 20] } }],
+      modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
     });
 
     this.rootEl.dataset.quoteId = this.option.quoteId;
@@ -52,6 +53,7 @@ export default class CommentTip {
     const display = this.inputArea.style.display === 'block' ? 'none' : 'block';
 
     this.inputArea.style.display = display;
+    this.button.classList.toggle(ACTIVE_BUTTON_CLASS_NAME);
 
     if (display === 'block') {
       this.textarea.focus();

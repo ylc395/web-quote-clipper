@@ -1,24 +1,42 @@
 @use '../constants';
 
+$item-size: 20px;
+$item-margin: 4px;
+
 #web-clipper-tooltip-container {
   position: fixed;
+  display: flex;
+  background-color: constants.$tooltip-color;
+  padding: 6px 8px;
+  border-radius: 8px;
 
   &.web-clipper-tooltip-container-reversed {
     transform: translate(-100%, -100%);
+  }
+
+  & > svg {
+    width: $item-size;
+    height: $item-size;
+    color: #fff;
+    margin-right: $item-margin;
   }
 
   .web-clipper-buttons {
     display: flex;
   }
 
-  * {
-    all: initial;
-  }
-
   button[data-web-clipper-color] {
-    width: 24px;
-    height: 24px;
+    all: initial;
+    display: flex;
+    width: $item-size;
+    height: $item-size;
+    border-radius: 50%;
     cursor: pointer;
+    margin-right: $item-margin;
+
+    &:last-child {
+      margin-right: 0;
+    }
 
     &[disabled] {
       opacity: 0.7;

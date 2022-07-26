@@ -6,6 +6,8 @@ $mark-colors: (
   'purple': #be89d5,
 );
 
+$tooltip-color: rgba(56, 64, 73, 0.8);
+
 @mixin textarea {
   all: initial;
   width: 280px;

@@ -18,7 +18,7 @@ export default class ColorPicker {
   };
 
   private show() {
-    this.el.style.display = 'block';
+    this.el.style.display = 'flex';
   }
 
   toggle() {

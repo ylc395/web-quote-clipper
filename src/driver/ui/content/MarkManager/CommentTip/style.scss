@@ -8,6 +8,11 @@
   all: initial;
   display: flex;
   cursor: pointer;
+  color: #8c959f5e;
+
+  &-active {
+    color: #8c959f;
+  }
 }
 
 .web-clipper-comment-input {
