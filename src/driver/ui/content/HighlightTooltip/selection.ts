@@ -10,6 +10,7 @@ import {
   isCodeElement,
   getLastChildDeep,
   getAncestor,
+  isVisible,
 } from '../utils';
 
 export function getSelectionRange() {
@@ -53,20 +54,35 @@ export const getSelectionEndPosition = (
 
   if (isElement(range.endContainer) && range.endOffset === 0) {
     const walker = document.createTreeWalker(range.commonAncestorContainer);
-    let currentNode = walker.currentNode;
-    let textNode: Text | null = null;
+    let currentNode: Node | null = walker.currentNode;
+    let textNode: Text | undefined | null = null;
 
     while (currentNode) {
-      const nextNode = walker.nextNode();
-      if (nextNode === range.endContainer || !nextNode) {
+      if (currentNode === range.endContainer) {
         break;
       }
 
-      currentNode = nextNode;
+      if (
+        range.startContainer.compareDocumentPosition(currentNode) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+      ) {
+        if (isElement(currentNode) && !isVisible(currentNode)) {
+          currentNode = walker.nextSibling();
 
-      if (isTextNode(currentNode) && currentNode.textContent?.trim()) {
-        textNode = currentNode;
+          if (!currentNode) {
+            walker.parentNode();
+            currentNode = walker.nextSibling();
+          }
+
+          continue;
+        }
+
+        if (isTextNode(currentNode) && currentNode.textContent?.trim()) {
+          textNode = currentNode;
+        }
       }
+
+      currentNode = walker.nextNode();
     }
 
     if (textNode) {
@@ -119,29 +135,36 @@ export async function generateQuote(
 
   const treeWalker = document.createTreeWalker(range.commonAncestorContainer);
   const contents: string[] = [];
-  let hasStarted = false;
   let lastText = '';
   let lastAnchor: { root: HTMLAnchorElement; lastChild: Node } | null = null;
   let lastCode: { lastChild: Node; isBlock: boolean } | null = null;
+  let currentNode: Node | null = treeWalker.currentNode;
 
   // todo: handle strong,em,del...
-  for (
-    let currentNode: Node | null = treeWalker.currentNode;
-    currentNode;
-    currentNode = treeWalker.nextNode()
-  ) {
+  while (currentNode) {
     const isStartNode = currentNode === startContainer;
     const isEndNode = currentNode === endContainer;
 
-    if (!hasStarted && isStartNode) {
-      hasStarted = true;
-    }
-
-    if (!hasStarted) {
+    if (
+      range.startContainer.compareDocumentPosition(currentNode) &
+      Node.DOCUMENT_POSITION_PRECEDING
+    ) {
+      currentNode = treeWalker.nextNode();
       continue;
     }
 
     if (isElement(currentNode)) {
+      if (!isVisible(currentNode)) {
+        currentNode = treeWalker.nextSibling();
+
+        if (!currentNode) {
+          treeWalker.parentNode();
+          currentNode = treeWalker.nextSibling();
+        }
+
+        continue;
+      }
+
       if (isBlockElement(currentNode) && lastText) {
         pushContents(contents, lastText);
         lastText = '';
@@ -230,6 +253,8 @@ export async function generateQuote(
     if (isEndNode) {
       break;
     }
+
+    currentNode = treeWalker.nextNode();
   }
 
   if (lastText) {

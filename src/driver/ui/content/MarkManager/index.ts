@@ -15,6 +15,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import './style.scss';
+import { isVisible } from '../utils';
 
 let id = 0;
 const generateId = () => String(++id);
@@ -183,9 +184,7 @@ export default class MarkManager {
             each: (el: HTMLElement) => {
               el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
             },
-            filter: (textNode) => {
-              return Boolean(textNode.parentElement?.offsetParent);
-            },
+            filter: isVisible,
             done: (count) => {
               resolve(count > 0);
             },
@@ -222,7 +221,7 @@ export default class MarkManager {
         quote,
         quoteId,
         onUpdate: (comment: string) => {
-          this.updateQuote(quoteId, { comment });
+          return this.updateQuote(quoteId, { comment });
         },
         onDestroy: () => {
           delete this.commentMap[quoteId];
