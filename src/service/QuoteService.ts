@@ -30,7 +30,11 @@ export default class QuoteService {
       });
     }
 
-    return url ? quotes.filter((q) => q.sourceUrl === url) : quotes;
+    return url
+      ? quotes.filter(
+          (q) => QuoteService.getUrl(q.sourceUrl) === QuoteService.getUrl(url),
+        )
+      : quotes;
   }
 
   async createQuote(quote: Quote) {
@@ -49,5 +53,10 @@ export default class QuoteService {
 
   async deleteQuote(quote: Quote) {
     return this.db!.deleteQuote(quote);
+  }
+
+  private static getUrl(url: string) {
+    const urlObj = new URL(url);
+    return `${urlObj.origin}${urlObj.pathname}`;
   }
 }

@@ -60,5 +60,5 @@ export const getLastChildDeep = (node: Node): Node => {
 
 export const isVisible = (node: Node) =>
   isElement(node)
-    ? Boolean(node.offsetParent)
+    ? node === document.body || Boolean(node.offsetParent)
     : Boolean(node.parentElement?.offsetParent);

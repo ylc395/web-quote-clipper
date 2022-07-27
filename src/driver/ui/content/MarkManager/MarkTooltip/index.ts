@@ -19,6 +19,8 @@ interface Options {
   quote: Quote;
   targetEl: HTMLElement;
   relatedEls: HTMLElement[];
+  onBeforeMount: () => void;
+  onMounted: () => void;
   onBeforeUnmount: () => void;
   onUnmounted: () => void;
   onDelete: (quoteId: string) => void;
@@ -50,6 +52,7 @@ export default class MarkTooltip {
   private mount() {
     const { quote, relatedEls } = this.options;
 
+    this.options.onBeforeMount();
     this.baseEl = this.findBaseEl();
     this.rootEl.innerHTML = renderTooltip({
       colors: COLORS.filter((c) => c !== quote.color),
@@ -70,7 +73,10 @@ export default class MarkTooltip {
 
     relatedEls.forEach((el) => el.classList.add(MARK_HOVER_CLASS_NAME));
     document.body.appendChild(this.rootEl);
-    this.popper = createPopper(this.baseEl, this.rootEl, { placement: 'top' });
+    this.popper = createPopper(this.baseEl, this.rootEl, {
+      placement: 'top',
+      onFirstUpdate: this.options.onMounted,
+    });
 
     document.addEventListener('mouseout', this.handleMouseout);
   }

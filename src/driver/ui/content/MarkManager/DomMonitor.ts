@@ -2,19 +2,37 @@ import EventEmitter from 'eventemitter3';
 import { MARK_CLASS_NAME, MARK_QUOTE_ID_DATASET_KEY_CAMEL } from './constants';
 import type App from '../App';
 import { TooltipEvents } from '../HighlightTooltip';
-import { isElement } from '../utils';
+import { isElement, isVisible } from '../utils';
 
 export enum DomMonitorEvents {
   QuoteRemoved = 'QUOTE_REMOVED',
   ContentAdded = 'CONTENT_ADDED',
+  UrlChanged = 'URL_CHANGED',
 }
 
 export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   private isListeningHighlightTooltip = false;
   private readonly domMonitor = this.createDomMonitor();
   private readonly removedQuoteIds: string[] = [];
+  private lastUrl = DomMonitor.getUrl();
+  private readonly urlMonitor = new MutationObserver(() => {
+    const url = DomMonitor.getUrl();
+
+    if (url === this.lastUrl) {
+      return;
+    }
+
+    this.lastUrl = url;
+    this.emit(DomMonitorEvents.UrlChanged);
+  });
+
   constructor(private readonly app: App) {
     super();
+    this.urlMonitor.observe(document, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
   }
 
   private stopSimply = () => {
@@ -23,7 +41,11 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   };
 
   start = () => {
-    this.domMonitor.observe(document.body, { subtree: true, childList: true });
+    this.domMonitor.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+    });
 
     if (!this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = true;
@@ -58,18 +80,34 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
   private createDomMonitor() {
     return new MutationObserver((mutationList) => {
+      const added: Node[] = [];
+      const removed: HTMLElement[] = [];
+      const attrs: string[] = [];
+
+      for (const {
+        addedNodes,
+        removedNodes,
+        attributeName,
+        target,
+      } of mutationList) {
+        added.push(...addedNodes);
+        removed.push(...Array.from(removedNodes).filter(isElement));
+
+        if (attributeName) {
+          isVisible(target)
+            ? this.emit(DomMonitorEvents.ContentAdded)
+            : removed.push(target as HTMLElement);
+          attrs.push(attributeName);
+        }
+      }
+
+      console.log('➕ nodes added:', added);
+      console.log('🚮 nodes removed:', removed);
+      console.log('🚮 attr updates:', attrs);
+
       const selector = `.${MARK_CLASS_NAME}`;
-      const addedElements = mutationList.flatMap(({ addedNodes }) =>
-        Array.from(addedNodes).filter(isElement),
-      );
 
-      console.log('➕ nodes added:', addedElements);
-      console.log('🚮 nodes removed:', addedElements);
-
-      const removedElements = mutationList.flatMap(({ removedNodes }) =>
-        Array.from(removedNodes).filter(isElement),
-      );
-      for (const el of removedElements) {
+      for (const el of removed) {
         const markEls = el.matches(selector)
           ? Array.of(el)
           : (Array.from(el.querySelectorAll(selector)) as HTMLElement[]);
@@ -83,16 +121,19 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
           }
 
           if (!this.removedQuoteIds.includes(quoteId)) {
-            console.log(`🚮 quote removed: ${quoteId}`);
             this.emit(DomMonitorEvents.QuoteRemoved, quoteId);
             this.removedQuoteIds.push(quoteId);
           }
         }
       }
 
-      if (addedElements.length > 0) {
+      if (added.length > 0) {
         this.emit(DomMonitorEvents.ContentAdded);
       }
     });
+  }
+
+  private static getUrl() {
+    return `${location.origin}${location.pathname}`;
   }
 }

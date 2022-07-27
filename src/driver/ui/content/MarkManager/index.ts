@@ -36,11 +36,26 @@ export default class MarkManager {
     this.domMonitor = new DomMonitor(app);
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
+    this.domMonitor.on(DomMonitorEvents.UrlChanged, this.reset);
 
     this.initQuotes();
   }
 
+  private reset = debounce(() => {
+    this.highlightAll.cancel();
+    this.domMonitor.stop();
+    this.unmatchedQuotes = [];
+
+    for (const id of Object.keys(this.matchedQuotesMap)) {
+      this.removeQuoteById(id);
+    }
+
+    this.initQuotes();
+  }, 500);
+
   private async initQuotes() {
+    console.log('🚛 Fetching quotes...');
+
     try {
       const quotes = await getQuotes({
         url: location.href,
@@ -92,16 +107,15 @@ export default class MarkManager {
 
     const relatedMarks = MarkManager.getMarkElsByQuoteId(quoteId);
 
-    this.domMonitor.stop();
     this.markTooltipMap[quoteId] = new MarkTooltip(
       {
         id: quoteId,
         quote: this.matchedQuotesMap[quoteId],
         relatedEls: relatedMarks,
         targetEl: markEl,
-        onBeforeUnmount: () => {
-          this.domMonitor.stop();
-        },
+        onBeforeMount: this.domMonitor.stop,
+        onMounted: this.domMonitor.start,
+        onBeforeUnmount: this.domMonitor.stop,
         onUnmounted: () => {
           delete this.markTooltipMap[quoteId];
           if (this.totalMarkCount > 0) {
@@ -113,7 +127,6 @@ export default class MarkManager {
       },
       this,
     );
-    this.domMonitor.start();
   }
 
   private highlightAll = debounce(async () => {
@@ -190,7 +203,15 @@ export default class MarkManager {
             each: (el: HTMLElement) => {
               el.dataset[MARK_QUOTE_ID_DATASET_KEY_CAMEL] = quoteId;
             },
-            filter: isVisible,
+            filter: (node) => {
+              const good = isVisible(node);
+
+              if (!good) {
+                console.log('🎭 filtered node:', node);
+              }
+
+              return good;
+            },
             done: (count) => {
               resolve(count > 0);
               this.domMonitor.start();
@@ -245,6 +266,7 @@ export default class MarkManager {
     }
 
     delete this.matchedQuotesMap[id];
+    console.log(`🚮 quote removed: ${id}`);
 
     if (this.activeMarkCount === 0) {
       document.removeEventListener('mouseover', this.handleMouseover);
