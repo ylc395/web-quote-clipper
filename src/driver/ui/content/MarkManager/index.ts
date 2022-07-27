@@ -30,6 +30,7 @@ export default class MarkManager {
   private readonly domMonitor: DomMonitor;
   private unmatchedQuotes?: Quote[];
   private totalMarkCount = 0;
+  private isHighlighting = false;
 
   constructor(app: App) {
     this.domMonitor = new DomMonitor(app);
@@ -50,13 +51,16 @@ export default class MarkManager {
       this.unmatchedQuotes = quotes;
       this.totalMarkCount = quotes.length;
       this.updateBadgeText();
+
+      if (quotes.length > 0) {
+        this.domMonitor.start();
+        this.highlightAll();
+      }
     } catch (error) {
       // todo: handle error
       console.error(error);
       return;
     }
-
-    this.highlightAll();
   }
 
   private handleMouseover = (e: MouseEvent) => {
@@ -117,13 +121,19 @@ export default class MarkManager {
       throw new Error('no unmatchedQuotes');
     }
 
-    console.log(`💡 ${this.unmatchedQuotes.length} to highlight`);
-
-    if (this.unmatchedQuotes.length === 0) {
+    if (this.isHighlighting) {
+      this.highlightAll();
       return;
     }
 
-    this.domMonitor.stop();
+    console.log(`💡 ${this.unmatchedQuotes.length} to highlight`);
+    this.isHighlighting = true;
+
+    if (this.unmatchedQuotes.length === 0) {
+      this.isHighlighting = false;
+      return;
+    }
+
     const failedQuotes: Quote[] = [];
 
     for (const quote of this.unmatchedQuotes) {
@@ -142,10 +152,7 @@ export default class MarkManager {
 
     this.updateBadgeText();
     this.unmatchedQuotes = failedQuotes;
-
-    if (this.totalMarkCount > 0) {
-      this.domMonitor.start();
-    }
+    this.isHighlighting = false;
   }, 500);
 
   private updateBadgeText() {
@@ -161,18 +168,17 @@ export default class MarkManager {
 
     const result = await new Promise<boolean>((resolve) => {
       if (range) {
-        window.requestAnimationFrame(() => {
-          this.domMonitor.stop();
-          highlightRange(range, 'mark', {
-            class: className,
-            [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
-          });
-          this.domMonitor.start();
-          this.totalMarkCount += 1;
-          resolve(true);
+        this.domMonitor.stop();
+        highlightRange(range, 'mark', {
+          class: className,
+          [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
         });
+        this.domMonitor.start();
+        this.totalMarkCount += 1;
+        resolve(true);
       } else {
-        window.requestAnimationFrame(() => {
+        setTimeout(() => {
+          this.domMonitor.stop();
           this.pen.mark(quote.contents.join('\n'), {
             acrossElements: true,
             diacritics: false,
@@ -187,9 +193,10 @@ export default class MarkManager {
             filter: isVisible,
             done: (count) => {
               resolve(count > 0);
+              this.domMonitor.start();
             },
           });
-        });
+        }, 50);
       }
     });
 
