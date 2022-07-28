@@ -14,7 +14,6 @@ import './style.scss';
 import { getAncestor } from '../utils';
 
 const ROOT_ID = 'web-clipper-tooltip-container';
-const BUTTON_CONTAINER_CLASS_NAME = 'web-clipper-button-container';
 
 export enum TooltipEvents {
   BeforeMount = 'BEFORE_MOUNT',
@@ -27,7 +26,6 @@ export default class HighlightTooltip extends EventEmitter {
   private rootEl: HTMLElement;
   private rootElRect?: DOMRect;
   private currentRange?: ReturnType<typeof getSelectionRange>;
-  private mouseEvent?: MouseEvent;
 
   constructor(private readonly app: App) {
     super();
@@ -45,33 +43,11 @@ export default class HighlightTooltip extends EventEmitter {
       return;
     }
 
-    this.mouseEvent = undefined;
-
     switch (true) {
       case target.matches('button[data-web-clipper-color]'):
         return this.capture(target.dataset.webClipperColor as Colors);
       default:
         break;
-    }
-  };
-
-  private handleMousedown = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-
-    if (
-      getAncestor(target, `.${BUTTON_CONTAINER_CLASS_NAME}`, this.rootEl) &&
-      this.rootEl.contains(target)
-    ) {
-      this.mouseEvent = e;
-      setTimeout(() => {
-        if (this.mouseEvent) {
-          // if `handleClick` is not triggered (probably caused by origin web page's script)
-          // trigger it manually
-          this.handleClick(e);
-        }
-      }, 200);
-    } else {
-      this.unmount();
     }
   };
 
@@ -104,11 +80,7 @@ export default class HighlightTooltip extends EventEmitter {
     document.body.appendChild(this.rootEl);
     this.rootElRect = this.rootEl.getBoundingClientRect();
 
-    document.addEventListener(
-      'selectionchange',
-      this.unmountWhenSelectionChange,
-    );
-    document.addEventListener('mousedown', this.handleMousedown);
+    document.addEventListener('selectionchange', this.unmount);
     document.addEventListener('scroll', this.toggleWhenScroll, true);
 
     this.emit(TooltipEvents.Mounted);
@@ -117,12 +89,8 @@ export default class HighlightTooltip extends EventEmitter {
   private unmount = () => {
     this.emit(TooltipEvents.BeforeUnmount);
 
-    document.removeEventListener('mousedown', this.handleMousedown);
     document.removeEventListener('scroll', this.toggleWhenScroll, true);
-    document.removeEventListener(
-      'selectionchange',
-      this.unmountWhenSelectionChange,
-    );
+    document.removeEventListener('selectionchange', this.unmount);
 
     this.rootEl.className = '';
     this.rootEl.remove();
@@ -149,24 +117,13 @@ export default class HighlightTooltip extends EventEmitter {
     try {
       const createdQuote = await postQuote(quote);
       this.app.markManager.highlightQuote(createdQuote, range);
-      window.getSelection()?.empty(); // tip: this will trigger `unmountWhenSelectionChange`
+      window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
     } catch (error) {
       // todo: handle error
       console.error(error);
       return;
     }
   }
-
-  private unmountWhenSelectionChange = () => {
-    if (this.mouseEvent) {
-      // mousedown on tooltip has been just emitted while selection has changed.
-      // this means selectionChange event is not triggered by user
-      // so we won't unmount.
-      return;
-    }
-
-    this.unmount();
-  };
 
   private toggleWhenScroll = throttle(() => {
     if (!this.rootElRect || !this.currentRange) {
