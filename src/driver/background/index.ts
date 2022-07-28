@@ -1,30 +1,35 @@
 import 'reflect-metadata';
 import { imgSrcToDataUrl } from './helper';
 import bootstrap from './bootstrap';
-import { Message, MessageEvents, Response } from 'driver/message';
+import {
+  BackgroundMessageEvents,
+  ClientMessage,
+  ClientMessageEvents,
+  Response,
+} from 'driver/message';
 import 'driver/ui/extension';
 
 bootstrap(({ quoteService }) => {
   chrome.runtime.onMessage.addListener(
-    (message: Message, sender, sendBack: (payload: Response) => void) => {
+    (message: ClientMessage, sender, sendBack: (payload: Response) => void) => {
       const success = (res: unknown) => sendBack({ res });
       const fail = (err: unknown) =>
         sendBack({ err: err instanceof Error ? err.message : err });
 
       switch (message.event) {
-        case MessageEvents.CreateQuote:
+        case ClientMessageEvents.CreateQuote:
           quoteService.createQuote(message.payload).then(success, fail);
           return true;
-        case MessageEvents.RequestQuotes:
+        case ClientMessageEvents.RequestQuotes:
           quoteService.fetchQuotes(message.payload).then(success, fail);
           return true;
-        case MessageEvents.GetDataUrl:
+        case ClientMessageEvents.GetDataUrl:
           imgSrcToDataUrl(message.payload).then(success, fail);
           return true;
-        case MessageEvents.DeleteQuote:
+        case ClientMessageEvents.DeleteQuote:
           quoteService.deleteQuote(message.payload).then(success, fail);
           return true;
-        case MessageEvents.UpdateQuote:
+        case ClientMessageEvents.UpdateQuote:
           quoteService.updateQuote(message.payload).then(success, fail);
           return true;
         default:
@@ -32,4 +37,11 @@ bootstrap(({ quoteService }) => {
       }
     },
   );
+});
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(({ tabId, url }) => {
+  chrome.tabs.sendMessage(tabId, {
+    event: BackgroundMessageEvents.UrlUpdated,
+    payload: url,
+  });
 });

@@ -8,26 +8,13 @@ const tabMarkRecord = {
 
 const urlMap: Record<number, string> = {};
 
-export function initBadgeText(
-  tab: chrome.tabs.Tab | number,
-  tabInfo?: chrome.tabs.TabChangeInfo,
-) {
-  if (tabInfo && !tabInfo.url) {
-    return;
-  }
-
-  const tabId = typeof tab === 'number' ? tab : tab.id;
-  const url = tabInfo?.url || (typeof tab !== 'number' && tab.url) || '';
-
-  if (typeof tabId === 'undefined' || !url) {
-    return;
-  }
-
+export function initBadgeText({ tabId, url }: { tabId: number; url: string }) {
   const oldUrl = urlMap[tabId];
-  const urlObj = new URL(url);
-  const urlPath = `${urlObj.origin}${urlObj.pathname}`;
 
-  if (oldUrl === urlPath) {
+  const urlObj = new URL(url);
+  const newUrl = `${urlObj.origin}${urlObj.pathname}`;
+
+  if (oldUrl === newUrl) {
     return;
   }
 
@@ -41,7 +28,7 @@ export function initBadgeText(
     tabId,
   });
 
-  urlMap[tabId] = urlPath;
+  urlMap[tabId] = newUrl;
 }
 
 export function setBadgeText(

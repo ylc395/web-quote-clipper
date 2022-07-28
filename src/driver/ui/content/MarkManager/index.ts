@@ -2,9 +2,8 @@ import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
 import type { Quote } from 'model/entity';
-import { getQuotes } from 'driver/ui/request';
 import { setBadgeText } from 'driver/ui/extension/message';
-import { deleteQuote, updateQuote } from 'driver/ui/request';
+import { getQuotes, deleteQuote, updateQuote } from 'driver/ui/request';
 import type App from '../App';
 import MarkTooltip from './MarkTooltip';
 import CommentTip from './CommentTip';
@@ -15,7 +14,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import './style.scss';
-import { isVisible } from '../utils';
+import { isVisible, onUrlUpdated } from '../utils';
 
 let id = 0;
 const generateId = () => String(++id);
@@ -23,7 +22,7 @@ const generateId = () => String(++id);
 export enum MarkManagerEvents {}
 
 export default class MarkManager {
-  private readonly pen = new Mark(document.body);
+  private pen = new Mark(document.body);
   private readonly matchedQuotesMap: Record<string, Quote> = {};
   private readonly markTooltipMap: Record<string, MarkTooltip> = {};
   readonly commentMap: Record<string, CommentTip> = {};
@@ -31,29 +30,46 @@ export default class MarkManager {
   private unmatchedQuotes?: Quote[];
   private totalMarkCount = 0;
   private isHighlighting = false;
+  private lastUrl = MarkManager.getUrl(location.href);
 
   constructor(app: App) {
     this.domMonitor = new DomMonitor(app);
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
-    this.domMonitor.on(DomMonitorEvents.UrlChanged, this.reset);
+    onUrlUpdated(this.handleUrlUpdated);
 
-    this.initQuotes();
+    this.init();
   }
 
+  private handleUrlUpdated = (url: string) => {
+    const newUrl = MarkManager.getUrl(url);
+
+    if (newUrl !== this.lastUrl) {
+      this.lastUrl = newUrl;
+      this.highlightAll.cancel();
+      this.reset();
+    }
+  };
+
   private reset = debounce(() => {
-    this.highlightAll.cancel();
+    console.log('💣 reset...');
     this.domMonitor.stop();
+    this.pen = new Mark(document.body);
     this.unmatchedQuotes = [];
 
     for (const id of Object.keys(this.matchedQuotesMap)) {
       this.removeQuoteById(id);
     }
 
-    this.initQuotes();
+    this.domMonitor.stop();
+    const allMarkEls = document.querySelectorAll(`.${MARK_CLASS_NAME}`);
+    [...allMarkEls].forEach((el) => el.replaceWith(...el.childNodes));
+    this.domMonitor.start();
+
+    this.init();
   }, 500);
 
-  private async initQuotes() {
+  private async init() {
     console.log('🚛 Fetching quotes...');
 
     try {
@@ -327,5 +343,10 @@ export default class MarkManager {
         `.${MARK_CLASS_NAME}[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`,
       ),
     ) as HTMLElement[];
+  }
+
+  private static getUrl(url: string) {
+    const urlObj = new URL(url);
+    return `${urlObj.origin}${urlObj.pathname}`;
   }
 }

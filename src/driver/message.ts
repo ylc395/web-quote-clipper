@@ -1,17 +1,19 @@
 import type { Quote } from 'model/entity';
-export type Message =
+export type ClientMessage =
   | CaptureQuoteMessage
   | RequestQuotesMessage
   | DeleteQuotesMessage
   | PutQuotesMessage
   | DataUrlMessage;
 
+export type BackgroundMessage = UrlUpdatedMessage;
+
 export interface Response<T = unknown> {
   err?: unknown;
   res?: T;
 }
 
-export enum MessageEvents {
+export enum ClientMessageEvents {
   CreateQuote = 'CREATE_QUOTE',
   RequestQuotes = 'REQUEST',
   UpdateQuote = 'UPDATE_QUOTE',
@@ -19,13 +21,17 @@ export enum MessageEvents {
   GetDataUrl = 'GET_DATA_URL',
 }
 
+export enum BackgroundMessageEvents {
+  UrlUpdated = 'URL_UPDATED',
+}
+
 interface CaptureQuoteMessage {
-  event: MessageEvents.CreateQuote;
+  event: ClientMessageEvents.CreateQuote;
   payload: Quote;
 }
 
 interface RequestQuotesMessage {
-  event: MessageEvents.RequestQuotes;
+  event: ClientMessageEvents.RequestQuotes;
   payload: {
     url?: string;
     contentType: 'pure' | 'html';
@@ -33,16 +39,21 @@ interface RequestQuotesMessage {
 }
 
 interface DeleteQuotesMessage {
-  event: MessageEvents.DeleteQuote;
+  event: ClientMessageEvents.DeleteQuote;
   payload: Quote;
 }
 
 interface PutQuotesMessage {
-  event: MessageEvents.UpdateQuote;
+  event: ClientMessageEvents.UpdateQuote;
   payload: Quote;
 }
 
 interface DataUrlMessage {
-  event: MessageEvents.GetDataUrl;
+  event: ClientMessageEvents.GetDataUrl;
+  payload: string;
+}
+
+interface UrlUpdatedMessage {
+  event: BackgroundMessageEvents.UrlUpdated;
   payload: string;
 }

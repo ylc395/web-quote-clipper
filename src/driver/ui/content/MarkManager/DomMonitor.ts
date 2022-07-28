@@ -7,32 +7,15 @@ import { isElement, isVisible } from '../utils';
 export enum DomMonitorEvents {
   QuoteRemoved = 'QUOTE_REMOVED',
   ContentAdded = 'CONTENT_ADDED',
-  UrlChanged = 'URL_CHANGED',
 }
 
 export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   private isListeningHighlightTooltip = false;
   private readonly domMonitor = this.createDomMonitor();
   private readonly removedQuoteIds: string[] = [];
-  private lastUrl = DomMonitor.getUrl();
-  private readonly urlMonitor = new MutationObserver(() => {
-    const url = DomMonitor.getUrl();
-
-    if (url === this.lastUrl) {
-      return;
-    }
-
-    this.lastUrl = url;
-    this.emit(DomMonitorEvents.UrlChanged);
-  });
 
   constructor(private readonly app: App) {
     super();
-    this.urlMonitor.observe(document, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
   }
 
   private stopSimply = () => {
@@ -131,9 +114,5 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
         this.emit(DomMonitorEvents.ContentAdded);
       }
     });
-  }
-
-  private static getUrl() {
-    return `${location.origin}${location.pathname}`;
   }
 }

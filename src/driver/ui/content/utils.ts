@@ -1,4 +1,5 @@
 import BLOCK_ELEMENTS from 'block-elements';
+import { BackgroundMessage, BackgroundMessageEvents } from 'driver/message';
 
 export const isTextNode = (node: Node): node is Text =>
   node.nodeType === document.TEXT_NODE;
@@ -62,3 +63,10 @@ export const isVisible = (node: Node) =>
   isElement(node)
     ? node === document.body || Boolean(node.offsetParent)
     : Boolean(node.parentElement?.offsetParent);
+
+export const onUrlUpdated = (cb: (newUrl: string) => void) => {
+  chrome.runtime.onMessage.addListener(
+    ({ event, payload }: BackgroundMessage) =>
+      event === BackgroundMessageEvents.UrlUpdated && cb(payload),
+  );
+};

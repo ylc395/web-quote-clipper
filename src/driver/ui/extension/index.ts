@@ -12,5 +12,5 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-chrome.tabs.onCreated.addListener(initBadgeText);
-chrome.tabs.onUpdated.addListener(initBadgeText);
+chrome.webNavigation.onBeforeNavigate.addListener(initBadgeText);
+chrome.webNavigation.onHistoryStateUpdated.addListener(initBadgeText);
