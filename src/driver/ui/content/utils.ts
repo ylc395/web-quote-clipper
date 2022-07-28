@@ -68,6 +68,9 @@ export const isVisible = (node: Node) =>
 export const onUrlUpdated = (cb: (newUrl: string) => void) => {
   chrome.runtime.onMessage.addListener(
     ({ event, payload }: BackgroundMessage) =>
-      event === BackgroundMessageEvents.UrlUpdated && cb(payload),
+      event === BackgroundMessageEvents.UrlUpdated &&
+      // todo: we need to check frameId here but there is no such an API
+      // see https://github.com/w3c/webextensions/issues/12
+      cb(payload.url),
   );
 };

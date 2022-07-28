@@ -39,9 +39,11 @@ bootstrap(({ quoteService }) => {
   );
 });
 
-chrome.webNavigation.onHistoryStateUpdated.addListener(({ tabId, url }) => {
-  chrome.tabs.sendMessage(tabId, {
-    event: BackgroundMessageEvents.UrlUpdated,
-    payload: url,
-  });
-});
+chrome.webNavigation.onHistoryStateUpdated.addListener(
+  ({ tabId, url, frameId }) => {
+    chrome.tabs.sendMessage(tabId, {
+      event: BackgroundMessageEvents.UrlUpdated,
+      payload: { frameId, url },
+    });
+  },
+);

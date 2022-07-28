@@ -55,5 +55,5 @@ interface DataUrlMessage {
 
 interface UrlUpdatedMessage {
   event: BackgroundMessageEvents.UrlUpdated;
-  payload: string;
+  payload: { url: string; frameId: number };
 }
