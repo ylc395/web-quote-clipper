@@ -15,6 +15,7 @@ export interface Option {
 }
 
 const BUTTON_CLASS_NAME = 'web-clipper-comment-main-button';
+const BUTTON_CONTAINER_CLASS_NAME = 'web-clipper-comment-button-container';
 const ACTIVE_BUTTON_CLASS_NAME = `${BUTTON_CLASS_NAME}-active`;
 const INPUT_CLASS_NAME = 'web-clipper-comment-input';
 const CONTAINER_CLASS_NAME = 'web-clipper-comment-container';
@@ -23,6 +24,7 @@ export default class CommentTip {
   private readonly rootEl = document.createElement('div');
   private readonly textarea: HTMLTextAreaElement;
   private readonly inputArea: HTMLElement;
+  private readonly buttonContainer: HTMLElement;
   private readonly buttons: {
     main: HTMLButtonElement;
     save: HTMLButtonElement;
@@ -39,6 +41,9 @@ export default class CommentTip {
       save: this.rootEl.querySelector('button[data-type="save"]')!,
       reset: this.rootEl.querySelector('button[data-type="reset"]')!,
     };
+    this.buttonContainer = this.rootEl.querySelector(
+      `.${BUTTON_CONTAINER_CLASS_NAME}`,
+    )!;
 
     this.mount();
     CommentTip.refreshZIndex();
@@ -57,6 +62,8 @@ export default class CommentTip {
     this.rootEl.dataset.quoteId = this.option.quoteId;
     this.textarea.addEventListener('keydown', this.handleKeydown);
     this.textarea.addEventListener('input', this.updateButtons);
+    this.textarea.addEventListener('focus', this.updateButtons);
+    this.textarea.addEventListener('blur', this.updateButtons);
     this.buttons.main.addEventListener('click', this.toggle);
     this.buttons.save.addEventListener('click', this.submit);
     this.buttons.reset.addEventListener('click', this.reset);
@@ -90,7 +97,6 @@ export default class CommentTip {
 
     this.inputArea.style.display = 'block';
     this.buttons.main.classList.add(ACTIVE_BUTTON_CLASS_NAME);
-    this.updateButtons();
 
     if (needFocus) {
       this.textarea.focus();
@@ -105,10 +111,13 @@ export default class CommentTip {
     }
 
     this.inputArea.style.display = 'none';
+    this.buttonContainer.style.display = 'none';
     this.buttons.main.classList.remove(ACTIVE_BUTTON_CLASS_NAME);
   };
 
   private updateButtons = () => {
+    this.buttonContainer.style.display =
+      document.activeElement === this.textarea ? 'block' : 'none';
     this.buttons.save.disabled = !this.isContentChanged;
     this.buttons.reset.disabled = !this.isContentChanged;
   };
@@ -129,7 +138,7 @@ export default class CommentTip {
       return;
     }
 
-    this.option.onUpdate(this.textarea.value);
+    await this.option.onUpdate(this.textarea.value);
     this.collapse(true);
   };
 
