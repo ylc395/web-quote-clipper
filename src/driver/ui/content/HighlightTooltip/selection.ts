@@ -52,7 +52,7 @@ export const getSelectionEndPosition = (
 ) => {
   range = range.cloneRange();
 
-  if (isElement(range.endContainer) && range.endOffset === 0) {
+  if (range.endOffset === 0) {
     const walker = document.createTreeWalker(range.commonAncestorContainer);
     let currentNode: Node | null = walker.currentNode;
     let textNode: Text | undefined | null = null;
@@ -63,8 +63,9 @@ export const getSelectionEndPosition = (
       }
 
       if (
+        range.startContainer === currentNode ||
         range.startContainer.compareDocumentPosition(currentNode) &
-        Node.DOCUMENT_POSITION_FOLLOWING
+          Node.DOCUMENT_POSITION_FOLLOWING
       ) {
         if (isElement(currentNode) && !isVisible(currentNode)) {
           currentNode = walker.nextSibling();
@@ -142,7 +143,6 @@ export async function generateQuote(
 
   // todo: handle strong,em,del...
   while (currentNode) {
-    const isStartNode = currentNode === startContainer;
     const isEndNode = currentNode === endContainer;
 
     if (
@@ -231,7 +231,7 @@ export async function generateQuote(
 
     if (isTextNode(currentNode) && currentNode.textContent) {
       const text = currentNode.textContent.slice(
-        isStartNode ? range.startOffset : 0,
+        currentNode === range.startContainer ? range.startOffset : 0,
         isEndNode ? range.endOffset : currentNode.textContent.length,
       );
 

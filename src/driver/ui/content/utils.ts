@@ -17,6 +17,7 @@ export const isValidAnchorElement = (
   element: Element,
 ): element is HTMLAnchorElement =>
   element.tagName.toLowerCase() === 'a' &&
+  Boolean(element.textContent?.length) &&
   element.getAttribute('href') !== '#' &&
   /^https?:\/\//.test((element as HTMLAnchorElement).href);
 

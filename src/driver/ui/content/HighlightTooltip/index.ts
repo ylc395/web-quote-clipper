@@ -176,7 +176,7 @@ export default class HighlightTooltip extends EventEmitter {
     ) {
       this.rootEl.style.display = 'none';
     } else {
-      this.rootEl.style.display = 'block';
+      this.rootEl.style.display = 'flex';
     }
   }, 300);
 }
