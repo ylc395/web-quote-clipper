@@ -11,8 +11,10 @@ import {
 import renderTooltip from './template.hbs';
 import type App from '../App';
 import './style.scss';
+import { getAncestor } from '../utils';
 
 const ROOT_ID = 'web-clipper-tooltip-container';
+const BUTTON_CONTAINER_CLASS_NAME = 'web-clipper-button-container';
 
 export enum TooltipEvents {
   BeforeMount = 'BEFORE_MOUNT',
@@ -54,7 +56,12 @@ export default class HighlightTooltip extends EventEmitter {
   };
 
   private handleMousedown = (e: MouseEvent) => {
-    if (this.rootEl.contains(e.target as HTMLElement)) {
+    const target = e.target as HTMLElement;
+
+    if (
+      getAncestor(target, `.${BUTTON_CONTAINER_CLASS_NAME}`, this.rootEl) &&
+      this.rootEl.contains(target)
+    ) {
       this.mouseEvent = e;
       setTimeout(() => {
         if (this.mouseEvent) {
