@@ -11,6 +11,7 @@ export interface Option {
   quoteId: string;
   onUpdate: (content: string) => void;
   onDestroy: () => void;
+  onMounted: () => void;
 }
 
 const BUTTON_CLASS_NAME = 'web-clipper-comment-main-button';
@@ -50,6 +51,7 @@ export default class CommentTip {
     this.popper = createPopper(baseEl, this.rootEl, {
       placement: 'left-start',
       modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
+      onFirstUpdate: this.option.onMounted,
     });
 
     this.rootEl.dataset.quoteId = this.option.quoteId;

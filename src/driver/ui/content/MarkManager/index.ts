@@ -240,22 +240,27 @@ export default class MarkManager {
   private attachComment(quoteId: string, quote: Quote) {
     if (this.commentMap[quoteId]) {
       this.commentMap[quoteId].updateQuote(quote);
-      return;
+      return Promise.resolve();
     }
 
     if (quote.comment) {
-      this.commentMap[quoteId] = new CommentTip({
-        relatedEls: MarkManager.getMarkElsByQuoteId(quoteId),
-        quote,
-        quoteId,
-        onUpdate: (comment: string) => {
-          return this.updateQuote(quoteId, { comment });
-        },
-        onDestroy: () => {
-          delete this.commentMap[quoteId];
-        },
+      return new Promise<void>((resolve) => {
+        this.commentMap[quoteId] = new CommentTip({
+          relatedEls: MarkManager.getMarkElsByQuoteId(quoteId),
+          quote,
+          quoteId,
+          onUpdate: (comment: string) => {
+            return this.updateQuote(quoteId, { comment });
+          },
+          onDestroy: () => {
+            delete this.commentMap[quoteId];
+          },
+          onMounted: resolve,
+        });
       });
     }
+
+    return Promise.resolve();
   }
 
   private removeQuoteById = (id: string) => {
@@ -307,7 +312,7 @@ export default class MarkManager {
       });
     }
 
-    this.attachComment(quoteId, newQuote);
+    await this.attachComment(quoteId, newQuote);
     this.domMonitor.start();
   };
 
