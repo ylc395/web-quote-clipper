@@ -108,15 +108,15 @@ export default class HighlightTooltip extends EventEmitter {
     }
 
     const { range } = this.currentRange;
-    const quote = await generateQuote(range, color);
+    const result = await generateQuote(range, color);
 
-    if (!quote) {
+    if (!result) {
       return;
     }
 
     try {
-      const createdQuote = await postQuote(quote);
-      this.app.markManager.highlightQuote(createdQuote, range);
+      const createdQuote = await postQuote(result.quote);
+      this.app.markManager.highlightQuote(createdQuote, result.range);
       window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
     } catch (error) {
       // todo: handle error

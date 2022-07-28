@@ -38,8 +38,14 @@ export const getLastValidChild = (node: Element) => {
   return null;
 };
 
-export const getAncestor = (el: Node, selector: string, until?: Element) => {
+export const getAncestor = (el: Node, selector: string, until?: Node) => {
   let parent = el.parentElement;
+
+  if (until) {
+    until = isElement(until) ? until : until.parentElement || document.body;
+  } else {
+    until = document.body;
+  }
 
   while (parent && parent !== until) {
     if (parent.matches(selector)) {

@@ -13,6 +13,8 @@ import {
   isVisible,
 } from '../utils';
 
+const SUSPICIOUS_EMPTY_STRING_REGEX = /^\s{5,}$/;
+
 export function getSelectionRange() {
   const selection = document.getSelection();
 
@@ -78,8 +80,17 @@ export const getSelectionEndPosition = (
           continue;
         }
 
-        if (isTextNode(currentNode) && currentNode.textContent?.trim()) {
-          textNode = currentNode;
+        if (isTextNode(currentNode) && currentNode.textContent) {
+          if (
+            SUSPICIOUS_EMPTY_STRING_REGEX.test(currentNode.textContent) &&
+            !getAncestor(currentNode, 'pre')
+          ) {
+            break;
+          }
+
+          if (currentNode.textContent.length > 0) {
+            textNode = currentNode;
+          }
         }
       }
 
@@ -118,10 +129,10 @@ const pushContents = (contents: string[], content: string) => {
 export async function generateQuote(
   range: Range,
   color: Colors,
-): Promise<Quote | undefined> {
+): Promise<{ quote: Quote; range: Range } | undefined> {
   // todo: too little case this function for
 
-  let { startContainer, endContainer, endOffset } = range;
+  let { startContainer, endContainer } = range;
 
   if (
     (!isElement(startContainer) && !isTextNode(startContainer)) ||
@@ -130,7 +141,8 @@ export async function generateQuote(
     return;
   }
 
-  if (isElement(endContainer) && endOffset > 0) {
+  // example: dbclick on <p><img /></p> will get a range with endOffset=1
+  if (isElement(endContainer) && range.endOffset > 0) {
     endContainer = getLastChildDeep(endContainer);
   }
 
@@ -230,6 +242,14 @@ export async function generateQuote(
     }
 
     if (isTextNode(currentNode) && currentNode.textContent) {
+      if (
+        range.endOffset === 0 &&
+        SUSPICIOUS_EMPTY_STRING_REGEX.test(currentNode.textContent) &&
+        !getAncestor(currentNode, 'pre')
+      ) {
+        break;
+      }
+
       const text = currentNode.textContent.slice(
         currentNode === range.startContainer ? range.startOffset : 0,
         isEndNode ? range.endOffset : currentNode.textContent.length,
@@ -261,11 +281,22 @@ export async function generateQuote(
     pushContents(contents, lastText);
   }
 
+  let newRange = range;
+  const previousNode = treeWalker.previousNode();
+
+  if (endContainer !== currentNode && previousNode) {
+    newRange = range.cloneRange();
+    newRange.setEndAfter(previousNode);
+  }
+
   return {
-    sourceUrl: location.href,
-    color,
-    contents,
-    comment: '',
-    createdAt: Date.now(),
+    quote: {
+      sourceUrl: location.href,
+      color,
+      contents,
+      comment: '',
+      createdAt: Date.now(),
+    },
+    range: newRange,
   };
 }
