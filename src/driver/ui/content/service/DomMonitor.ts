@@ -1,7 +1,5 @@
 import EventEmitter from 'eventemitter3';
 import { MARK_CLASS_NAME, MARK_QUOTE_ID_DATASET_KEY_CAMEL } from './constants';
-import type App from '../App';
-import { TooltipEvents } from '../HighlightTooltip';
 import { isElement, isVisible } from '../utils';
 
 export enum DomMonitorEvents {
@@ -10,52 +8,40 @@ export enum DomMonitorEvents {
 }
 
 export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
-  private isListeningHighlightTooltip = false;
   private readonly domMonitor = this.createDomMonitor();
   private readonly removedQuoteIds: string[] = [];
+  private waitingTokens = new Set<Symbol>();
 
   constructor() {
     super();
   }
 
-  private stopSimply = () => {
-    console.log('👀 DOM monitor stop simply');
-    this.domMonitor.disconnect();
-  };
+  start = (token?: Symbol) => {
+    if (token) {
+      this.waitingTokens.delete(token);
+    }
 
-  start = () => {
+    if (this.waitingTokens.size > 0) {
+      return;
+    }
+
     this.domMonitor.observe(document.body, {
       subtree: true,
       childList: true,
       attributes: true,
     });
 
-    if (!this.isListeningHighlightTooltip) {
-      this.isListeningHighlightTooltip = true;
-      // this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopSimply);
-      // this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
-      // this.app.highlightTooltip.on(
-      //   TooltipEvents.BeforeUnmount,
-      //   this.stopSimply,
-      // );
-      // this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
-    }
-
     console.log('👀 DOM monitor start');
   };
 
-  stop = () => {
+  stop = (needToken = false) => {
     this.domMonitor.disconnect();
 
-    if (this.isListeningHighlightTooltip) {
-      this.isListeningHighlightTooltip = false;
-      // this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopSimply);
-      // this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
-      // this.app.highlightTooltip.off(
-      //   TooltipEvents.BeforeUnmount,
-      //   this.stopSimply,
-      // );
-      // this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
+    if (needToken) {
+      const token = Symbol();
+      this.waitingTokens.add(token);
+
+      return token;
     }
 
     console.log('👀 DOM monitor stop');

@@ -11,10 +11,10 @@ export default function usePopper(
   const popperRef = ref<undefined | HTMLElement>();
 
   onMounted(() => {
-    domMonitor.stop();
+    const token = domMonitor.stop(true);
     popper.value = createPopper(targetEl, popperRef.value!, {
       ...options,
-      onFirstUpdate: domMonitor.start,
+      onFirstUpdate: () => domMonitor.start(token),
     });
   });
 

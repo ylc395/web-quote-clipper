@@ -1,4 +1,3 @@
-useTooltipPopper
 <script lang="ts">
 import { ref, defineComponent, inject, onMounted, onUnmounted } from 'vue';
 import {
