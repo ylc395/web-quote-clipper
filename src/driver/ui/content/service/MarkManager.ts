@@ -1,7 +1,13 @@
 import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import { InjectionKey, shallowReactive, reactive } from 'vue';
+import {
+  InjectionKey,
+  shallowReactive,
+  shallowRef,
+  watch,
+  watchEffect,
+} from 'vue';
 import type { Quote } from 'model/entity';
 import { setBadgeText } from 'driver/ui/extension/message';
 import { getQuotes, deleteQuote, updateQuote } from 'driver/ui/request';
@@ -12,6 +18,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import { isVisible, onUrlUpdated } from '../utils';
+import { computed } from '@vue/reactivity';
 
 let id = 0;
 const generateId = () => String(++id);
@@ -24,8 +31,13 @@ export default class MarkManager {
   readonly tooltipTargetMap: Record<string, HTMLElement> = shallowReactive({});
   readonly commentMap: Record<string, boolean> = shallowReactive({});
   readonly domMonitor: DomMonitor;
-  private unmatchedQuotes?: Quote[];
-  private totalMarkCount = 0;
+  private readonly unmatchedQuotes = shallowRef<Quote[]>([]);
+  private readonly activeMarkCount = computed(() => {
+    return Object.keys(this.matchedQuotesMap).length;
+  });
+  private readonly totalMarkCount = computed(
+    () => this.unmatchedQuotes.value.length + this.activeMarkCount.value,
+  );
   private isHighlighting = false;
   private lastUrl = MarkManager.getUrl(location.href);
 
@@ -34,6 +46,18 @@ export default class MarkManager {
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
     onUrlUpdated(this.handleUrlUpdated);
+
+    watch(this.activeMarkCount, (newValue, oldValue) => {
+      if (newValue !== 0 && oldValue === 0) {
+        document.addEventListener('mouseover', this.tryToMount);
+      }
+
+      if (newValue === 0 && oldValue !== 0) {
+        document.removeEventListener('mouseover', this.tryToMount);
+      }
+    });
+
+    watch([this.activeMarkCount, this.totalMarkCount], this.updateBadgeText);
 
     this.init();
   }
@@ -52,7 +76,7 @@ export default class MarkManager {
     console.log('💣 reset...');
     this.domMonitor.stop();
     this.pen = new Mark(document.body);
-    this.unmatchedQuotes = [];
+    this.unmatchedQuotes.value = [];
 
     for (const id of Object.keys(this.matchedQuotesMap)) {
       this.removeQuoteById(id);
@@ -76,9 +100,7 @@ export default class MarkManager {
         orderBy: 'contentLength',
       });
 
-      this.unmatchedQuotes = quotes;
-      this.totalMarkCount = quotes.length;
-      this.updateBadgeText();
+      this.unmatchedQuotes.value = quotes;
 
       if (quotes.length > 0) {
         this.domMonitor.start();
@@ -109,31 +131,23 @@ export default class MarkManager {
     }
   };
 
-  private get activeMarkCount() {
-    return Object.keys(this.matchedQuotesMap).length;
-  }
-
   private highlightAll = debounce(async () => {
-    if (!this.unmatchedQuotes) {
-      throw new Error('no unmatchedQuotes');
-    }
-
     if (this.isHighlighting) {
       this.highlightAll();
       return;
     }
 
-    console.log(`💡 ${this.unmatchedQuotes.length} to highlight`);
+    console.log(`💡 ${this.unmatchedQuotes.value.length} to highlight`);
     this.isHighlighting = true;
 
-    if (this.unmatchedQuotes.length === 0) {
+    if (this.unmatchedQuotes.value.length === 0) {
       this.isHighlighting = false;
       return;
     }
 
     const failedQuotes: Quote[] = [];
 
-    for (const quote of this.unmatchedQuotes) {
+    for (const quote of this.unmatchedQuotes.value) {
       const isSuccessful = await this.highlightQuote(quote);
 
       if (!isSuccessful) {
@@ -147,17 +161,16 @@ export default class MarkManager {
       }`,
     );
 
-    this.updateBadgeText();
-    this.unmatchedQuotes = failedQuotes;
+    this.unmatchedQuotes.value = failedQuotes;
     this.isHighlighting = false;
   }, 500);
 
-  private updateBadgeText() {
+  private updateBadgeText = debounce(() => {
     setBadgeText({
-      total: this.totalMarkCount,
-      active: this.activeMarkCount,
+      total: this.totalMarkCount.value,
+      active: this.activeMarkCount.value,
     });
-  }
+  }, 500);
 
   async highlightQuote(quote: Quote, range?: Range) {
     const quoteId = generateId();
@@ -171,7 +184,6 @@ export default class MarkManager {
           [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
         });
         this.domMonitor.start();
-        this.totalMarkCount += 1;
         resolve(true);
       } else {
         setTimeout(() => {
@@ -207,14 +219,7 @@ export default class MarkManager {
 
     if (result) {
       console.log('🐮 highlight success');
-      if (this.activeMarkCount === 0) {
-        document.addEventListener('mouseover', this.tryToMount);
-      }
       this.matchedQuotesMap[quoteId] = quote;
-    }
-
-    if (range) {
-      this.updateBadgeText();
     }
 
     return result;
@@ -230,20 +235,13 @@ export default class MarkManager {
     delete this.matchedQuotesMap[id];
     console.log(`🚮 quote removed: ${id}`);
 
-    if (this.activeMarkCount === 0) {
-      document.removeEventListener('mouseover', this.tryToMount);
-    }
-
-    this.totalMarkCount -= 1;
     const relatedEls = MarkManager.getMarkElsByQuoteId(id);
     this.domMonitor.stop();
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
-    if (this.totalMarkCount > 0) {
+    if (this.totalMarkCount.value > 0) {
       this.domMonitor.start();
     }
-
-    this.updateBadgeText();
 
     return quote;
   };
