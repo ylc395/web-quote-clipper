@@ -9,7 +9,7 @@ import { COLORS } from 'model/entity';
 import JoplinIcon from './JoplinIcon.vue';
 import { useTooltipPopper, useSubmenu } from './composable';
 import { token } from '../../service/MarkManager';
-import useDomMonitor from '../useDomMonitor';
+import { useDomMonitor } from '../composable';
 
 export default defineComponent({
   components: {

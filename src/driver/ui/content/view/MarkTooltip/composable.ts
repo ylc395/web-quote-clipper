@@ -1,6 +1,6 @@
 import { inject, reactive } from 'vue';
 import MarkManager, { token } from '../../service/MarkManager';
-import usePopper from '../usePopper';
+import { usePopper } from '../composable';
 
 function findBaseEl(targetEl: HTMLElement, relatedEls: HTMLElement[]) {
   const firstEl = relatedEls[0];

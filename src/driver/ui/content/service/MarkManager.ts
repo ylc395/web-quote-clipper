@@ -113,11 +113,6 @@ export default class MarkManager {
     return Object.keys(this.matchedQuotesMap).length;
   }
 
-  isAvailableRange(range: Range) {
-    const marks = Array.from(document.querySelectorAll(`.${MARK_CLASS_NAME}`));
-    return marks.every((el) => !range.intersectsNode(el));
-  }
-
   private highlightAll = debounce(async () => {
     if (!this.unmatchedQuotes) {
       throw new Error('no unmatchedQuotes');

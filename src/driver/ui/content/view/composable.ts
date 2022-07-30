@@ -1,11 +1,17 @@
+import type DomMonitor from '../service/DomMonitor';
 import { createPopper, Instance, Options } from '@popperjs/core';
-import { inject, onMounted, onUnmounted, ref, shallowRef } from 'vue';
+import {
+  onUpdated,
+  onBeforeUpdate,
+  onMounted,
+  onUnmounted,
+  ref,
+  shallowRef,
+  inject,
+} from 'vue';
 import { token } from '../service/MarkManager';
 
-export default function usePopper(
-  targetEl: HTMLElement,
-  options: Partial<Options>,
-) {
+export function usePopper(targetEl: HTMLElement, options: Partial<Options>) {
   const { domMonitor } = inject(token)!;
   const popper = shallowRef<Instance | undefined>();
   const popperRef = ref<undefined | HTMLElement>();
@@ -25,4 +31,10 @@ export default function usePopper(
   });
 
   return { popperRef, popper };
+}
+
+export function useDomMonitor(domMonitor?: DomMonitor) {
+  domMonitor = domMonitor || inject(token)!.domMonitor;
+  onBeforeUpdate(domMonitor.stop);
+  onUpdated(domMonitor.start);
 }

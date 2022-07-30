@@ -2,8 +2,7 @@
 import { computed, defineComponent, inject, ref } from 'vue';
 import { BIconChatRightTextFill } from 'bootstrap-icons-vue';
 import MarkManager, { token } from '../service/MarkManager';
-import usePopper from './usePopper';
-import useDomMonitor from './useDomMonitor';
+import { useDomMonitor, usePopper } from './composable';
 
 export default defineComponent({
   props: {
