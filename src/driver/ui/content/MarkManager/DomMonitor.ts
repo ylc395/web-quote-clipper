@@ -14,7 +14,7 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   private readonly domMonitor = this.createDomMonitor();
   private readonly removedQuoteIds: string[] = [];
 
-  constructor(private readonly app: App) {
+  constructor() {
     super();
   }
 
@@ -32,13 +32,13 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
     if (!this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = true;
-      this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopSimply);
-      this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
-      this.app.highlightTooltip.on(
-        TooltipEvents.BeforeUnmount,
-        this.stopSimply,
-      );
-      this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
+      // this.app.highlightTooltip.on(TooltipEvents.BeforeMount, this.stopSimply);
+      // this.app.highlightTooltip.on(TooltipEvents.Mounted, this.start);
+      // this.app.highlightTooltip.on(
+      //   TooltipEvents.BeforeUnmount,
+      //   this.stopSimply,
+      // );
+      // this.app.highlightTooltip.on(TooltipEvents.Unmounted, this.start);
     }
 
     console.log('👀 DOM monitor start');
@@ -49,13 +49,13 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
 
     if (this.isListeningHighlightTooltip) {
       this.isListeningHighlightTooltip = false;
-      this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopSimply);
-      this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
-      this.app.highlightTooltip.off(
-        TooltipEvents.BeforeUnmount,
-        this.stopSimply,
-      );
-      this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
+      // this.app.highlightTooltip.off(TooltipEvents.BeforeMount, this.stopSimply);
+      // this.app.highlightTooltip.off(TooltipEvents.Mounted, this.start);
+      // this.app.highlightTooltip.off(
+      //   TooltipEvents.BeforeUnmount,
+      //   this.stopSimply,
+      // );
+      // this.app.highlightTooltip.off(TooltipEvents.Unmounted, this.start);
     }
 
     console.log('👀 DOM monitor stop');

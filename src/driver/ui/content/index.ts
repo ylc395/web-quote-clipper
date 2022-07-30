@@ -1,3 +1,6 @@
-import App from './App';
+import { createApp } from 'vue';
+import App from './App.vue';
 
-new App();
+const rootEl = document.createElement('div');
+document.body.appendChild(rootEl);
+createApp(App).mount(rootEl);

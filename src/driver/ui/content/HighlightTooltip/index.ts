@@ -11,7 +11,6 @@ import {
 import renderTooltip from './template.hbs';
 import type App from '../App';
 import './style.scss';
-import { getAncestor } from '../utils';
 
 const ROOT_ID = 'web-clipper-tooltip-container';
 

@@ -1,5 +1,5 @@
 import { defineConfig } from 'rollup';
-import typescript from '@rollup/plugin-typescript';
+import typescript from 'rollup-plugin-typescript2';
 import vFileResolver from './tool/vFileResolver';
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
@@ -12,6 +12,7 @@ import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 
 const plugins = [
+  vue({ css: false }),
   commonjs(),
   nodePolyfills(),
   vFileResolver,
@@ -56,9 +57,9 @@ export default defineConfig([
       format: 'iife',
     },
     plugins: [
+      ...plugins,
       handlebars(),
       styles({ mode: ['inject', { singleTag: true }] }),
-      ...plugins,
     ],
   },
   {
@@ -67,6 +68,6 @@ export default defineConfig([
       file: './dist/chrome-extension/popup.js',
       format: 'iife',
     },
-    plugins: [vue(), ...plugins],
+    plugins,
   },
 ]);
