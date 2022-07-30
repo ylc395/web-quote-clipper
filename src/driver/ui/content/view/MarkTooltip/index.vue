@@ -1,13 +1,6 @@
+useTooltipPopper
 <script lang="ts">
-import {
-  ref,
-  onUpdated,
-  onBeforeUpdate,
-  defineComponent,
-  inject,
-  onMounted,
-  onUnmounted,
-} from 'vue';
+import { ref, defineComponent, inject, onMounted, onUnmounted } from 'vue';
 import {
   BIconTrashFill,
   BIconPaletteFill,
@@ -15,8 +8,9 @@ import {
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
 import JoplinIcon from './JoplinIcon.vue';
-import { usePopper, useSubmenu } from './composable';
-import { token } from '../index';
+import { useTooltipPopper, useSubmenu } from './composable';
+import { token } from '../../service/MarkManager';
+import useDomMonitor from '../useDomMonitor';
 
 export default defineComponent({
   components: {
@@ -32,13 +26,8 @@ export default defineComponent({
     },
   },
   setup({ id }) {
-    const {
-      matchedQuotesMap,
-      deleteQuote,
-      updateQuote,
-      domMonitor,
-      tooltipTargetMap,
-    } = inject(token)!;
+    const { matchedQuotesMap, deleteQuote, updateQuote, tooltipTargetMap } =
+      inject(token)!;
     const quote = matchedQuotesMap[id];
 
     const jump = () => {
@@ -47,7 +36,7 @@ export default defineComponent({
       }
     };
 
-    const { popperRef, relatedEls, popper } = usePopper(id);
+    const { popperRef, relatedEls, popper } = useTooltipPopper(id);
     const { submenuVisibility, toggleSubmenu } = useSubmenu();
     const comment = ref(quote.comment);
     const handleMouseout = (e: MouseEvent) => {
@@ -62,8 +51,7 @@ export default defineComponent({
       }
     };
 
-    onBeforeUpdate(domMonitor.stop);
-    onUpdated(domMonitor.start);
+    useDomMonitor();
     onMounted(() => document.addEventListener('mouseout', handleMouseout));
     onUnmounted(() => document.removeEventListener('mouseout', handleMouseout));
 
@@ -136,7 +124,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use '../../constants';
+@use '../constants';
 
 .web-clipper-mark-manager-tooltip {
   display: flex;

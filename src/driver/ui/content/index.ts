@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import App from './App.vue';
+import App from './view/App.vue';
 
 const rootEl = document.createElement('div');
 document.body.appendChild(rootEl);

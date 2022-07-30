@@ -1,4 +1,4 @@
-import MarkManager from './MarkManager';
+import MarkManager from './service/MarkManager';
 import HighlightTooltip from './HighlightTooltip';
 
 export default class App {

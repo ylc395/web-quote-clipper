@@ -1,18 +1,16 @@
 import highlightRange from 'dom-highlight-range';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import { InjectionKey, shallowReactive } from 'vue';
+import { InjectionKey, shallowReactive, reactive } from 'vue';
 import type { Quote } from 'model/entity';
 import { setBadgeText } from 'driver/ui/extension/message';
 import { getQuotes, deleteQuote, updateQuote } from 'driver/ui/request';
-import CommentTip from './CommentTip';
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
 import {
   MARK_CLASS_NAME,
   MARK_QUOTE_ID_DATASET_KEY,
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
-import './style.scss';
 import { isVisible, onUrlUpdated } from '../utils';
 
 let id = 0;
@@ -24,7 +22,7 @@ export default class MarkManager {
   private pen = new Mark(document.body);
   readonly matchedQuotesMap: Record<string, Quote> = shallowReactive({});
   readonly tooltipTargetMap: Record<string, HTMLElement> = shallowReactive({});
-  readonly commentMap: Record<string, CommentTip> = {};
+  readonly commentMap: Record<string, boolean> = shallowReactive({});
   readonly domMonitor: DomMonitor;
   private unmatchedQuotes?: Quote[];
   private totalMarkCount = 0;
@@ -103,10 +101,7 @@ export default class MarkManager {
         throw new Error('no quote');
       }
 
-      if (
-        this.tooltipTargetMap[quoteId] ||
-        this.commentMap[quoteId]?.isExpanded
-      ) {
+      if (this.tooltipTargetMap[quoteId] || this.commentMap[quoteId]) {
         return;
       }
 
@@ -221,7 +216,6 @@ export default class MarkManager {
         document.addEventListener('mouseover', this.tryToMount);
       }
       this.matchedQuotesMap[quoteId] = quote;
-      this.attachComment(quoteId, quote);
     }
 
     if (range) {
@@ -229,32 +223,6 @@ export default class MarkManager {
     }
 
     return result;
-  }
-
-  private attachComment(quoteId: string, quote: Quote) {
-    if (this.commentMap[quoteId]) {
-      this.commentMap[quoteId].updateQuote(quote);
-      return Promise.resolve();
-    }
-
-    if (quote.comment) {
-      return new Promise<void>((resolve) => {
-        this.commentMap[quoteId] = new CommentTip({
-          relatedEls: MarkManager.getMarkElsByQuoteId(quoteId),
-          quote,
-          quoteId,
-          onUpdate: (comment: string) => {
-            return this.updateQuote(quoteId, { comment });
-          },
-          onDestroy: () => {
-            delete this.commentMap[quoteId];
-          },
-          onMounted: resolve,
-        });
-      });
-    }
-
-    return Promise.resolve();
   }
 
   private removeQuoteById = (id: string) => {
@@ -274,11 +242,6 @@ export default class MarkManager {
     this.totalMarkCount -= 1;
     const relatedEls = MarkManager.getMarkElsByQuoteId(id);
     this.domMonitor.stop();
-
-    if (this.commentMap[id]) {
-      this.commentMap[id].destroy();
-    }
-
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
     if (this.totalMarkCount > 0) {
@@ -297,17 +260,15 @@ export default class MarkManager {
     await updateQuote(newQuote);
 
     this.matchedQuotesMap[quoteId] = newQuote;
-    this.domMonitor.stop();
 
     if (oldQuote.color !== newQuote.color) {
+      this.domMonitor.stop();
       MarkManager.getMarkElsByQuoteId(quoteId).forEach((el) => {
         el.classList.remove(`${MARK_CLASS_NAME}-${oldQuote.color}`);
         el.classList.add(`${MARK_CLASS_NAME}-${newQuote.color}`);
       });
+      this.domMonitor.start();
     }
-
-    await this.attachComment(quoteId, newQuote);
-    this.domMonitor.start();
   };
 
   deleteQuote = async (quoteId: string) => {
@@ -315,7 +276,7 @@ export default class MarkManager {
     this.removeQuoteById(quoteId);
   };
 
-  private static getMarkElsByQuoteId(id: string) {
+  static getMarkElsByQuoteId(id: string) {
     return Array.from(
       document.querySelectorAll(
         `.${MARK_CLASS_NAME}[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`,
