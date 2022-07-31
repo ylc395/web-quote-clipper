@@ -35,6 +35,7 @@ export default defineComponent({
       } else {
         rootRect.value = undefined;
         document.removeEventListener('scroll', toggleWhenScroll, true);
+        isShowing.value = true;
       }
     });
 

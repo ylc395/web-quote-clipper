@@ -62,7 +62,7 @@ export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
         added.push(...addedNodes);
         removed.push(...Array.from(removedNodes).filter(isElement));
 
-        if (attributeName) {
+        if (attributeName && !attributeName.startsWith('data-popper')) {
           isVisible(target)
             ? this.emit(DomMonitorEvents.ContentAdded)
             : removed.push(target as HTMLElement);
