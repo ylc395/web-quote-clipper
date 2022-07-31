@@ -28,6 +28,27 @@ export function generateQuoteId(quote: Quote) {
   return `quote${quote.createdAt.toString(36)}`;
 }
 
+export function stringifyMetadata(quote: Quote) {
+  const comment = quote.comment
+    ? ` ${COMMENT_ATTR}="${escape(quote.comment)}"`
+    : '';
+  return `{#${generateQuoteId(quote)} cite="${
+    quote.sourceUrl
+  }" ${ATTR_PREFIX}-color="${quote.color}"${comment}}`;
+}
+
+function escape(text: string) {
+  return text.replace(/[<>&"'\n]/gim, (i) => {
+    return '&#' + i.charCodeAt(0) + ';';
+  });
+}
+
+function unescape(text: string) {
+  return text.replace(/&#(\d+);/gim, (_, code) =>
+    String.fromCharCode(Number(code)),
+  );
+}
+
 export default class MarkdownService {
   private readonly renderer: Processor; // ast/md to html
   private readonly transformer: Processor; // ast/md to md
@@ -88,15 +109,15 @@ export default class MarkdownService {
 
     this.visit(root, 'blockquote', finder);
 
-    const { range, metadata, blockquoteNode } = getResult();
+    const { range, blockquoteNode } = getResult();
 
-    if (blockquoteNode && range && metadata) {
+    if (blockquoteNode && range) {
       const lastNode: Paragraph = {
         type: 'paragraph',
         children: [
           {
             type: 'text',
-            value: MarkdownService.stringifyMetadata(quote, metadata.id),
+            value: stringifyMetadata(quote),
           },
         ],
       };
@@ -140,7 +161,7 @@ export default class MarkdownService {
 
       quotes.push({
         sourceUrl,
-        comment: MarkdownService.unescape(comment),
+        comment: unescape(comment),
         color,
         contents,
         createdAt: timestamp,
@@ -160,18 +181,9 @@ export default class MarkdownService {
       );
     }
 
-    const quoteId = generateQuoteId(quote);
-
-    return `${processedContents.join(
-      '\n>\n',
-    )}\n>\n> ${MarkdownService.stringifyMetadata(quote, quoteId)}`;
-  }
-
-  private static stringifyMetadata(quote: Quote, id: string) {
-    const comment = quote.comment
-      ? ` ${COMMENT_ATTR}="${MarkdownService.escape(quote.comment)}"`
-      : '';
-    return `{#${id} cite="${quote.sourceUrl}" ${ATTR_PREFIX}-color="${quote.color}"${comment}}`;
+    return `${processedContents.join('\n>\n')}\n>\n> ${stringifyMetadata(
+      quote,
+    )}`;
   }
 
   removeBlockquote(quote: Quote, noteContent: string) {
@@ -228,17 +240,5 @@ export default class MarkdownService {
     }
 
     return timestamp;
-  }
-
-  private static escape(text: string) {
-    return text.replace(/[<>&"'\n]/gim, (i) => {
-      return '&#' + i.charCodeAt(0) + ';';
-    });
-  }
-
-  private static unescape(text: string) {
-    return text.replace(/&#(\d+);/gim, (_, code) =>
-      String.fromCharCode(Number(code)),
-    );
   }
 }

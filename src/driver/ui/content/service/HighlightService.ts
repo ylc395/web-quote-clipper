@@ -1,7 +1,7 @@
 import { InjectionKey, shallowRef, watchEffect } from 'vue';
 import debounce from 'lodash.debounce';
-import throttle from 'lodash.throttle';
 import type { Colors, Quote } from 'model/entity';
+import { stringifyMetadata } from 'service/MarkdownService';
 import { postQuote, toDataUrl } from 'driver/ui/request';
 import {
   isBlockElement,
@@ -59,7 +59,10 @@ export default class HighlightService {
     this.currentRange.value = undefined;
   };
 
-  capture = async (color: Colors) => {
+  capture = async (
+    color: Colors,
+    type: 'persist' | 'clipboard-inline' | 'clipboard-block',
+  ) => {
     if (!this.currentRange.value) {
       throw new Error('no range');
     }
@@ -68,18 +71,34 @@ export default class HighlightService {
     const result = await this.generateQuote(range, color);
 
     if (!result) {
-      return;
+      throw new Error('generate quote error');
     }
 
-    try {
+    if (type === 'clipboard-block') {
+      await navigator.clipboard.writeText(
+        `> ${result.quote.contents.join('\n>\n')}\n>\n ${stringifyMetadata(
+          result.quote,
+        )}`,
+      );
+    }
+
+    if (type === 'clipboard-inline') {
+      if (result.quote.contents.length > 0) {
+        throw new Error('can not copy to clipboard');
+      }
+
+      await navigator.clipboard.writeText(
+        `[${result.quote.contents[0]}]${stringifyMetadata(result.quote)}`,
+      );
+    }
+
+    if (type === 'persist') {
       const createdQuote = await postQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, result.range);
-      window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
-    } catch (error) {
-      // todo: handle error
-      console.error(error);
-      return;
+    } else {
+      this.markManager.highlightQuote(result.quote, result.range);
     }
+    window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
   };
 
   private async generateQuote(

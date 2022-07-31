@@ -68,7 +68,7 @@ export default defineComponent({
     <div class="web-clipper-button-container">
       <button
         v-for="color of colors"
-        @click="capture(color)"
+        @click="capture(color, 'persist')"
         :disabled="!range.isAvailable"
         :data-web-clipper-color="color"
       />
