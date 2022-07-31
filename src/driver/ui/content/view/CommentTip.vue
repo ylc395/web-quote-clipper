@@ -20,6 +20,10 @@ export default defineComponent({
     const isDisabled = computed(() => comment.value === quote.value.comment);
     const toggle = () => (commentMap[id] = !commentMap[id]);
     const reset = () => (comment.value = quote.value.comment);
+    const save: typeof updateQuote = async (...args) => {
+      await updateQuote(...args);
+      toggle();
+    };
 
     const { popper, popperRef } = usePopper(
       MarkManager.getMarkElsByQuoteId(id)[0],
@@ -39,7 +43,7 @@ export default defineComponent({
       popperRef,
       reset,
       toggle,
-      updateQuote,
+      save,
     };
   },
 });
@@ -57,9 +61,11 @@ export default defineComponent({
       <textarea
         v-model="comment"
         placeholder="Press Ctrl/Cmd+Enter to submit, Esc to exit"
+        @keydown.ctrl.enter="save(id, { comment })"
+        @keydown.meta.enter="save(id, { comment })"
       />
       <div class="web-clipper-comment-button-container">
-        <button :disabled="isDisabled" @click="updateQuote(id, { comment })">
+        <button :disabled="isDisabled" @click="save(id, { comment })">
           Save
         </button>
         <button :disabled="isDisabled" @click="reset">Reset</button>
