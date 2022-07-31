@@ -34,9 +34,15 @@ export function useSubmenu(id: string) {
   const toggleSubmenu = (name: keyof typeof submenuVisibility) => {
     if (name === 'comment' && matchedQuotesMap[id].comment) {
       commentMap[id] = !commentMap[id];
-      return;
+    } else {
+      submenuVisibility[name] = !submenuVisibility[name];
     }
-    submenuVisibility[name] = !submenuVisibility[name];
+
+    for (const key of Object.keys(submenuVisibility)) {
+      if (key !== name) {
+        submenuVisibility[key as keyof typeof submenuVisibility] = false;
+      }
+    }
   };
 
   return { submenuVisibility, toggleSubmenu };
