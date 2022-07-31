@@ -24,13 +24,18 @@ export function useTooltipPopper(quoteId: string) {
   return { popperRef, relatedEls, popper };
 }
 
-export function useSubmenu() {
+export function useSubmenu(id: string) {
+  const { matchedQuotesMap, commentMap } = inject(token)!;
   const submenuVisibility = reactive({
     color: false,
     comment: false,
   });
 
   const toggleSubmenu = (name: keyof typeof submenuVisibility) => {
+    if (name === 'comment' && matchedQuotesMap[id].comment) {
+      commentMap[id] = !commentMap[id];
+      return;
+    }
     submenuVisibility[name] = !submenuVisibility[name];
   };
 

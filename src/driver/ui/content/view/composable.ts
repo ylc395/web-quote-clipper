@@ -1,5 +1,10 @@
 import type DomMonitor from '../service/DomMonitor';
-import { createPopper, Instance, Options } from '@popperjs/core';
+import {
+  createPopper,
+  Instance,
+  OptionsGeneric,
+  StrictModifiers,
+} from '@popperjs/core';
 import {
   onUpdated,
   onBeforeUpdate,
@@ -11,7 +16,10 @@ import {
 } from 'vue';
 import { token } from '../service/MarkManager';
 
-export function usePopper(targetEl: HTMLElement, options: Partial<Options>) {
+export function usePopper(
+  targetEl: HTMLElement,
+  options: Partial<OptionsGeneric<StrictModifiers>>,
+) {
   const { domMonitor } = inject(token)!;
   const popper = shallowRef<Instance | undefined>();
   const popperRef = ref<undefined | HTMLElement>();

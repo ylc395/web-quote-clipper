@@ -28,6 +28,10 @@ export default defineComponent({
     const { matchedQuotesMap, deleteQuote, updateQuote, tooltipTargetMap } =
       inject(token)!;
     const quote = matchedQuotesMap[id];
+    const handleUpdate: typeof updateQuote = async (...args) => {
+      await updateQuote(...args);
+      delete tooltipTargetMap[id];
+    };
 
     const jump = () => {
       if (quote.note) {
@@ -36,7 +40,7 @@ export default defineComponent({
     };
 
     const { popperRef, relatedEls, popper } = useTooltipPopper(id);
-    const { submenuVisibility, toggleSubmenu } = useSubmenu();
+    const { submenuVisibility, toggleSubmenu } = useSubmenu(id);
     const comment = ref(quote.comment);
     const handleMouseout = (e: MouseEvent) => {
       const relatedTarget = e.relatedTarget as HTMLElement;
@@ -63,7 +67,7 @@ export default defineComponent({
       jump,
       toggleSubmenu,
       deleteQuote,
-      updateQuote,
+      handleUpdate,
     };
   },
 });
@@ -106,7 +110,7 @@ export default defineComponent({
         :data-web-clipper-color="color"
         v-for="color of colors"
         :key="color"
-        @click="updateQuote(id, { color })"
+        @click="handleUpdate(id, { color })"
       />
     </div>
     <div
@@ -116,8 +120,8 @@ export default defineComponent({
       <textarea
         placeholder="Press Ctrl/Cmd+Enter to submit, Esc to exit"
         v-model="comment"
-        @keydown.ctrl.enter="updateQuote(id, { comment })"
-        @keydown.meta.enter="updateQuote(id, { comment })"
+        @keydown.ctrl.enter="handleUpdate(id, { comment })"
+        @keydown.meta.enter="handleUpdate(id, { comment })"
       />
     </div>
   </div>

@@ -25,6 +25,7 @@ export default defineComponent({
       MarkManager.getMarkElsByQuoteId(id)[0],
       {
         placement: 'left-start',
+        modifiers: [{ name: 'offset', options: { offset: [0, 12] } }],
       },
     );
 
@@ -45,7 +46,11 @@ export default defineComponent({
 </script>
 <template>
   <div ref="popperRef" class="web-clipper-comment-container">
-    <button @click="toggle" class="web-clipper-comment-main-button">
+    <button
+      @click="toggle"
+      class="web-clipper-comment-main-button"
+      :class="{ 'web-clipper-comment-main-button-active': isExpanded }"
+    >
       <BIconChatRightTextFill />
     </button>
     <div v-if="isExpanded" class="web-clipper-comment-input">
@@ -107,6 +112,11 @@ export default defineComponent({
       padding: 2px 0;
       border-radius: 4px;
       cursor: pointer;
+      margin-right: 6px;
+
+      &:last-child {
+        margin-right: 0;
+      }
 
       &:disabled {
         color: rgba(255, 255, 255, 0.7);
