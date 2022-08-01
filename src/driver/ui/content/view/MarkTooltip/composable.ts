@@ -30,6 +30,7 @@ export function useSubmenu(id: string) {
   const submenuVisibility = reactive({
     color: false,
     comment: false,
+    copy: false,
   });
 
   const toggleSubmenu = (name: keyof typeof submenuVisibility) => {

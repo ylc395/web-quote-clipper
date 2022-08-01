@@ -2,7 +2,6 @@ import { shallowRef, watch } from 'vue';
 import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
-import { stringifyMetadata } from 'service/MarkdownService';
 import { postQuote, toDataUrl } from 'driver/ui/request';
 import {
   isBlockElement,
@@ -15,6 +14,7 @@ import {
   getLastChildDeep,
   getAncestor,
   isVisible,
+  copyQuoteToClipboard,
 } from '../utils';
 import MarkManager from './MarkManager';
 import { MARK_CLASS_NAME } from './constants';
@@ -75,24 +75,6 @@ export default class HighlightService {
       throw new Error('generate quote error');
     }
 
-    if (type === 'clipboard-block') {
-      await navigator.clipboard.writeText(
-        `> ${result.quote.contents.join('\n>\n>')}\n>\n> ${stringifyMetadata(
-          result.quote,
-        )}`,
-      );
-    }
-
-    if (type === 'clipboard-inline') {
-      if (result.quote.contents.length > 1) {
-        throw new Error('can not copy to clipboard');
-      }
-
-      await navigator.clipboard.writeText(
-        `[${result.quote.contents[0]}]${stringifyMetadata(result.quote)}`,
-      );
-    }
-
     if (type === 'persist') {
       const createdQuote = await postQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, {
@@ -100,6 +82,7 @@ export default class HighlightService {
         isPersisted: true,
       });
     } else {
+      copyQuoteToClipboard(result.quote, type);
       this.markManager.highlightQuote(result.quote, {
         range: result.range,
         isPersisted: false,

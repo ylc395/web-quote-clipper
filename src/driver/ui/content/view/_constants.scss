@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $mark-colors: (
   'yellow': #f3ce6d,
   'pink': #e96789,
@@ -19,4 +21,28 @@ $tooltip-color: rgba(56, 64, 73, 0.8);
   font-size: 15px;
   background-color: rgba(255, 255, 255, 0.85);
   font-family: inherit;
+}
+
+@mixin submenu {
+  all: initial;
+  background-color: $tooltip-color;
+  width: fit-content;
+  margin: 4px 0;
+  border-radius: 6px;
+}
+
+@mixin submenu-item {
+  all: initial;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 6px;
+  white-space: pre;
+  cursor: pointer;
+  display: block;
+  font-weight: bold;
+
+  &:hover {
+    background-color: color.adjust($tooltip-color, $lightness: 10%);
+  }
 }

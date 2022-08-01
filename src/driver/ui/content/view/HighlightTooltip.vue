@@ -14,7 +14,7 @@ export default defineComponent({
     const { capture, currentRange, generateQuote, generatedQuote } =
       container.resolve(HighlightService);
     const rootRef = ref<HTMLElement | undefined>();
-    let rootRect : DOMRect | undefined = undefined;
+    let rootRect: DOMRect | undefined = undefined;
     const isShowing = ref(true);
     const dbType = useConfig('db');
     const color = ref<Colors | undefined>();
@@ -109,7 +109,6 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use 'sass:color';
 @use './constants';
 
 $item-size: 20px;
@@ -164,28 +163,12 @@ $item-margin: 4px;
   }
 
   .web-clipper-tooltip-submenu {
-    all: initial;
+    @include constants.submenu;
     position: absolute;
-    background-color: constants.$tooltip-color;
-    color: #fff;
-    font-size: 14px;
-    font-family: inherit;
-    width: fit-content;
     left: 0;
-    border-radius: 6px;
-    margin: 4px 0;
 
     & > li {
-      padding: 6px;
-      white-space: pre;
-      cursor: pointer;
-
-      &:hover {
-        background-color: color.adjust(
-          constants.$tooltip-color,
-          $lightness: 10%
-        );
-      }
+      @include constants.submenu-item;
     }
   }
 }

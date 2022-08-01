@@ -5,6 +5,7 @@ import {
   BIconTrashFill,
   BIconPaletteFill,
   BIconChatRightTextFill,
+  BIconClipboard2Fill,
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
@@ -18,6 +19,7 @@ export default defineComponent({
     BIconTrashFill,
     BIconPaletteFill,
     BIconChatRightTextFill,
+    BIconClipboard2Fill,
     JoplinIcon,
   },
   props: {
@@ -34,10 +36,11 @@ export default defineComponent({
       tooltipTargetMap,
       toggleMarkHover,
       jumpToJoplin,
+      copyAs,
     } = container.resolve(MarkManager);
     const quote = matchedQuotesMap[id];
-    const handleUpdate: typeof updateQuote = async (...args) => {
-      await updateQuote(...args);
+    const handleUpdate = async (patch: Parameters<typeof updateQuote>[1]) => {
+      await updateQuote(id, patch);
       delete tooltipTargetMap[id];
     };
 
@@ -55,6 +58,12 @@ export default defineComponent({
         delete tooltipTargetMap[id];
       }
     };
+
+    const handleCopy = async (type: Parameters<typeof copyAs>[1]) => {
+      await copyAs(id, type);
+      delete tooltipTargetMap[id];
+    };
+
     const dbType = useConfig('db');
 
     useDomMonitor();
@@ -79,6 +88,7 @@ export default defineComponent({
       toggleSubmenu,
       deleteQuote,
       handleUpdate,
+      handleCopy,
     };
   },
 });
@@ -102,6 +112,14 @@ export default defineComponent({
         <BIconTrashFill />
       </button>
       <button
+        v-if="dbType === JOPLIN && !quote.note"
+        class="web-clipper-mark-manager-main-button"
+        @click="toggleSubmenu('copy')"
+        title="Copy"
+      >
+        <BIconClipboard2Fill />
+      </button>
+      <button
         v-if="quote.note"
         class="web-clipper-mark-manager-main-button"
         @click="toggleSubmenu('color')"
@@ -123,7 +141,7 @@ export default defineComponent({
         :data-web-clipper-color="color"
         v-for="color of colors"
         :key="color"
-        @click="handleUpdate(id, { color })"
+        @click="handleUpdate({ color })"
       />
     </div>
     <div
@@ -133,9 +151,20 @@ export default defineComponent({
       <textarea
         placeholder="Press Ctrl/Cmd+Enter to submit, Esc to exit"
         v-model="comment"
-        @keydown.ctrl.enter="handleUpdate(id, { comment })"
-        @keydown.meta.enter="handleUpdate(id, { comment })"
+        @keydown.ctrl.enter="handleUpdate({ comment })"
+        @keydown.meta.enter="handleUpdate({ comment })"
       />
+    </div>
+    <div v-if="submenuVisibility.copy" class="web-clipper-mark-manager-copy">
+      <button @click="handleCopy('clipboard-block')">
+        Copy As Md Blockquote
+      </button>
+      <button
+        v-if="quote.contents.length <= 1"
+        @click="handleCopy('clipboard-inline')"
+      >
+        Copy As Md Text
+      </button>
     </div>
   </div>
 </template>
@@ -176,7 +205,8 @@ export default defineComponent({
     }
   }
 
-  .web-clipper-mark-manager-colors {
+  .web-clipper-mark-manager-colors,
+  .web-clipper-mark-manager-copy {
     margin-bottom: 4px;
     background-color: constants.$tooltip-color;
     border-radius: 6px;
@@ -184,8 +214,10 @@ export default defineComponent({
     width: fit-content;
     padding: 4px 6px;
     display: flex;
+  }
 
-    & > button[data-web-clipper-color] {
+  .web-clipper-mark-manager-colors {
+    & > button {
       all: initial;
       width: 18px;
       height: 18px;
@@ -207,6 +239,17 @@ export default defineComponent({
 
   .web-clipper-mark-manager-comment > textarea {
     @include constants.textarea;
+  }
+
+  .web-clipper-mark-manager-copy {
+    @include constants.submenu;
+    overflow: hidden;
+
+    & > button {
+      @include constants.submenu-item;
+      box-sizing: border-box;
+      width: 100%;
+    }
   }
 }
 </style>

@@ -1,5 +1,7 @@
 import BLOCK_ELEMENTS from 'block-elements';
 import { BackgroundMessage, BackgroundMessageEvents } from 'driver/message';
+import { stringifyMetadata } from 'service/MarkdownService';
+import type { Quote } from 'model/entity';
 
 export const isTextNode = (node: Node): node is Text =>
   node.nodeType === document.TEXT_NODE;
@@ -79,4 +81,25 @@ export const onUrlUpdated = (cb: (newUrl: string) => void) => {
       // see https://github.com/w3c/webextensions/issues/12
       cb(payload.url),
   );
+};
+
+export const copyQuoteToClipboard = async (
+  quote: Quote,
+  type: 'clipboard-inline' | 'clipboard-block',
+) => {
+  if (type === 'clipboard-block') {
+    await navigator.clipboard.writeText(
+      `> ${quote.contents.join('\n>\n>')}\n>\n> ${stringifyMetadata(quote)}`,
+    );
+  }
+
+  if (type === 'clipboard-inline') {
+    if (quote.contents.length > 1) {
+      throw new Error('can not copy to clipboard');
+    }
+
+    await navigator.clipboard.writeText(
+      `[${quote.contents[0]}]${stringifyMetadata(quote)}`,
+    );
+  }
 };

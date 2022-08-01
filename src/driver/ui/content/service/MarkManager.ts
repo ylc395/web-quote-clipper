@@ -15,7 +15,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY,
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
-import { isVisible, onUrlUpdated } from '../utils';
+import { copyQuoteToClipboard, isVisible, onUrlUpdated } from '../utils';
 import { DbTypes } from 'model/db';
 
 let id = 0;
@@ -305,5 +305,10 @@ export default class MarkManager {
     }
 
     window.open(`joplin://x-callback-url/openNote?id=${quote.note.id}`);
+  };
+
+  copyAs = async (id: string, type: 'clipboard-inline' | 'clipboard-block') => {
+    const quote = this.matchedQuotesMap[id];
+    await copyQuoteToClipboard(quote, type);
   };
 }
