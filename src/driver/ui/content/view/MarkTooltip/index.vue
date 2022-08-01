@@ -33,6 +33,7 @@ export default defineComponent({
       updateQuote,
       tooltipTargetMap,
       toggleMarkHover,
+      jumpToJoplin,
     } = container.resolve(MarkManager);
     const quote = matchedQuotesMap[id];
     const handleUpdate: typeof updateQuote = async (...args) => {
@@ -40,15 +41,9 @@ export default defineComponent({
       delete tooltipTargetMap[id];
     };
 
-    const jump = () => {
-      if (quote.note) {
-        window.open(`joplin://x-callback-url/openNote?id=${quote.note.id}`);
-      }
-    };
-
     const { popperRef, relatedEls, popper } = useTooltipPopper(id);
     const { submenuVisibility, toggleSubmenu } = useSubmenu(id);
-    const comment = ref(quote.comment);
+    const comment = ref(matchedQuotesMap[id].comment);
     const handleMouseout = (e: MouseEvent) => {
       const relatedTarget = e.relatedTarget as HTMLElement;
       const isStillInMark =
@@ -80,7 +75,7 @@ export default defineComponent({
       popperRef,
       dbType,
       JOPLIN: DbTypes.Joplin,
-      jump,
+      jumpToJoplin,
       toggleSubmenu,
       deleteQuote,
       handleUpdate,
@@ -94,7 +89,7 @@ export default defineComponent({
       <button
         v-if="quote.note && dbType === JOPLIN"
         class="web-clipper-mark-manager-main-button"
-        @click="jump"
+        @click="jumpToJoplin(id)"
         title="Open In Joplin"
       >
         <JoplinIcon />

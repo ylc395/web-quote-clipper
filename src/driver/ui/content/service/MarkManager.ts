@@ -296,4 +296,14 @@ export default class MarkManager {
     const urlObj = new URL(url);
     return `${urlObj.origin}${urlObj.pathname}`;
   }
+
+  jumpToJoplin = (id: string) => {
+    const quote = this.matchedQuotesMap[id];
+
+    if (!quote || !quote.note) {
+      throw new Error('no quote');
+    }
+
+    window.open(`joplin://x-callback-url/openNote?id=${quote.note.id}`);
+  };
 }
