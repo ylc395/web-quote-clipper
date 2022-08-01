@@ -27,8 +27,13 @@ export default defineComponent({
     },
   },
   setup({ id }) {
-    const { matchedQuotesMap, deleteQuote, updateQuote, tooltipTargetMap } =
-      container.resolve(MarkManager);
+    const {
+      matchedQuotesMap,
+      deleteQuote,
+      updateQuote,
+      tooltipTargetMap,
+      toggleMarkHover,
+    } = container.resolve(MarkManager);
     const quote = matchedQuotesMap[id];
     const handleUpdate: typeof updateQuote = async (...args) => {
       await updateQuote(...args);
@@ -58,8 +63,14 @@ export default defineComponent({
     const dbType = useConfig('db');
 
     useDomMonitor();
-    onMounted(() => document.addEventListener('mouseout', handleMouseout));
-    onUnmounted(() => document.removeEventListener('mouseout', handleMouseout));
+    onMounted(() => {
+      document.addEventListener('mouseout', handleMouseout);
+      toggleMarkHover(id);
+    });
+    onUnmounted(() => {
+      document.removeEventListener('mouseout', handleMouseout);
+      toggleMarkHover(id);
+    });
 
     return {
       colors: COLORS,

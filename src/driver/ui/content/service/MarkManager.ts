@@ -276,6 +276,13 @@ export default class MarkManager {
     ) as HTMLElement[];
   }
 
+  toggleMarkHover = (id: string) => {
+    this.domMonitor.stop();
+    MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+      el.classList.toggle('web-clipper-mark-hover'),
+    );
+    this.domMonitor.start();
+  };
   private static getUrl(url: string) {
     const urlObj = new URL(url);
     return `${urlObj.origin}${urlObj.pathname}`;
