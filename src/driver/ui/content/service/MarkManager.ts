@@ -1,17 +1,14 @@
 import highlightRange from 'dom-highlight-range';
-import { singleton } from 'tsyringe';
+import { container, singleton } from 'tsyringe';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import {
-  InjectionKey,
-  shallowReactive,
-  shallowRef,
-  watch,
-  computed,
-} from 'vue';
+import { shallowReactive, shallowRef, watch, computed } from 'vue';
+
 import type { Quote } from 'model/entity';
+import ConfigService from 'service/ConfigService';
 import { setBadgeText } from 'driver/ui/extension/message';
 import { getQuotes, deleteQuote, updateQuote } from 'driver/ui/request';
+
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
 import {
   MARK_CLASS_NAME,
@@ -19,12 +16,14 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import { isVisible, onUrlUpdated } from '../utils';
+import { DbTypes } from 'model/db';
 
 let id = 0;
 const generateId = () => String(++id);
 
 @singleton()
 export default class MarkManager {
+  private readonly config = container.resolve(ConfigService);
   private pen = new Mark(document.body);
   readonly matchedQuotesMap: Record<string, Quote> = shallowReactive({});
   readonly tooltipTargetMap: Record<string, HTMLElement> = shallowReactive({});
@@ -171,15 +170,20 @@ export default class MarkManager {
     });
   }, 500);
 
-  async highlightQuote(quote: Quote, range?: Range) {
+  async highlightQuote(
+    quote: Quote,
+    option?: { range: Range; isPersisted: boolean },
+  ) {
     const quoteId = generateId();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
 
     const result = await new Promise<boolean>((resolve) => {
-      if (range) {
+      if (option) {
         this.domMonitor.stop();
-        highlightRange(range, 'mark', {
-          class: className,
+        highlightRange(option.range, 'mark', {
+          class:
+            className +
+            (option.isPersisted ? '' : ` ${MARK_CLASS_NAME}-unpersisted`),
           [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
         });
         this.domMonitor.start();
@@ -264,7 +268,12 @@ export default class MarkManager {
   };
 
   deleteQuote = async (quoteId: string) => {
-    await deleteQuote(this.matchedQuotesMap[quoteId]);
+    const quote = this.matchedQuotesMap[quoteId];
+
+    if ((await this.config.get('db')) !== DbTypes.Joplin || quote.note) {
+      await deleteQuote(quote);
+    }
+
     this.removeQuoteById(quoteId);
   };
 

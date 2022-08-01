@@ -1,4 +1,4 @@
-import { InjectionKey, shallowRef, watchEffect } from 'vue';
+import { shallowRef, watch } from 'vue';
 import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
@@ -42,17 +42,23 @@ export default class HighlightService {
     | undefined
   >();
 
+  readonly generatedQuote = shallowRef<
+    { range: Range; quote: Quote } | undefined
+  >();
+
   constructor() {
     document.addEventListener(
       'selectionchange',
       debounce(this.refreshSelectionRange, 500),
     );
-    watchEffect(() => {
-      if (this.currentRange.value) {
+
+    watch(this.currentRange, (value) => {
+      if (value) {
         document.addEventListener('selectionchange', this.clearRange);
       } else {
         document.removeEventListener('selectionchange', this.clearRange);
       }
+      this.generatedQuote.value = undefined;
     });
   }
 
@@ -61,15 +67,9 @@ export default class HighlightService {
   };
 
   capture = async (
-    color: Colors,
     type: 'persist' | 'clipboard-inline' | 'clipboard-block',
   ) => {
-    if (!this.currentRange.value) {
-      throw new Error('no range');
-    }
-
-    const { range } = this.currentRange.value;
-    const result = await this.generateQuote(range, color);
+    const result = this.generatedQuote.value;
 
     if (!result) {
       throw new Error('generate quote error');
@@ -77,14 +77,14 @@ export default class HighlightService {
 
     if (type === 'clipboard-block') {
       await navigator.clipboard.writeText(
-        `> ${result.quote.contents.join('\n>\n')}\n>\n ${stringifyMetadata(
+        `> ${result.quote.contents.join('\n>\n>')}\n>\n> ${stringifyMetadata(
           result.quote,
         )}`,
       );
     }
 
     if (type === 'clipboard-inline') {
-      if (result.quote.contents.length > 0) {
+      if (result.quote.contents.length > 1) {
         throw new Error('can not copy to clipboard');
       }
 
@@ -95,21 +95,32 @@ export default class HighlightService {
 
     if (type === 'persist') {
       const createdQuote = await postQuote(result.quote);
-      this.markManager.highlightQuote(createdQuote, result.range);
+      this.markManager.highlightQuote(createdQuote, {
+        range: result.range,
+        isPersisted: true,
+      });
     } else {
-      this.markManager.highlightQuote(result.quote, result.range);
+      this.markManager.highlightQuote(result.quote, {
+        range: result.range,
+        isPersisted: false,
+      });
     }
     window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
   };
 
-  private async generateQuote(
-    range: Range,
-    color: Colors,
-  ): Promise<{ quote: Quote; range: Range } | undefined> {
-    // todo: too little case this function for
+  generateQuote = async (color: Colors) => {
+    if (this.generatedQuote.value) {
+      return;
+    }
 
+    if (!this.currentRange.value) {
+      throw new Error('no current range');
+    }
+
+    const { range } = this.currentRange.value;
     let { startContainer, endContainer } = range;
 
+    // todo: too little case this function for
     if (
       (!isElement(startContainer) && !isTextNode(startContainer)) ||
       (!isElement(endContainer) && !isTextNode(endContainer))
@@ -267,7 +278,7 @@ export default class HighlightService {
       newRange.setEndAfter(previousNode);
     }
 
-    return {
+    this.generatedQuote.value = {
       quote: {
         sourceUrl: location.href,
         color,
@@ -277,7 +288,7 @@ export default class HighlightService {
       },
       range: newRange,
     };
-  }
+  };
 
   private static isAvailableRange = (range: Range) => {
     const marks = Array.from(document.querySelectorAll(`.${MARK_CLASS_NAME}`));

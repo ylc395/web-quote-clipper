@@ -92,7 +92,7 @@ export default defineComponent({
   <div ref="popperRef" class="web-clipper-mark-manager-tooltip">
     <div class="web-clipper-mark-manager-button-container">
       <button
-        v-if="dbType === JOPLIN"
+        v-if="quote.note && dbType === JOPLIN"
         class="web-clipper-mark-manager-main-button"
         @click="jump"
         title="Open In Joplin"
@@ -107,6 +107,7 @@ export default defineComponent({
         <BIconTrashFill />
       </button>
       <button
+        v-if="quote.note"
         class="web-clipper-mark-manager-main-button"
         @click="toggleSubmenu('color')"
         title="Color"
@@ -114,6 +115,7 @@ export default defineComponent({
         <BIconPaletteFill />
       </button>
       <button
+        v-if="quote.note"
         class="web-clipper-mark-manager-main-button"
         @click="toggleSubmenu('comment')"
         title="Comment"

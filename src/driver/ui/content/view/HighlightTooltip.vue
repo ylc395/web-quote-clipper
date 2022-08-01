@@ -2,25 +2,29 @@
 import { container } from 'tsyringe';
 import { BIconBrushFill } from 'bootstrap-icons-vue';
 import throttle from 'lodash.throttle';
-import { defineComponent, ref, watchPostEffect } from 'vue';
-import { COLORS } from 'model/entity';
-import { useDomMonitor } from './composable';
+import { defineComponent, ref, watchPostEffect, watch } from 'vue';
+import { Colors, COLORS } from 'model/entity';
+import { DbTypes } from 'model/db';
+import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
 
 export default defineComponent({
   components: { BIconBrushFill },
   setup() {
-    const { capture, currentRange } = container.resolve(HighlightService);
+    const { capture, currentRange, generateQuote, generatedQuote } =
+      container.resolve(HighlightService);
     const rootRef = ref<HTMLElement | undefined>();
-    const rootRect = ref<DOMRect | undefined>();
+    let rootRect : DOMRect | undefined = undefined;
     const isShowing = ref(true);
+    const dbType = useConfig('db');
+    const color = ref<Colors | undefined>();
 
     const toggleWhenScroll = throttle(() => {
-      if (!rootRect.value || !currentRange.value) {
+      if (!rootRect || !currentRange.value) {
         throw new Error('no rootElRect');
       }
 
-      const { height: tooltipHeight, y: tooltipY } = rootRect.value;
+      const { height: tooltipHeight, y: tooltipY } = rootRect;
       const { height: rangeHeight, y: rangeY } =
         currentRange.value.range.getBoundingClientRect();
 
@@ -29,16 +33,23 @@ export default defineComponent({
         tooltipY - (rangeY + rangeHeight) < 80;
     }, 300);
 
+    const handleColorPicked = (_color: Colors) => {
+      color.value = _color;
+      generateQuote(_color);
+    };
+
     watchPostEffect(() => {
       if (rootRef.value) {
-        rootRect.value = rootRef.value.getBoundingClientRect();
+        rootRect = rootRef.value.getBoundingClientRect();
         document.addEventListener('scroll', toggleWhenScroll, true);
       } else {
-        rootRect.value = undefined;
+        rootRect = undefined;
         document.removeEventListener('scroll', toggleWhenScroll, true);
         isShowing.value = true;
       }
     });
+
+    watch(currentRange, () => (color.value = undefined));
 
     useDomMonitor();
 
@@ -47,7 +58,12 @@ export default defineComponent({
       range: currentRange,
       rootRef,
       isShowing,
+      dbType,
+      JOPLIN: DbTypes.Joplin,
+      color,
       capture,
+      generatedQuote,
+      handleColorPicked,
     };
   },
 });
@@ -68,15 +84,32 @@ export default defineComponent({
     <BIconBrushFill />
     <div class="web-clipper-button-container">
       <button
-        v-for="color of colors"
-        @click="capture(color, 'persist')"
+        v-for="_color of colors"
+        :class="{ 'web-clipper-selected-color': color === _color }"
+        @click="handleColorPicked(_color)"
         :disabled="!range.isAvailable"
-        :data-web-clipper-color="color"
+        :data-web-clipper-color="_color"
       />
     </div>
+    <ul
+      class="web-clipper-tooltip-submenu"
+      v-if="color"
+      :style="{
+        top: range.reversed ? '' : '100%',
+        bottom: range.reversed ? '100%' : '',
+      }"
+    >
+      <li @click="capture('persist')">Save To Joplin</li>
+      <li @click="capture('clipboard-block')">Copy As Md Blockquote</li>
+      <li
+        v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
+        @click="capture('clipboard-inline')"
+      >Copy As Md Text</li>
+    </ul>
   </div>
 </template>
 <style lang="scss">
+@use 'sass:color';
 @use './constants';
 
 $item-size: 20px;
@@ -88,6 +121,7 @@ $item-margin: 4px;
   background-color: constants.$tooltip-color;
   padding: 6px 8px;
   border-radius: 8px;
+  user-select: none;
 
   & > svg {
     width: $item-size;
@@ -108,6 +142,7 @@ $item-margin: 4px;
     border-radius: 50%;
     cursor: pointer;
     margin-right: $item-margin;
+    box-sizing: border-box;
 
     &:last-child {
       margin-right: 0;
@@ -116,11 +151,41 @@ $item-margin: 4px;
     &[disabled] {
       opacity: 0.7;
     }
+
+    &.web-clipper-selected-color {
+      border: 2px solid #fff;
+    }
   }
 
   @each $key, $value in constants.$mark-colors {
     button[data-web-clipper-color='#{$key}'] {
       background-color: $value;
+    }
+  }
+
+  .web-clipper-tooltip-submenu {
+    all: initial;
+    position: absolute;
+    background-color: constants.$tooltip-color;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    width: fit-content;
+    left: 0;
+    border-radius: 6px;
+    margin: 4px 0;
+
+    & > li {
+      padding: 6px;
+      white-space: pre;
+      cursor: pointer;
+
+      &:hover {
+        background-color: color.adjust(
+          constants.$tooltip-color,
+          $lightness: 10%
+        );
+      }
     }
   }
 }
