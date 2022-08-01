@@ -104,6 +104,8 @@ export default class MarkManager {
         this.domMonitor.start();
         this.highlightAll();
       }
+
+      this.updateBadgeText();
     } catch (error) {
       // todo: handle error
       console.error(error);
