@@ -12,10 +12,10 @@ import {
   onUnmounted,
   ref,
   shallowRef,
-  inject,
 } from 'vue';
 import MarkManager from '../service/MarkManager';
 import type DomMonitor from '../service/DomMonitor';
+import ConfigService, { ConfigEvents } from 'service/ConfigService';
 
 export function usePopper(
   targetEl: HTMLElement,
@@ -46,4 +46,19 @@ export function useDomMonitor(domMonitor?: DomMonitor) {
   domMonitor = domMonitor || container.resolve(MarkManager).domMonitor;
   onBeforeUpdate(domMonitor.stop);
   onUpdated(domMonitor.start);
+}
+
+export function useConfig(...args: Parameters<ConfigService['get']>) {
+  const configService = container.resolve(ConfigService);
+  const key = args[0];
+  const value = shallowRef<string | undefined>();
+  const update = async () => {
+    value.value = await configService.get(key);
+  };
+
+  configService.on(ConfigEvents.Updated, update);
+  onUnmounted(() => configService.off(ConfigEvents.Updated, update));
+  update();
+
+  return value;
 }

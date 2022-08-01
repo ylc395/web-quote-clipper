@@ -1,7 +1,7 @@
 import { container } from 'tsyringe';
-import { storageToken, databaseToken } from 'model/db';
+import { storageToken, databaseToken, DbTypes } from 'model/db';
 import QuoteService from 'service/QuoteService';
-import ConfigService, { DbTypes } from 'service/ConfigService';
+import ConfigService from 'service/ConfigService';
 import { BrowserQuoteDatabase, BrowserStorage } from 'driver/browserStorage';
 import Joplin from '../joplin';
 
@@ -9,7 +9,6 @@ container.registerSingleton(storageToken, BrowserStorage);
 
 const DbMap = {
   [DbTypes.Browser]: BrowserQuoteDatabase,
-  [DbTypes.Github]: BrowserQuoteDatabase,
   [DbTypes.Joplin]: Joplin,
 } as const;
 

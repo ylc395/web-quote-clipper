@@ -7,10 +7,11 @@ import {
   BIconChatRightTextFill,
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
+import { DbTypes } from 'model/db';
 import JoplinIcon from './JoplinIcon.vue';
 import { useTooltipPopper, useSubmenu } from './composable';
 import MarkManager from '../../service/MarkManager';
-import { useDomMonitor } from '../composable';
+import { useDomMonitor, useConfig } from '../composable';
 
 export default defineComponent({
   components: {
@@ -54,6 +55,7 @@ export default defineComponent({
         delete tooltipTargetMap[id];
       }
     };
+    const dbType = useConfig('db');
 
     useDomMonitor();
     onMounted(() => document.addEventListener('mouseout', handleMouseout));
@@ -65,6 +67,8 @@ export default defineComponent({
       submenuVisibility,
       comment,
       popperRef,
+      dbType,
+      JOPLIN: DbTypes.Joplin,
       jump,
       toggleSubmenu,
       deleteQuote,
@@ -77,7 +81,7 @@ export default defineComponent({
   <div ref="popperRef" class="web-clipper-mark-manager-tooltip">
     <div class="web-clipper-mark-manager-button-container">
       <button
-        v-if="quote.note"
+        v-if="dbType === JOPLIN"
         class="web-clipper-mark-manager-main-button"
         @click="jump"
         title="Open In Joplin"

@@ -25,3 +25,8 @@ export interface Storage extends EventEmitter<StorageEvents> {
 export const storageToken: InjectionToken<Storage> = Symbol('storageToken');
 export const databaseToken: InjectionToken<QuoteDatabase> =
   Symbol('databaseToken');
+
+export enum DbTypes {
+  Joplin = 'JOPLIN',
+  Browser = 'BROWSER',
+}

@@ -1,32 +1,22 @@
 import { container, singleton } from 'tsyringe';
-import type { Note } from 'model/entity';
+import { AppConfig, DEFAULT_CONFIG } from 'model/config';
 import { StorageEvents, storageToken, StorageChangedEvent } from 'model/db';
+import EventEmitter from 'eventemitter3';
 
 const CONFIG_KEY = 'config';
 
-export enum DbTypes {
-  Joplin = 'JOPLIN',
-  Github = 'GITHUB',
-  Browser = 'BROWSER',
+export enum ConfigEvents {
+  Updated = 'Updated',
 }
-
-interface AppConfig {
-  targetId: Note['id'];
-  db: DbTypes;
-}
-
-const DEFAULT_CONFIG: AppConfig = {
-  targetId: '622b83982fd244dca3bc3bcecb8c29e4',
-  db: DbTypes.Joplin,
-};
 
 @singleton()
-export default class ConfigService {
+export default class ConfigService extends EventEmitter<ConfigEvents> {
   private readonly storage = container.resolve(storageToken);
   private config?: AppConfig;
   private readonly ready: Promise<void>;
 
   constructor() {
+    super();
     this.ready = this.init();
     this.storage.on(StorageEvents.Changed, this.handleStorageChanged);
   }
@@ -37,6 +27,7 @@ export default class ConfigService {
     }
 
     this.config = this.parseConfigText(changes[CONFIG_KEY].newValue);
+    this.emit(ConfigEvents.Updated);
   };
 
   private parseConfigText(v: unknown) {
@@ -55,6 +46,7 @@ export default class ConfigService {
   private async init() {
     const configText = await this.storage.get(CONFIG_KEY);
     this.config = this.parseConfigText(configText);
+    this.emit(ConfigEvents.Updated);
   }
 
   async get<T extends keyof AppConfig>(key: T): Promise<AppConfig[T]> {
