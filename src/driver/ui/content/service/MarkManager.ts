@@ -1,4 +1,5 @@
 import highlightRange from 'dom-highlight-range';
+import { singleton } from 'tsyringe';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
 import {
@@ -6,7 +7,7 @@ import {
   shallowReactive,
   shallowRef,
   watch,
-  watchEffect,
+  computed,
 } from 'vue';
 import type { Quote } from 'model/entity';
 import { setBadgeText } from 'driver/ui/extension/message';
@@ -18,13 +19,11 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import { isVisible, onUrlUpdated } from '../utils';
-import { computed } from '@vue/reactivity';
 
 let id = 0;
 const generateId = () => String(++id);
 
-export const token: InjectionKey<MarkManager> = Symbol('MarkManager');
-
+@singleton()
 export default class MarkManager {
   private pen = new Mark(document.body);
   readonly matchedQuotesMap: Record<string, Quote> = shallowReactive({});

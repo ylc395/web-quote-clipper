@@ -1,26 +1,17 @@
 <script lang="ts">
-import { provide, defineComponent } from 'vue';
-
-import MarkManager, { token as markManagerToken } from '../service/MarkManager';
-import HighlightService, {
-  token as highlightToken,
-} from '../service/HighlightService';
-
+import { defineComponent } from 'vue';
+import MarkManager from '../service/MarkManager';
 import MarkTooltip from './MarkTooltip/index.vue';
 import CommentTip from './CommentTip.vue';
 import HighlightTooltip from './HighlightTooltip.vue';
 import { useDomMonitor } from './composable';
 import './style.scss';
+import { container } from 'tsyringe';
 
 export default defineComponent({
-  props: {
-    markManager: { type: MarkManager, required: true },
-    highlightService: { type: HighlightService, required: true },
-  },
   components: { MarkTooltip, CommentTip, HighlightTooltip },
-  setup({ markManager, highlightService }) {
-    provide(markManagerToken, markManager);
-    provide(highlightToken, highlightService);
+  setup() {
+    const markManager = container.resolve(MarkManager);
     useDomMonitor(markManager.domMonitor);
     return { markManager };
   },

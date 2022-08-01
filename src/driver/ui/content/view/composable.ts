@@ -1,4 +1,4 @@
-import type DomMonitor from '../service/DomMonitor';
+import { container } from 'tsyringe';
 import {
   createPopper,
   Instance,
@@ -14,13 +14,14 @@ import {
   shallowRef,
   inject,
 } from 'vue';
-import { token } from '../service/MarkManager';
+import MarkManager from '../service/MarkManager';
+import type DomMonitor from '../service/DomMonitor';
 
 export function usePopper(
   targetEl: HTMLElement,
   options: Partial<OptionsGeneric<StrictModifiers>>,
 ) {
-  const { domMonitor } = inject(token)!;
+  const { domMonitor } = container.resolve(MarkManager);
   const popper = shallowRef<Instance | undefined>();
   const popperRef = ref<undefined | HTMLElement>();
 
@@ -42,7 +43,7 @@ export function usePopper(
 }
 
 export function useDomMonitor(domMonitor?: DomMonitor) {
-  domMonitor = domMonitor || inject(token)!.domMonitor;
+  domMonitor = domMonitor || container.resolve(MarkManager).domMonitor;
   onBeforeUpdate(domMonitor.stop);
   onUpdated(domMonitor.start);
 }

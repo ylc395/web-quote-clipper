@@ -1,4 +1,5 @@
 import { InjectionKey, shallowRef, watchEffect } from 'vue';
+import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
 import { stringifyMetadata } from 'service/MarkdownService';
@@ -15,7 +16,7 @@ import {
   getAncestor,
   isVisible,
 } from '../utils';
-import type MarkManager from './MarkManager';
+import MarkManager from './MarkManager';
 import { MARK_CLASS_NAME } from './constants';
 
 const SUSPICIOUS_EMPTY_STRING_REGEX = /^\s{5,}$/;
@@ -27,9 +28,9 @@ function pushContents(contents: string[], content: string) {
   }
 }
 
-export const token: InjectionKey<HighlightService> = Symbol();
-
+@singleton()
 export default class HighlightService {
+  private readonly markManager = container.resolve(MarkManager);
   readonly currentRange = shallowRef<
     | {
         range: Range;
@@ -41,7 +42,7 @@ export default class HighlightService {
     | undefined
   >();
 
-  constructor(private readonly markManager: MarkManager) {
+  constructor() {
     document.addEventListener(
       'selectionchange',
       debounce(this.refreshSelectionRange, 500),

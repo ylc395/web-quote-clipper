@@ -1,5 +1,6 @@
-import { inject, reactive } from 'vue';
-import MarkManager, { token } from '../../service/MarkManager';
+import { container } from 'tsyringe';
+import { reactive } from 'vue';
+import MarkManager from '../../service/MarkManager';
 import { usePopper } from '../composable';
 
 function findBaseEl(targetEl: HTMLElement, relatedEls: HTMLElement[]) {
@@ -13,7 +14,7 @@ function findBaseEl(targetEl: HTMLElement, relatedEls: HTMLElement[]) {
 }
 
 export function useTooltipPopper(quoteId: string) {
-  const { tooltipTargetMap } = inject(token)!;
+  const { tooltipTargetMap } = container.resolve(MarkManager);
   const targetEl = tooltipTargetMap[quoteId];
   const relatedEls = MarkManager.getMarkElsByQuoteId(quoteId);
 
@@ -25,7 +26,7 @@ export function useTooltipPopper(quoteId: string) {
 }
 
 export function useSubmenu(id: string) {
-  const { matchedQuotesMap, commentMap } = inject(token)!;
+  const { matchedQuotesMap, commentMap } = container.resolve(MarkManager);
   const submenuVisibility = reactive({
     color: false,
     comment: false,

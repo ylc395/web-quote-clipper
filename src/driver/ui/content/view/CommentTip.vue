@@ -1,8 +1,9 @@
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from 'vue';
 import { BIconChatRightTextFill } from 'bootstrap-icons-vue';
-import MarkManager, { token } from '../service/MarkManager';
+import MarkManager from '../service/MarkManager';
 import { useDomMonitor, usePopper } from './composable';
+import { container } from 'tsyringe';
 
 export default defineComponent({
   props: {
@@ -13,7 +14,8 @@ export default defineComponent({
   },
   components: { BIconChatRightTextFill },
   setup({ id }) {
-    const { matchedQuotesMap, updateQuote, commentMap } = inject(token)!;
+    const { matchedQuotesMap, updateQuote, commentMap } =
+      container.resolve(MarkManager);
     const quote = computed(() => matchedQuotesMap[id]);
     const comment = ref(quote.value.comment);
     const isExpanded = computed(() => commentMap[id]);

@@ -1,4 +1,5 @@
 import EventEmitter from 'eventemitter3';
+import { singleton } from 'tsyringe';
 import { MARK_CLASS_NAME, MARK_QUOTE_ID_DATASET_KEY_CAMEL } from './constants';
 import { isElement, isVisible } from '../utils';
 
@@ -7,6 +8,7 @@ export enum DomMonitorEvents {
   ContentAdded = 'CONTENT_ADDED',
 }
 
+@singleton()
 export default class DomMonitor extends EventEmitter<DomMonitorEvents> {
   private readonly domMonitor = this.createDomMonitor();
   private readonly removedQuoteIds: string[] = [];

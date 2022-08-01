@@ -1,15 +1,16 @@
 <script lang="ts">
+import { container } from 'tsyringe';
 import { BIconBrushFill } from 'bootstrap-icons-vue';
 import throttle from 'lodash.throttle';
-import { defineComponent, inject, ref, watchPostEffect } from 'vue';
+import { defineComponent, ref, watchPostEffect } from 'vue';
 import { COLORS } from 'model/entity';
-import { token } from '../service/HighlightService';
 import { useDomMonitor } from './composable';
+import HighlightService from '../service/HighlightService';
 
 export default defineComponent({
   components: { BIconBrushFill },
   setup() {
-    const { capture, currentRange } = inject(token)!;
+    const { capture, currentRange } = container.resolve(HighlightService);
     const rootRef = ref<HTMLElement | undefined>();
     const rootRect = ref<DOMRect | undefined>();
     const isShowing = ref(true);
