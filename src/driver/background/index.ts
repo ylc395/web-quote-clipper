@@ -2,34 +2,38 @@ import 'reflect-metadata';
 import { imgSrcToDataUrl } from './helper';
 import bootstrap from './bootstrap';
 import {
-  BackgroundMessageEvents,
-  ClientMessage,
-  ClientMessageEvents,
+  Message as BackgroundMessage,
+  MessageEvents,
   Response,
-} from 'driver/message';
+} from 'driver/background/message';
+import { MessageEvents as RuntimeMessageEvents } from 'driver/ui/client-runtime/message';
 import 'driver/ui/extension';
 
 bootstrap(({ quoteService }) => {
   chrome.runtime.onMessage.addListener(
-    (message: ClientMessage, sender, sendBack: (payload: Response) => void) => {
+    (
+      message: BackgroundMessage,
+      sender,
+      sendBack: (payload: Response) => void,
+    ) => {
       const success = (res: unknown) => sendBack({ res });
       const fail = (err: unknown) =>
         sendBack({ err: err instanceof Error ? err.message : err });
 
       switch (message.event) {
-        case ClientMessageEvents.CreateQuote:
+        case MessageEvents.CreateQuote:
           quoteService.createQuote(message.payload).then(success, fail);
           return true;
-        case ClientMessageEvents.RequestQuotes:
+        case MessageEvents.RequestQuotes:
           quoteService.fetchQuotes(message.payload).then(success, fail);
           return true;
-        case ClientMessageEvents.GetDataUrl:
+        case MessageEvents.GetDataUrl:
           imgSrcToDataUrl(message.payload).then(success, fail);
           return true;
-        case ClientMessageEvents.DeleteQuote:
+        case MessageEvents.DeleteQuote:
           quoteService.deleteQuote(message.payload).then(success, fail);
           return true;
-        case ClientMessageEvents.UpdateQuote:
+        case MessageEvents.UpdateQuote:
           quoteService.updateQuote(message.payload).then(success, fail);
           return true;
         default:
@@ -42,7 +46,7 @@ bootstrap(({ quoteService }) => {
 chrome.webNavigation.onHistoryStateUpdated.addListener(
   ({ tabId, url, frameId }) => {
     chrome.tabs.sendMessage(tabId, {
-      event: BackgroundMessageEvents.UrlUpdated,
+      event: RuntimeMessageEvents.UrlUpdated,
       payload: { frameId, url },
     });
   },

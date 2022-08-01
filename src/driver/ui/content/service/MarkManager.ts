@@ -5,9 +5,9 @@ import debounce from 'lodash.debounce';
 import { shallowReactive, shallowRef, watch, computed } from 'vue';
 
 import type { Quote } from 'model/entity';
+import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import { setBadgeText } from 'driver/ui/extension/message';
-import { getQuotes, deleteQuote, updateQuote } from 'driver/ui/request';
+import Runtime from 'driver/ui/client-runtime/extension';
 
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
 import {
@@ -15,8 +15,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY,
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
-import { copyQuoteToClipboard, isVisible, onUrlUpdated } from '../utils';
-import { DbTypes } from 'model/db';
+import { copyQuoteToClipboard, isVisible } from '../utils';
 
 let id = 0;
 const generateId = () => String(++id);
@@ -43,7 +42,7 @@ export default class MarkManager {
     this.domMonitor = new DomMonitor();
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
-    onUrlUpdated(this.handleUrlUpdated);
+    Runtime.onUrlUpdated(this.handleUrlUpdated);
 
     watch(this.activeMarkCount, (newValue, oldValue) => {
       if (newValue !== 0 && oldValue === 0) {
@@ -92,7 +91,7 @@ export default class MarkManager {
     console.log('🚛 Fetching quotes...');
 
     try {
-      const quotes = await getQuotes({
+      const quotes = await Runtime.getQuotes({
         url: location.href,
         contentType: 'pure',
         orderBy: 'contentLength',
@@ -166,7 +165,7 @@ export default class MarkManager {
   }, 500);
 
   private updateBadgeText = debounce(() => {
-    setBadgeText({
+    Runtime.setBadgeText({
       total: this.totalMarkCount.value,
       active: this.activeMarkCount.value,
     });
@@ -255,7 +254,7 @@ export default class MarkManager {
     const oldQuote = this.matchedQuotesMap[quoteId];
     const newQuote = { ...oldQuote, ...quote };
 
-    await updateQuote(newQuote);
+    await Runtime.updateQuote(newQuote);
 
     this.matchedQuotesMap[quoteId] = newQuote;
 
@@ -273,7 +272,7 @@ export default class MarkManager {
     const quote = this.matchedQuotesMap[quoteId];
 
     if ((await this.config.get('db')) !== DbTypes.Joplin || quote.note) {
-      await deleteQuote(quote);
+      await Runtime.deleteQuote(quote);
     }
 
     this.removeQuoteById(quoteId);

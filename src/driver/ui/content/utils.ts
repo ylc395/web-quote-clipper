@@ -1,5 +1,4 @@
 import BLOCK_ELEMENTS from 'block-elements';
-import { BackgroundMessage, BackgroundMessageEvents } from 'driver/message';
 import { stringifyMetadata } from 'service/MarkdownService';
 import type { Quote } from 'model/entity';
 
@@ -72,16 +71,6 @@ export const isVisible = (node: Node) =>
   isElement(node)
     ? node === document.body || Boolean(node.offsetParent)
     : Boolean(node.parentElement?.offsetParent);
-
-export const onUrlUpdated = (cb: (newUrl: string) => void) => {
-  chrome.runtime.onMessage.addListener(
-    ({ event, payload }: BackgroundMessage) =>
-      event === BackgroundMessageEvents.UrlUpdated &&
-      // todo: we need to check frameId here but there is no such an API
-      // see https://github.com/w3c/webextensions/issues/12
-      cb(payload.url),
-  );
-};
 
 export const copyQuoteToClipboard = async (
   quote: Quote,

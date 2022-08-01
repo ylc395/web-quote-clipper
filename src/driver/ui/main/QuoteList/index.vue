@@ -1,11 +1,11 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { container } from 'tsyringe';
-import ClientService from 'service/ClientService';
+import QuoteService from '../service/QuoteService';
 
 export default defineComponent({
   setup() {
-    const { quotes } = container.resolve(ClientService);
+    const { quotes } = container.resolve(QuoteService);
 
     return {
       quotes,

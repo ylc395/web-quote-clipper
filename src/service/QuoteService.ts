@@ -1,7 +1,12 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
 import { databaseToken, QuoteDatabase } from 'model/db';
-import type { FetchOptions } from 'model/client';
+
+export interface QuotesQuery {
+  url?: string;
+  orderBy?: 'contentLength' | 'createdAt';
+  contentType: 'html' | 'pure';
+}
 
 @singleton()
 export default class QuoteService {
@@ -11,7 +16,7 @@ export default class QuoteService {
     this.initDb();
   }
 
-  async fetchQuotes({ url, contentType, orderBy }: FetchOptions) {
+  async fetchQuotes({ url, contentType, orderBy }: QuotesQuery) {
     const quotes = await this.db!.getAllQuotes(contentType);
 
     if (orderBy === 'contentLength') {
