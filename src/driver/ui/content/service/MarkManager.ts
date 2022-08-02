@@ -2,7 +2,7 @@ import highlightRange from 'dom-highlight-range';
 import { container, singleton } from 'tsyringe';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import { shallowReactive, shallowRef, watch, computed } from 'vue';
+import { shallowReactive, shallowRef, watch, computed, reactive } from 'vue';
 
 import type { Quote } from 'model/entity';
 import { DbTypes } from 'model/db';
@@ -17,17 +17,25 @@ import {
 } from './constants';
 import { copyQuoteToClipboard, isVisible } from '../utils';
 
+const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
+
 let id = 0;
 const generateId = () => String(++id);
+const getQuery = () =>
+  ({
+    url: location.href,
+    contentType: 'pure',
+    orderBy: 'contentLength',
+  } as const);
 
 @singleton()
 export default class MarkManager {
   private readonly config = container.resolve(ConfigService);
   private pen = new Mark(document.body);
-  readonly matchedQuotesMap: Record<string, Quote> = shallowReactive({});
+  readonly matchedQuotesMap: Record<string, Quote> = reactive({});
   readonly tooltipTargetMap: Record<string, HTMLElement> = shallowReactive({});
   readonly commentMap: Record<string, boolean> = shallowReactive({});
-  readonly domMonitor: DomMonitor;
+  readonly domMonitor = new DomMonitor();
   private readonly unmatchedQuotes = shallowRef<Quote[]>([]);
   private readonly activeMarkCount = computed(() => {
     return Object.keys(this.matchedQuotesMap).length;
@@ -39,10 +47,10 @@ export default class MarkManager {
   private lastUrl = MarkManager.getUrl(location.href);
 
   constructor() {
-    this.domMonitor = new DomMonitor();
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
     Runtime.onUrlUpdated(this.handleUrlUpdated);
+    window.addEventListener('focus', this.refresh);
 
     watch(this.activeMarkCount, (newValue, oldValue) => {
       if (newValue !== 0 && oldValue === 0) {
@@ -58,6 +66,54 @@ export default class MarkManager {
 
     this.init();
   }
+
+  private refresh = debounce(async () => {
+    if ((await this.config.get('db')) !== DbTypes.Joplin) {
+      return;
+    }
+
+    console.log('💧 hydrating...');
+
+    const quotes = await Runtime.getQuotes(getQuery());
+    const updatedIds: string[] = [];
+    const unmatchedQuotes: Quote[] = [];
+    const existedQuoteIds = Object.keys(this.matchedQuotesMap);
+
+    for (const quote of quotes) {
+      let matched = false;
+      for (const id of existedQuoteIds) {
+        if (this.matchedQuotesMap[id].createdAt === quote.createdAt) {
+          if (!this.matchedQuotesMap[id].note) {
+            MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+              el.classList.remove(UNPERSISTED_CLASS_NAME),
+            );
+          }
+          this.matchedQuotesMap[id] = quote;
+          updatedIds.push(id);
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
+        unmatchedQuotes.push(quote);
+      }
+    }
+
+    const unpersistedQuoteIds = existedQuoteIds.filter(
+      (id) => !updatedIds.includes(id),
+    );
+
+    for (const id of unpersistedQuoteIds) {
+      this.matchedQuotesMap[id].note = undefined;
+      MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+        el.classList.add(UNPERSISTED_CLASS_NAME),
+      );
+    }
+
+    this.unmatchedQuotes.value = unmatchedQuotes;
+    this.highlightAll();
+  }, 500);
 
   private handleUrlUpdated = (url: string) => {
     const newUrl = MarkManager.getUrl(url);
@@ -91,11 +147,7 @@ export default class MarkManager {
     console.log('🚛 Fetching quotes...');
 
     try {
-      const quotes = await Runtime.getQuotes({
-        url: location.href,
-        contentType: 'pure',
-        orderBy: 'contentLength',
-      });
+      const quotes = await Runtime.getQuotes(getQuery());
 
       this.unmatchedQuotes.value = quotes;
 
@@ -184,7 +236,7 @@ export default class MarkManager {
         highlightRange(option.range, 'mark', {
           class:
             className +
-            (option.isPersisted ? '' : ` ${MARK_CLASS_NAME}-unpersisted`),
+            (option.isPersisted ? '' : ` ${UNPERSISTED_CLASS_NAME}`),
           [MARK_QUOTE_ID_DATASET_KEY]: quoteId,
         });
         this.domMonitor.start();

@@ -1,8 +1,9 @@
 <script lang="ts">
-import { computed, defineComponent, inject, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { BIconChatRightTextFill } from 'bootstrap-icons-vue';
+import { DbTypes } from 'model/db';
 import MarkManager from '../service/MarkManager';
-import { useDomMonitor, usePopper } from './composable';
+import { useDomMonitor, usePopper, useConfig } from './composable';
 import { container } from 'tsyringe';
 
 export default defineComponent({
@@ -17,13 +18,17 @@ export default defineComponent({
     const { matchedQuotesMap, updateQuote, commentMap } =
       container.resolve(MarkManager);
     const quote = computed(() => matchedQuotesMap[id]);
+    const dbType = useConfig('db');
     const comment = ref(quote.value.comment);
     const isExpanded = computed(() => commentMap[id]);
     const isDisabled = computed(() => comment.value === quote.value.comment);
     const toggle = () => (commentMap[id] = !commentMap[id]);
     const reset = () => (comment.value = quote.value.comment);
-    const save: typeof updateQuote = async (...args) => {
-      await updateQuote(...args);
+    const save = async (patch: Parameters<typeof updateQuote>[1]) => {
+      if (isUnpersisted) {
+        return;
+      }
+      await updateQuote(id, patch);
       toggle();
     };
 
@@ -35,6 +40,10 @@ export default defineComponent({
       },
     );
 
+    const isUnpersisted = computed(
+      () => dbType.value !== DbTypes.Browser && !quote.value.note,
+    );
+
     useDomMonitor();
 
     return {
@@ -43,6 +52,7 @@ export default defineComponent({
       isDisabled,
       popper,
       popperRef,
+      isUnpersisted,
       reset,
       toggle,
       save,
@@ -63,13 +73,12 @@ export default defineComponent({
       <textarea
         v-model="comment"
         placeholder="Press Ctrl/Cmd+Enter to submit, Esc to exit"
-        @keydown.ctrl.enter="save(id, { comment })"
-        @keydown.meta.enter="save(id, { comment })"
+        :readonly="isUnpersisted"
+        @keydown.ctrl.enter="save({ comment })"
+        @keydown.meta.enter="save({ comment })"
       />
-      <div class="web-clipper-comment-button-container">
-        <button :disabled="isDisabled" @click="save(id, { comment })">
-          Save
-        </button>
+      <div v-if="!isUnpersisted" class="web-clipper-comment-button-container">
+        <button :disabled="isDisabled" @click="save({ comment })">Save</button>
         <button :disabled="isDisabled" @click="reset">Reset</button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { container } from 'tsyringe';
-import { ref, defineComponent, onMounted, onUnmounted } from 'vue';
+import { ref, defineComponent, onMounted, onUnmounted, computed } from 'vue';
 import {
   BIconTrashFill,
   BIconPaletteFill,
@@ -40,7 +40,7 @@ export default defineComponent({
       jumpToJoplin,
       copyAs,
     } = container.resolve(MarkManager);
-    const quote = matchedQuotesMap[id];
+    const quote = computed(() => matchedQuotesMap[id]);
     const handleUpdate = async (patch: Parameters<typeof updateQuote>[1]) => {
       await updateQuote(id, patch);
       delete tooltipTargetMap[id];
