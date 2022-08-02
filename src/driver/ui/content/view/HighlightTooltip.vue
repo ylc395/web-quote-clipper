@@ -117,9 +117,7 @@ export default defineComponent({
       <li
         v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
         @click="handleCapture('clipboard-inline')"
-      >
-        Copy As Md Text
-      </li>
+      >Copy As Md Text</li>
     </ul>
   </div>
 </template>
