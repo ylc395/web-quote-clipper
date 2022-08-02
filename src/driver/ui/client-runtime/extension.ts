@@ -3,7 +3,10 @@ import {
   MessageEvents,
   Response,
 } from 'driver/background/message';
-import type { SetBadgeTextMessage } from 'driver/ui/extension/message';
+import type {
+  SetBadgeTextMessage,
+  NotifyMessage,
+} from 'driver/ui/extension/message';
 import type { Quote } from 'model/entity';
 import type { QuotesQuery } from 'service/QuoteService';
 
@@ -74,4 +77,11 @@ export default class ExtensionRuntime {
         cb(payload.url),
     );
   };
+
+  static notify(option: NotifyMessage['payload']) {
+    chrome.runtime.sendMessage<NotifyMessage>({
+      event: 'notify',
+      payload: option,
+    });
+  }
 }

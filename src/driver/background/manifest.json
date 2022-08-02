@@ -18,6 +18,6 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["storage", "tabs", "webNavigation"],
+  "permissions": ["storage", "tabs", "webNavigation", "notifications"],
   "host_permissions": ["<all_urls>"]
 }

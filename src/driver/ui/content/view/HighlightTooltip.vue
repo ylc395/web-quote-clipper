@@ -5,6 +5,8 @@ import throttle from 'lodash.throttle';
 import { defineComponent, ref, watchPostEffect, watch } from 'vue';
 import { Colors, COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
+import Runtime from 'driver/ui/client-runtime/extension';
+
 import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
 
@@ -38,6 +40,17 @@ export default defineComponent({
       generateQuote(_color);
     };
 
+    const handleCapture: typeof capture = async (type) => {
+      await capture(type);
+
+      if (type !== 'persist') {
+        Runtime.notify({
+          title: 'Copied',
+          content: 'You can paste it to Joplin now.',
+        });
+      }
+    };
+
     watchPostEffect(() => {
       if (rootRef.value) {
         rootRect = rootRef.value.getBoundingClientRect();
@@ -61,7 +74,7 @@ export default defineComponent({
       dbType,
       JOPLIN: DbTypes.Joplin,
       color,
-      capture,
+      handleCapture,
       generatedQuote,
       handleColorPicked,
     };
@@ -99,12 +112,14 @@ export default defineComponent({
         bottom: range.reversed ? '100%' : '',
       }"
     >
-      <li @click="capture('persist')">Save To Joplin</li>
-      <li @click="capture('clipboard-block')">Copy As Md Blockquote</li>
+      <li @click="handleCapture('persist')">Save To Joplin</li>
+      <li @click="handleCapture('clipboard-block')">Copy As Md Blockquote</li>
       <li
         v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
-        @click="capture('clipboard-inline')"
-      >Copy As Md Text</li>
+        @click="handleCapture('clipboard-inline')"
+      >
+        Copy As Md Text
+      </li>
     </ul>
   </div>
 </template>
