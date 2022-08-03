@@ -18,6 +18,7 @@ import {
 import { copyQuoteToClipboard, isVisible } from '../utils';
 
 const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
+const REFRESH_DELAY = 2000; // not sure what's the best interval
 
 let id = 0;
 const generateId = () => String(++id);
@@ -113,7 +114,7 @@ export default class MarkManager {
 
     this.unmatchedQuotes.value = unmatchedQuotes;
     this.highlightAll();
-  }, 500);
+  }, REFRESH_DELAY);
 
   private handleUrlUpdated = (url: string) => {
     const newUrl = MarkManager.getUrl(url);
