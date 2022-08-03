@@ -36,11 +36,28 @@ export default defineComponent({
     }, 300);
 
     const handleColorPicked = (_color: Colors) => {
+      if (color.value === _color) {
+        color.value = undefined;
+        return;
+      }
       color.value = _color;
       generateQuote(_color);
     };
 
-    const handleCapture: typeof capture = async (type) => {
+    const handleCapture = async (option: {
+      type?: Parameters<typeof capture>[0];
+      color?: Colors;
+    }) => {
+      if (option.color) {
+        if (color.value) {
+          return;
+        }
+
+        await generateQuote(option.color);
+      }
+
+      // todo: load app config here
+      const type = option.type || 'persist'
       await capture(type);
 
       if (type !== 'persist') {
@@ -99,7 +116,8 @@ export default defineComponent({
       <button
         v-for="_color of colors"
         :class="{ 'web-clipper-selected-color': color === _color }"
-        @click="handleColorPicked(_color)"
+        @contextmenu.prevent="handleColorPicked(_color)"
+        @click="handleCapture({ color: _color })"
         :disabled="!range.isAvailable"
         :data-web-clipper-color="_color"
       />
@@ -112,11 +130,13 @@ export default defineComponent({
         bottom: range.reversed ? '100%' : '',
       }"
     >
-      <li @click="handleCapture('persist')">Save To Joplin</li>
-      <li @click="handleCapture('clipboard-block')">Copy As Md Blockquote</li>
+      <li @click="handleCapture({ type: 'persist' })">Save To Joplin</li>
+      <li
+        @click="handleCapture({ type: 'clipboard-block' })"
+      >Copy As Md Blockquote</li>
       <li
         v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
-        @click="handleCapture('clipboard-inline')"
+        @click="handleCapture({ type: 'clipboard-inline' })"
       >Copy As Md Text</li>
     </ul>
   </div>

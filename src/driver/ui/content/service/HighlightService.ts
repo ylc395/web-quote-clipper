@@ -93,6 +93,7 @@ export default class HighlightService {
 
   generateQuote = async (color: Colors) => {
     if (this.generatedQuote.value) {
+      this.generatedQuote.value.quote.color = color;
       return;
     }
 
