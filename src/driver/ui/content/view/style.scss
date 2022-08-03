@@ -9,12 +9,10 @@
   .web-clipper-mark-#{$key} {
     background-color: $value;
 
-    // todo: beautify this
     &.web-clipper-mark-unpersisted {
       text-decoration: underline dotted currentColor 2px;
     }
 
-    // todo: beautify this
     &.web-clipper-mark-hover {
       background-color: color.adjust($value, $lightness: 8%);
     }

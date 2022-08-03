@@ -130,6 +130,7 @@ export default class MarkdownService {
     }
   }
 
+  // todo: not only blockquote
   extractQuotes(md: string, contentType: 'pure' | 'html') {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
