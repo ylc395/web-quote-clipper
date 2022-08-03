@@ -76,6 +76,7 @@ export default defineComponent({
         :readonly="isUnpersisted"
         @keydown.ctrl.enter="save({ comment })"
         @keydown.meta.enter="save({ comment })"
+        @keydown.esc="toggle"
       />
       <div v-if="!isUnpersisted" class="web-clipper-comment-button-container">
         <button :disabled="isDisabled" @click="save({ comment })">Save</button>

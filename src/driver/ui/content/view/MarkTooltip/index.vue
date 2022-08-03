@@ -1,6 +1,13 @@
 <script lang="ts">
 import { container } from 'tsyringe';
-import { ref, defineComponent, onMounted, onUnmounted, computed } from 'vue';
+import {
+  ref,
+  defineComponent,
+  onMounted,
+  onUnmounted,
+  computed,
+  watch,
+} from 'vue';
 import {
   BIconTrashFill,
   BIconPaletteFill,
@@ -52,6 +59,7 @@ export default defineComponent({
     const handleMouseout = (e: MouseEvent) => {
       const relatedTarget = e.relatedTarget as HTMLElement;
       const isStillInMark =
+        submenuVisibility.comment ||
         popperRef.value!.contains(relatedTarget) ||
         popper.value!.state.elements.popper.contains(relatedTarget) ||
         relatedEls.some((el) => el.contains(relatedTarget));
@@ -71,6 +79,7 @@ export default defineComponent({
     };
 
     const dbType = useConfig('db');
+    const textareaRef = ref<HTMLTextAreaElement | undefined>();
 
     useDomMonitor();
     onMounted(() => {
@@ -81,6 +90,7 @@ export default defineComponent({
       document.removeEventListener('mouseout', handleMouseout);
       toggleMarkHover(id);
     });
+    watch(textareaRef, (el) => el && el.focus());
 
     return {
       colors: COLORS,
@@ -88,6 +98,7 @@ export default defineComponent({
       submenuVisibility,
       comment,
       popperRef,
+      textareaRef,
       dbType,
       JOPLIN: DbTypes.Joplin,
       jumpToJoplin,
@@ -128,6 +139,9 @@ export default defineComponent({
       <button
         v-if="quote.note"
         class="web-clipper-mark-manager-main-button"
+        :class="{
+          'web-clipper-mark-manager-main-button-hover': submenuVisibility.color,
+        }"
         @click="toggleSubmenu('color')"
         title="Color"
       >
@@ -136,6 +150,10 @@ export default defineComponent({
       <button
         v-if="quote.note"
         class="web-clipper-mark-manager-main-button"
+        :class="{
+          'web-clipper-mark-manager-main-button-hover':
+            submenuVisibility.comment,
+        }"
         @click="toggleSubmenu('comment')"
         title="Comment"
       >
@@ -155,21 +173,22 @@ export default defineComponent({
       class="web-clipper-mark-manager-comment"
     >
       <textarea
+        ref="textareaRef"
         placeholder="Press Ctrl/Cmd+Enter to submit, Esc to exit"
         v-model="comment"
         @keydown.ctrl.enter="handleUpdate({ comment })"
         @keydown.meta.enter="handleUpdate({ comment })"
+        @keydown.esc="toggleSubmenu('comment')"
       />
     </div>
     <div v-if="submenuVisibility.copy" class="web-clipper-mark-manager-copy">
-      <button @click="handleCopy('clipboard-block')">
-        Copy As Md Blockquote
+      <button @click="handleCopy('clipboard-block')"
+        >Copy As Md Blockquote
       </button>
       <button
         v-if="quote.contents.length <= 1"
         @click="handleCopy('clipboard-inline')"
-      >
-        Copy As Md Text
+        >Copy As Md Text
       </button>
     </div>
   </div>
