@@ -249,7 +249,6 @@ export default defineComponent({
 
   .web-clipper-mark-manager-copy {
     @include constants.submenu;
-    overflow: hidden;
 
     & > button {
       @include constants.submenu-item;
