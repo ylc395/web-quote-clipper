@@ -2,10 +2,16 @@ import type { InjectionToken } from 'tsyringe';
 import type EventEmitter from 'eventemitter3';
 import type { Quote } from './entity';
 
+export interface QuotesQuery {
+  url?: string;
+  orderBy?: 'contentLength' | 'createdAt';
+  contentType: 'html' | 'pure' | 'md';
+}
+
 export interface QuoteDatabase {
   putQuote: (quote: Quote) => Promise<Quote>; // update
   postQuote: (quote: Quote) => Promise<Quote>; // create
-  getAllQuotes: (contentType: 'pure' | 'html') => Promise<Quote[]>;
+  getAllQuotes: (query: QuotesQuery) => Promise<Quote[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
 }
 

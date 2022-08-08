@@ -1,12 +1,13 @@
 import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
 import type { Quote, Note } from 'model/entity';
-import { storageToken, QuoteDatabase } from 'model/db';
+import { storageToken, QuoteDatabase, QuotesQuery } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, {
-  ATTR_PREFIX,
   generateQuoteId,
+  ATTR_PREFIX,
 } from 'service/MarkdownService';
+import { getUrlPath } from 'service/QuoteService';
 
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
@@ -219,10 +220,12 @@ export default class Joplin implements QuoteDatabase {
     };
   }
 
-  async getAllQuotes(contentType: 'pure' | 'html') {
-    const notes = await this.searchNotes(ATTR_PREFIX);
+  async getAllQuotes({ contentType, url }: QuotesQuery) {
+    const notes = await this.searchNotes(
+      url ? `cite=${getUrlPath(url)}` : ATTR_PREFIX,
+    );
     const quotes = notes.flatMap((note) => {
-      const quotes = this.md.extractQuotes(note.content, contentType);
+      const quotes = this.md.extractQuotes(note.content, contentType, url);
 
       return quotes.map((quote) => ({
         ...quote,

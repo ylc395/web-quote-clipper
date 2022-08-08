@@ -12,6 +12,8 @@ import { visit, EXIT } from 'unist-util-visit';
 import { toString } from 'mdast-util-to-string';
 import parseAttr from 'md-attr-parser';
 import type { Quote, Colors } from 'model/entity';
+import type { QuotesQuery } from 'model/db';
+import { getUrlPath } from './QuoteService';
 
 export const ATTR_PREFIX = 'data-web-clipper';
 const COLOR_ATTR = `${ATTR_PREFIX}-color` as const;
@@ -131,7 +133,11 @@ export default class MarkdownService {
   }
 
   // todo: not only blockquote
-  extractQuotes(md: string, contentType: 'pure' | 'html') {
+  extractQuotes(
+    md: string,
+    contentType: QuotesQuery['contentType'],
+    url?: string,
+  ) {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
     this.visit(root, 'blockquote', (node) => {
@@ -148,6 +154,11 @@ export default class MarkdownService {
         [COLOR_ATTR]: color,
         [COMMENT_ATTR]: comment = '',
       } = metadata;
+
+      if (url && getUrlPath(sourceUrl) !== url) {
+        return;
+      }
+
       const timestamp = MarkdownService.getTimestampFromQuoteId(quoteId);
       const contents = contentNodes.map((node) => {
         if (contentType === 'pure') {

@@ -1,3 +1,4 @@
+import type { QuotesQuery } from 'model/db';
 import type { Quote } from 'model/entity';
 export type Message =
   | CaptureQuoteMessage
@@ -26,10 +27,7 @@ interface CaptureQuoteMessage {
 
 interface RequestQuotesMessage {
   event: MessageEvents.RequestQuotes;
-  payload: {
-    url?: string;
-    contentType: 'pure' | 'html';
-  };
+  payload: QuotesQuery;
 }
 
 interface DeleteQuotesMessage {

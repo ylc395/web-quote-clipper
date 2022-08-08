@@ -2,6 +2,8 @@ import BLOCK_ELEMENTS from 'block-elements';
 import { stringifyMetadata } from 'service/MarkdownService';
 import type { Quote } from 'model/entity';
 
+export { getUrlPath } from 'service/QuoteService';
+
 export const isTextNode = (node: Node): node is Text =>
   node.nodeType === document.TEXT_NODE;
 

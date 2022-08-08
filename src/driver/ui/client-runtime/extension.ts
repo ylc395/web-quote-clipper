@@ -8,7 +8,7 @@ import type {
   NotifyMessage,
 } from 'driver/ui/extension/message';
 import type { Quote } from 'model/entity';
-import type { QuotesQuery } from 'service/QuoteService';
+import type { QuotesQuery } from 'model/db';
 
 import {
   Message as RuntimeMessage,

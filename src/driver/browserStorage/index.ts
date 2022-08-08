@@ -1,8 +1,9 @@
 import { container, singleton } from 'tsyringe';
 import EventEmitter from 'eventemitter3';
-import { QuoteDatabase, Storage, StorageEvents } from 'model/db';
+import { QuoteDatabase, Storage, StorageEvents, QuotesQuery } from 'model/db';
 import type { Quote } from 'model/entity';
 import MarkdownService from 'service/MarkdownService';
+import { getUrlPath } from 'service/QuoteService';
 
 const STORAGE_AREA = 'local';
 
@@ -35,7 +36,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   private readonly storage = container.resolve(BrowserStorage);
   private readonly md = new MarkdownService();
 
-  async getAllQuotes(contentType: 'pure' | 'html' | 'md') {
+  async getAllQuotes({ contentType, url }: QuotesQuery) {
     const quotesText = await this.storage.get(QUOTES_KEY);
     let quotes: Quote[];
 
@@ -43,6 +44,10 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
       quotes = JSON.parse(quotesText);
     } catch {
       quotes = [];
+    }
+
+    if (url) {
+      quotes = quotes.filter(({ sourceUrl }) => url === getUrlPath(sourceUrl));
     }
 
     return contentType === 'md'
@@ -58,7 +63,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   }
 
   async postQuote(quote: Quote) {
-    const quotes = await this.getAllQuotes('md');
+    const quotes = await this.getAllQuotes({ contentType: 'md' });
     quotes.push(quote);
 
     await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
@@ -66,7 +71,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   }
 
   async putQuote(quote: Quote) {
-    const quotes = await this.getAllQuotes('md');
+    const quotes = await this.getAllQuotes({ contentType: 'md' });
     const index = quotes.findIndex(
       ({ createdAt }) => quote.createdAt === createdAt,
     );
@@ -77,7 +82,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   }
 
   async deleteQuote(quote: Quote) {
-    const quotes = await this.getAllQuotes('md');
+    const quotes = await this.getAllQuotes({ contentType: 'md' });
     const index = quotes.findIndex(
       ({ createdAt }) => quote.createdAt === createdAt,
     );

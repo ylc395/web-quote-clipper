@@ -15,7 +15,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY,
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
-import { copyQuoteToClipboard, isVisible } from '../utils';
+import { copyQuoteToClipboard, isVisible, getUrlPath } from '../utils';
 
 const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
 const REFRESH_DELAY = 2000; // not sure what's the best interval
@@ -45,7 +45,7 @@ export default class MarkManager {
     () => this.unmatchedQuotes.value.length + this.activeMarkCount.value,
   );
   private isHighlighting = false;
-  private lastUrl = MarkManager.getUrl(location.href);
+  private lastUrl = getUrlPath(location.href);
 
   constructor() {
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
@@ -117,7 +117,7 @@ export default class MarkManager {
   }, REFRESH_DELAY);
 
   private handleUrlUpdated = (url: string) => {
-    const newUrl = MarkManager.getUrl(url);
+    const newUrl = getUrlPath(url);
 
     if (newUrl !== this.lastUrl) {
       this.lastUrl = newUrl;
@@ -346,10 +346,6 @@ export default class MarkManager {
     );
     this.domMonitor.start();
   };
-  private static getUrl(url: string) {
-    const urlObj = new URL(url);
-    return `${urlObj.origin}${urlObj.pathname}`;
-  }
 
   jumpToJoplin = (id: string) => {
     const quote = this.matchedQuotesMap[id];

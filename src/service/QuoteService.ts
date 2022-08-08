@@ -1,11 +1,10 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
-import { databaseToken, QuoteDatabase } from 'model/db';
+import { databaseToken, QuoteDatabase, QuotesQuery } from 'model/db';
 
-export interface QuotesQuery {
-  url?: string;
-  orderBy?: 'contentLength' | 'createdAt';
-  contentType: 'html' | 'pure';
+export function getUrlPath(url: string) {
+  const urlObj = new URL(url);
+  return `${urlObj.origin}${urlObj.pathname}`;
 }
 
 @singleton()
@@ -17,7 +16,7 @@ export default class QuoteService {
   }
 
   async fetchQuotes({ url, contentType, orderBy }: QuotesQuery) {
-    const quotes = await this.db!.getAllQuotes(contentType);
+    const quotes = await this.db!.getAllQuotes({ contentType, url });
 
     if (orderBy === 'contentLength') {
       quotes.sort((a, b) => {
@@ -35,11 +34,7 @@ export default class QuoteService {
       });
     }
 
-    return url
-      ? quotes.filter(
-          (q) => QuoteService.getUrl(q.sourceUrl) === QuoteService.getUrl(url),
-        )
-      : quotes;
+    return quotes;
   }
 
   async createQuote(quote: Quote) {
@@ -58,10 +53,5 @@ export default class QuoteService {
 
   async deleteQuote(quote: Quote) {
     return this.db!.deleteQuote(quote);
-  }
-
-  private static getUrl(url: string) {
-    const urlObj = new URL(url);
-    return `${urlObj.origin}${urlObj.pathname}`;
   }
 }
