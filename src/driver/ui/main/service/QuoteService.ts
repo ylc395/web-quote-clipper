@@ -1,7 +1,7 @@
 import { container, singleton } from 'tsyringe';
 import { Ref, ref } from 'vue';
 import type { Quote } from 'model/entity';
-import Runtime from 'driver/ui/client-runtime/extension';
+import runtime from 'driver/ui/runtime/mainRuntime';
 
 @singleton()
 export default class QuoteService {
@@ -12,8 +12,9 @@ export default class QuoteService {
   }
 
   private init = async () => {
-    this.quotes.value = await Runtime.getQuotes({
+    this.quotes.value = await runtime.getQuotes({
       contentType: 'html',
+      url: await runtime.getCurrentTabUrl(),
     });
   };
 }

@@ -6,7 +6,7 @@ import { defineComponent, ref, watchPostEffect, watch } from 'vue';
 import { Colors, COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import Runtime from 'driver/ui/client-runtime/extension';
+import runtime from 'driver/ui/runtime/contentRuntime';
 
 import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
@@ -62,7 +62,7 @@ export default defineComponent({
       await capture(type);
 
       if (type !== 'persist') {
-        Runtime.notify({
+        runtime.notify({
           title: 'Copied',
           content: 'You can paste it to Joplin now.',
         });

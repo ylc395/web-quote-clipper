@@ -16,7 +16,7 @@ import {
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
-import Runtime from 'driver/ui/client-runtime/extension';
+import runtime from 'driver/ui/runtime/contentRuntime';
 
 import JoplinIcon from './JoplinIcon.vue';
 import { useTooltipPopper, useSubmenu } from './composable';
@@ -72,7 +72,7 @@ export default defineComponent({
     const handleCopy = async (type: Parameters<typeof copyAs>[1]) => {
       await copyAs(id, type);
       delete tooltipTargetMap[id];
-      Runtime.notify({
+      runtime.notify({
         title: 'Copied',
         content: 'You can paste it to Joplin now.',
       });

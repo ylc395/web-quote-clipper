@@ -6,7 +6,7 @@ import {
   MessageEvents,
   Response,
 } from 'driver/background/message';
-import { MessageEvents as RuntimeMessageEvents } from 'driver/ui/client-runtime/message';
+import { MessageEvents as RuntimeMessageEvents } from 'driver/ui/runtime/message';
 import 'driver/ui/extension';
 
 bootstrap(({ quoteService }) => {

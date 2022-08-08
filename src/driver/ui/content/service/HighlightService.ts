@@ -2,7 +2,7 @@ import { shallowRef, watch } from 'vue';
 import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
-import Runtime from 'driver/ui/client-runtime/extension';
+import runtime from 'driver/ui/runtime/contentRuntime';
 import {
   isBlockElement,
   isElement,
@@ -76,7 +76,7 @@ export default class HighlightService {
     }
 
     if (type === 'persist') {
-      const createdQuote = await Runtime.postQuote(result.quote);
+      const createdQuote = await runtime.postQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, {
         range: result.range,
         isPersisted: true,
@@ -157,7 +157,7 @@ export default class HighlightService {
           const imgEl = new Image();
           imgEl.title = currentNode.title;
           imgEl.alt = currentNode.src;
-          imgEl.src = await Runtime.toDataUrl(
+          imgEl.src = await runtime.toDataUrl(
             currentNode.currentSrc || currentNode.src,
           );
           lastText += `![${imgEl.alt}](${imgEl.src}${
