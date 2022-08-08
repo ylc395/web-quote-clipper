@@ -5,6 +5,7 @@ import throttle from 'lodash.throttle';
 import { defineComponent, ref, watchPostEffect, watch } from 'vue';
 import { Colors, COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
+import ConfigService from 'service/ConfigService';
 import Runtime from 'driver/ui/client-runtime/extension';
 
 import { useDomMonitor, useConfig } from './composable';
@@ -13,6 +14,7 @@ import HighlightService from '../service/HighlightService';
 export default defineComponent({
   components: { BIconBrushFill },
   setup() {
+    const configService = container.resolve(ConfigService);
     const { capture, currentRange, generateQuote, generatedQuote } =
       container.resolve(HighlightService);
     const rootRef = ref<HTMLElement | undefined>();
@@ -56,8 +58,7 @@ export default defineComponent({
         await generateQuote(option.color);
       }
 
-      // todo: load app config here
-      const type = option.type || 'persist'
+      const type = option.type || (await configService.get('operation'));
       await capture(type);
 
       if (type !== 'persist') {
@@ -131,13 +132,14 @@ export default defineComponent({
       }"
     >
       <li @click="handleCapture({ type: 'persist' })">Save To Joplin</li>
-      <li
-        @click="handleCapture({ type: 'clipboard-block' })"
-      >Copy As Md Blockquote</li>
+      <li @click="handleCapture({ type: 'clipboard-block' })"
+        >Copy As Md Blockquote</li
+      >
       <li
         v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
         @click="handleCapture({ type: 'clipboard-inline' })"
-      >Copy As Md Text</li>
+        >Copy As Md Text</li
+      >
     </ul>
   </div>
 </template>
