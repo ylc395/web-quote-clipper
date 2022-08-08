@@ -19,5 +19,5 @@ chrome.runtime.onMessage.addListener(({ event, payload }: Message, sender) => {
   }
 });
 
-chrome.webNavigation.onBeforeNavigate.addListener(initBadgeText);
+chrome.webNavigation.onCommitted.addListener(initBadgeText);
 chrome.webNavigation.onHistoryStateUpdated.addListener(initBadgeText);

@@ -6,18 +6,7 @@ const tabMarkRecord = {
   active: 0,
 };
 
-const urlMap: Record<number, string> = {};
-
-export function initBadgeText({ tabId, url }: { tabId: number; url: string }) {
-  const oldUrl = urlMap[tabId];
-
-  const urlObj = new URL(url);
-  const newUrl = `${urlObj.origin}${urlObj.pathname}`;
-
-  if (oldUrl === newUrl) {
-    return;
-  }
-
+export function initBadgeText({ tabId }: { tabId: number }) {
   chrome.action.setBadgeText({
     text: '-',
     tabId,
@@ -27,8 +16,6 @@ export function initBadgeText({ tabId, url }: { tabId: number; url: string }) {
     color: 'blue',
     tabId,
   });
-
-  urlMap[tabId] = newUrl;
 }
 
 export function setBadgeText(
