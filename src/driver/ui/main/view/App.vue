@@ -1,12 +1,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
-import QuoteList from './QuoteList/index.vue';
+import QuoteList from './QuoteList.vue';
 
 export default defineComponent({
   components: { QuoteList },
-  setup() {
-    return {};
-  },
 });
 </script>
 <template>
