@@ -7,5 +7,12 @@ export default defineComponent({
 });
 </script>
 <template>
-  <QuoteList />
+  <div id="app">
+    <QuoteList />
+  </div>
 </template>
+<style>
+#app {
+  min-width: 320px;
+}
+</style>

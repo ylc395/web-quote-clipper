@@ -1,41 +1,47 @@
+import type { Quote } from 'model/entity';
 import type {
   SetBadgeTextMessage,
   NotifyMessage,
 } from 'driver/ui/extension/message';
-import { MessageEvents } from 'driver/background/message';
+import { MessageEvents as BackgroundMessageEvents } from 'driver/background/message';
+import * as fetch from './common';
 
-import {
-  Message as RuntimeMessage,
-  MessageEvents as RuntimeMessageEvents,
-  postMessage,
-} from './message';
+export type Message = UrlUpdatedMessage | ScrollMessage | DeleteQuoteMessage;
 
-import * as fetch from './fetch';
+export enum MessageEvents {
+  UrlUpdated = 'URL_UPDATED',
+  Scroll = 'SCROLL',
+  DeleteQuote = 'DELETE_QUOTE',
+}
+
+interface UrlUpdatedMessage {
+  event: MessageEvents.UrlUpdated;
+  payload: { url: string; frameId: number };
+}
+
+interface ScrollMessage {
+  event: MessageEvents.Scroll;
+  payload: Quote;
+}
+
+interface DeleteQuoteMessage {
+  event: MessageEvents.DeleteQuote;
+  payload: Quote;
+}
 
 export default {
   ...fetch,
-
-  setBadgeText: (payload: SetBadgeTextMessage['payload']) => {
-    return chrome.runtime.sendMessage({ event: 'setBadgeText', payload });
-  },
-
+  handleMessage: (cb: (message: Message) => void) =>
+    chrome.runtime.onMessage.addListener(cb),
   toDataUrl: (url: string) => {
-    return postMessage<string>({
-      event: MessageEvents.GetDataUrl,
+    return fetch.postMessage<string>({
+      event: BackgroundMessageEvents.GetDataUrl,
       payload: url,
     });
   },
-
-  onUrlUpdated: (cb: (newUrl: string) => void) => {
-    chrome.runtime.onMessage.addListener(
-      ({ event, payload }: RuntimeMessage) =>
-        event === RuntimeMessageEvents.UrlUpdated &&
-        // todo: we need to check frameId here but there is no such an API
-        // see https://github.com/w3c/webextensions/issues/12
-        cb(payload.url),
-    );
+  setBadgeText: (payload: SetBadgeTextMessage['payload']) => {
+    return chrome.runtime.sendMessage({ event: 'setBadgeText', payload });
   },
-
   notify: (option: NotifyMessage['payload']) => {
     chrome.runtime.sendMessage<NotifyMessage>({
       event: 'notify',

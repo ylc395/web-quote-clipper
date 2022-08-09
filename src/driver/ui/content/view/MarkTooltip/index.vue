@@ -17,8 +17,8 @@ import {
 import { COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
 import runtime from 'driver/ui/runtime/contentRuntime';
+import JoplinIcon from '../../../JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
 
-import JoplinIcon from './JoplinIcon.vue';
 import { useTooltipPopper, useSubmenu } from './composable';
 import MarkManager from '../../service/MarkManager';
 import { useDomMonitor, useConfig } from '../composable';

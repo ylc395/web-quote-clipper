@@ -1,8 +1,23 @@
-import { MessageEvents as BackgroundMessageEvents } from 'driver/background/message';
 import type { Quote } from 'model/entity';
 import type { QuotesQuery } from 'model/db';
+import {
+  Message as BackgroundMessage,
+  MessageEvents as BackgroundMessageEvents,
+  Response,
+} from 'driver/background/message';
 
-import { postMessage } from './message';
+export const postMessage = async <T = void>(message: BackgroundMessage) => {
+  const { err, res } = await chrome.runtime.sendMessage<
+    BackgroundMessage,
+    Response<T>
+  >(message);
+
+  if (err) {
+    throw new Error(String(err));
+  }
+
+  return res!;
+};
 
 export const postQuote = (quote: Quote) => {
   return postMessage<Quote>({
@@ -30,4 +45,8 @@ export const deleteQuote = async (quote: Quote) => {
     event: BackgroundMessageEvents.DeleteQuote,
     payload: quote,
   });
+};
+
+export const jumpToJoplin = (noteId: string) => {
+  window.open(`joplin://x-callback-url/openNote?id=${noteId}`);
 };

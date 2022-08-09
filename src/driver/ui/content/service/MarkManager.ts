@@ -50,7 +50,6 @@ export default class MarkManager {
   constructor() {
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
-    runtime.onUrlUpdated(this.handleUrlUpdated);
     window.addEventListener('focus', this.refresh);
 
     watch(this.activeMarkCount, (newValue, oldValue) => {
@@ -116,7 +115,7 @@ export default class MarkManager {
     this.highlightAll();
   }, REFRESH_DELAY);
 
-  private handleUrlUpdated = (url: string) => {
+  handleUrlUpdated = (url: string) => {
     const newUrl = getUrlPath(url);
 
     if (newUrl !== this.lastUrl) {
@@ -321,7 +320,8 @@ export default class MarkManager {
     }
   };
 
-  deleteQuote = async (quoteId: string) => {
+  deleteQuote = async (query: string | Quote) => {
+    const quoteId = typeof query === 'string' ? query : this.getQuoteId(query);
     const quote = this.matchedQuotesMap[quoteId];
 
     if ((await this.config.get('db')) !== DbTypes.Joplin || quote.note) {
@@ -354,11 +354,30 @@ export default class MarkManager {
       throw new Error('no quote');
     }
 
-    window.open(`joplin://x-callback-url/openNote?id=${quote.note.id}`);
+    runtime.jumpToJoplin(quote.note.id);
   };
 
   copyAs = async (id: string, type: 'clipboard-inline' | 'clipboard-block') => {
     const quote = this.matchedQuotesMap[id];
     await copyQuoteToClipboard(quote, type);
+  };
+
+  scrollToMark = (quote: Quote) => {
+    const quoteId = this.getQuoteId(quote);
+    const el = MarkManager.getMarkElsByQuoteId(quoteId)[0];
+    el.scrollIntoView();
+  };
+
+  private getQuoteId = (quote: Quote) => {
+    const matchedQuotes = Object.entries(this.matchedQuotesMap);
+    const target = matchedQuotes.find(
+      ([_, { createdAt }]) => quote.createdAt === createdAt,
+    );
+
+    if (!target) {
+      throw new Error('can not find quote');
+    }
+
+    return target[0];
   };
 }

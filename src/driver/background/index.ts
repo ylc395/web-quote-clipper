@@ -1,21 +1,13 @@
 import 'reflect-metadata';
 import { imgSrcToDataUrl } from './helper';
 import bootstrap from './bootstrap';
-import {
-  Message as BackgroundMessage,
-  MessageEvents,
-  Response,
-} from 'driver/background/message';
-import { MessageEvents as RuntimeMessageEvents } from 'driver/ui/runtime/message';
+import { Message, MessageEvents, Response } from './message';
+import { MessageEvents as ContentRuntimeMessageEvents } from 'driver/ui/runtime/contentRuntime';
 import 'driver/ui/extension';
 
 bootstrap(({ quoteService }) => {
   chrome.runtime.onMessage.addListener(
-    (
-      message: BackgroundMessage,
-      sender,
-      sendBack: (payload: Response) => void,
-    ) => {
+    (message: Message, sender, sendBack: (payload: Response) => void) => {
       const success = (res: unknown) => sendBack({ res });
       const fail = (err: unknown) =>
         sendBack({ err: err instanceof Error ? err.message : err });
@@ -46,7 +38,7 @@ bootstrap(({ quoteService }) => {
 chrome.webNavigation.onHistoryStateUpdated.addListener(
   ({ tabId, url, frameId }) => {
     chrome.tabs.sendMessage(tabId, {
-      event: RuntimeMessageEvents.UrlUpdated,
+      event: ContentRuntimeMessageEvents.UrlUpdated,
       payload: { frameId, url },
     });
   },
