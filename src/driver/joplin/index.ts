@@ -221,11 +221,11 @@ export default class Joplin implements QuoteDatabase {
   }
 
   async getAllQuotes({ contentType, url }: QuotesQuery) {
-    const notes = await this.searchNotes(
-      url ? `cite=${getUrlPath(url)}` : ATTR_PREFIX,
-    );
+    const urlPath = url ? getUrlPath(url) : undefined;
+    const notes = await this.searchNotes(url ? `cite=${urlPath}` : ATTR_PREFIX);
+
     const quotes = notes.flatMap((note) => {
-      const quotes = this.md.extractQuotes(note.content, contentType, url);
+      const quotes = this.md.extractQuotes(note.content, contentType, urlPath);
 
       return quotes.map((quote) => ({
         ...quote,

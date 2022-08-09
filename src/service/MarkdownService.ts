@@ -136,7 +136,7 @@ export default class MarkdownService {
   extractQuotes(
     md: string,
     contentType: QuotesQuery['contentType'],
-    url?: string,
+    urlPath?: string,
   ) {
     const root = this.parser.parse(md);
     const quotes: Quote[] = [];
@@ -155,7 +155,7 @@ export default class MarkdownService {
         [COMMENT_ATTR]: comment = '',
       } = metadata;
 
-      if (url && getUrlPath(sourceUrl) !== url) {
+      if (urlPath && getUrlPath(sourceUrl) !== urlPath) {
         return;
       }
 
