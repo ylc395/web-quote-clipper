@@ -2,6 +2,7 @@ import { shallowRef, watch } from 'vue';
 import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
+import { generateQuoteId } from 'service/QuoteService';
 import runtime from 'driver/ui/runtime/contentRuntime';
 import {
   isBlockElement,
@@ -262,14 +263,16 @@ export default class HighlightService {
       newRange.setEndAfter(previousNode);
     }
 
+    const quote = {
+      sourceUrl: location.href,
+      color,
+      contents,
+      comment: '',
+      createdAt: Date.now(),
+    };
+
     this.generatedQuote.value = {
-      quote: {
-        sourceUrl: location.href,
-        color,
-        contents,
-        comment: '',
-        createdAt: Date.now(),
-      },
+      quote: { ...quote, id: generateQuoteId(quote) },
       range: newRange,
     };
   };

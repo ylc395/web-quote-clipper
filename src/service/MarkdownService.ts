@@ -26,7 +26,7 @@ interface BlockQuoteMetadata {
   cite: string;
 }
 
-export function generateQuoteId(quote: Quote) {
+export function generateQuoteIdInMd(quote: Quote) {
   return `quote${quote.createdAt.toString(36)}`;
 }
 
@@ -34,7 +34,7 @@ export function stringifyMetadata(quote: Quote) {
   const comment = quote.comment
     ? ` ${COMMENT_ATTR}="${escape(quote.comment)}"`
     : '';
-  return `{#${generateQuoteId(quote)} cite="${
+  return `{#${generateQuoteIdInMd(quote)} cite="${
     quote.sourceUrl
   }" ${ATTR_PREFIX}-color="${quote.color}"${comment}}`;
 }
@@ -158,7 +158,7 @@ export default class MarkdownService {
     urlPath?: string,
   ) {
     const root = this.parser.parse(md);
-    const quotes: Quote[] = [];
+    const quotes: Omit<Quote, 'id'>[] = [];
     this.visit(root, 'blockquote', (node) => {
       const blockquote = MarkdownService.parseBlockquote(node);
 

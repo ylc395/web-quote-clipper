@@ -4,7 +4,7 @@ import type { Quote, Note } from 'model/entity';
 import { storageToken, QuoteDatabase, QuotesQuery } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, {
-  generateQuoteId,
+  generateQuoteIdInMd,
   ATTR_PREFIX,
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
@@ -173,7 +173,7 @@ export default class Joplin implements QuoteDatabase {
   }
 
   async putQuote(quote: Quote) {
-    const notes = await this.searchNotes(generateQuoteId(quote));
+    const notes = await this.searchNotes(generateQuoteIdInMd(quote));
     const note = notes[0];
 
     const newContent = this.md.updateByQuote(note.content, quote);
@@ -199,7 +199,7 @@ export default class Joplin implements QuoteDatabase {
 
     return {
       ...quote,
-      note: { id: noteId },
+      note: { id: noteId, path: note.path },
     };
   }
 

@@ -21,7 +21,7 @@ const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
 const REFRESH_DELAY = 2000; // not sure what's the best interval
 
 let id = 0;
-const generateId = () => String(++id);
+const generateCid = () => String(++id);
 const getQuery = () =>
   ({
     url: location.href,
@@ -49,7 +49,7 @@ export default class MarkManager {
 
   constructor() {
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
-    this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteById);
+    this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteByCid);
     window.addEventListener('focus', this.refresh);
 
     watch(this.activeMarkCount, (newValue, oldValue) => {
@@ -74,22 +74,22 @@ export default class MarkManager {
 
     console.log('💧 hydrating...');
 
-    const quotes = await runtime.fetchQuotes(getQuery());
-    const updatedIds: string[] = [];
+    const existedQuotes = await runtime.fetchQuotes(getQuery());
+    const updatedCids: string[] = [];
     const unmatchedQuotes: Quote[] = [];
-    const existedQuoteIds = Object.keys(this.matchedQuotesMap);
+    const existedQuoteCids = Object.keys(this.matchedQuotesMap);
 
-    for (const quote of quotes) {
+    for (const quote of existedQuotes) {
       let matched = false;
-      for (const id of existedQuoteIds) {
-        if (this.matchedQuotesMap[id].createdAt === quote.createdAt) {
-          if (!this.matchedQuotesMap[id].note) {
-            MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+      for (const cid of existedQuoteCids) {
+        if (this.matchedQuotesMap[cid].id === quote.id) {
+          if (!this.matchedQuotesMap[cid].note) {
+            MarkManager.getMarkElsByQuoteId(cid).forEach((el) =>
               el.classList.remove(UNPERSISTED_CLASS_NAME),
             );
           }
-          this.matchedQuotesMap[id] = quote;
-          updatedIds.push(id);
+          this.matchedQuotesMap[cid] = quote;
+          updatedCids.push(cid);
           matched = true;
           break;
         }
@@ -100,13 +100,13 @@ export default class MarkManager {
       }
     }
 
-    const unpersistedQuoteIds = existedQuoteIds.filter(
-      (id) => !updatedIds.includes(id),
+    const unpersistedQuoteCids = existedQuoteCids.filter(
+      (id) => !updatedCids.includes(id),
     );
 
-    for (const id of unpersistedQuoteIds) {
-      this.matchedQuotesMap[id].note = undefined;
-      MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+    for (const cid of unpersistedQuoteCids) {
+      this.matchedQuotesMap[cid].note = undefined;
+      MarkManager.getMarkElsByQuoteId(cid).forEach((el) =>
         el.classList.add(UNPERSISTED_CLASS_NAME),
       );
     }
@@ -131,8 +131,8 @@ export default class MarkManager {
     this.pen = new Mark(document.body);
     this.unmatchedQuotes.value = [];
 
-    for (const id of Object.keys(this.matchedQuotesMap)) {
-      this.removeQuoteById(id);
+    for (const cid of Object.keys(this.matchedQuotesMap)) {
+      this.removeQuoteByCid(cid);
     }
 
     this.domMonitor.stop();
@@ -227,7 +227,7 @@ export default class MarkManager {
     quote: Quote,
     option?: { range: Range; isPersisted: boolean },
   ) {
-    const quoteId = generateId();
+    const quoteId = generateCid();
     const className = `${MARK_CLASS_NAME} ${MARK_CLASS_NAME}-${quote.color}`;
 
     const result = await new Promise<boolean>((resolve) => {
@@ -281,17 +281,17 @@ export default class MarkManager {
     return result;
   }
 
-  private removeQuoteById = (id: string) => {
-    const quote = this.matchedQuotesMap[id];
+  private removeQuoteByCid = (cid: string) => {
+    const quote = this.matchedQuotesMap[cid];
 
     if (!quote) {
       throw Error('no quote when delete');
     }
 
-    delete this.matchedQuotesMap[id];
-    console.log(`🚮 quote removed: ${id}`);
+    delete this.matchedQuotesMap[cid];
+    console.log(`🚮 quote removed: ${cid}`);
 
-    const relatedEls = MarkManager.getMarkElsByQuoteId(id);
+    const relatedEls = MarkManager.getMarkElsByQuoteId(cid);
     this.domMonitor.stop();
     relatedEls.forEach((el) => el.replaceWith(...el.childNodes));
 
@@ -302,17 +302,17 @@ export default class MarkManager {
     return quote;
   };
 
-  updateQuote = async (quoteId: string, quote: Partial<Quote>) => {
-    const oldQuote = this.matchedQuotesMap[quoteId];
+  updateQuote = async (cid: string, quote: Partial<Quote>) => {
+    const oldQuote = this.matchedQuotesMap[cid];
     const newQuote = { ...oldQuote, ...quote };
 
     await runtime.updateQuote(newQuote);
 
-    this.matchedQuotesMap[quoteId] = newQuote;
+    this.matchedQuotesMap[cid] = newQuote;
 
     if (oldQuote.color !== newQuote.color) {
       this.domMonitor.stop();
-      MarkManager.getMarkElsByQuoteId(quoteId).forEach((el) => {
+      MarkManager.getMarkElsByQuoteId(cid).forEach((el) => {
         el.classList.remove(`${MARK_CLASS_NAME}-${oldQuote.color}`);
         el.classList.add(`${MARK_CLASS_NAME}-${newQuote.color}`);
       });
@@ -320,28 +320,28 @@ export default class MarkManager {
     }
   };
 
-  deleteQuote = async (query: string | Quote) => {
-    const quoteId = typeof query === 'string' ? query : this.getQuoteId(query);
-    const quote = this.matchedQuotesMap[quoteId];
+  deleteQuote = async (quote: string | Quote) => {
+    const cid = typeof quote === 'string' ? quote : this.getQuoteCid(quote);
+    const _quote = this.matchedQuotesMap[cid];
 
-    if ((await this.config.get('db')) !== DbTypes.Joplin || quote.note) {
-      await runtime.deleteQuote(quote);
+    if ((await this.config.get('db')) !== DbTypes.Joplin || _quote.note) {
+      await runtime.deleteQuote(_quote);
     }
 
-    this.removeQuoteById(quoteId);
+    this.removeQuoteByCid(cid);
   };
 
-  static getMarkElsByQuoteId(id: string) {
+  static getMarkElsByQuoteId(cid: string) {
     return Array.from(
       document.querySelectorAll(
-        `.${MARK_CLASS_NAME}[${MARK_QUOTE_ID_DATASET_KEY}="${id}"]`,
+        `.${MARK_CLASS_NAME}[${MARK_QUOTE_ID_DATASET_KEY}="${cid}"]`,
       ),
     ) as HTMLElement[];
   }
 
-  toggleMarkHover = (id: string) => {
+  toggleMarkHover = (cid: string) => {
     this.domMonitor.stop();
-    MarkManager.getMarkElsByQuoteId(id).forEach((el) =>
+    MarkManager.getMarkElsByQuoteId(cid).forEach((el) =>
       el.classList.toggle('web-clipper-mark-hover'),
     );
     this.domMonitor.start();
@@ -357,22 +357,23 @@ export default class MarkManager {
     runtime.jumpToJoplin(quote.note.id);
   };
 
-  copyAs = async (id: string, type: 'clipboard-inline' | 'clipboard-block') => {
-    const quote = this.matchedQuotesMap[id];
+  copyAs = async (
+    cid: string,
+    type: 'clipboard-inline' | 'clipboard-block',
+  ) => {
+    const quote = this.matchedQuotesMap[cid];
     await copyQuoteToClipboard(quote, type);
   };
 
   scrollToMark = (quote: Quote) => {
-    const quoteId = this.getQuoteId(quote);
-    const el = MarkManager.getMarkElsByQuoteId(quoteId)[0];
+    const cid = this.getQuoteCid(quote);
+    const el = MarkManager.getMarkElsByQuoteId(cid)[0];
     el.scrollIntoView();
   };
 
-  private getQuoteId = (quote: Quote) => {
+  private getQuoteCid = (quote: Quote) => {
     const matchedQuotes = Object.entries(this.matchedQuotesMap);
-    const target = matchedQuotes.find(
-      ([_, { createdAt }]) => quote.createdAt === createdAt,
-    );
+    const target = matchedQuotes.find(([_, { id }]) => quote.id === id);
 
     if (!target) {
       throw new Error('can not find quote');

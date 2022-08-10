@@ -11,7 +11,7 @@ export interface QuotesQuery {
 export interface QuoteDatabase {
   putQuote: (quote: Quote) => Promise<Quote>; // update
   postQuote: (quote: Quote) => Promise<Quote>; // create
-  getAllQuotes: (query: QuotesQuery) => Promise<Quote[]>;
+  getAllQuotes: (query: QuotesQuery) => Promise<Omit<Quote, 'id'>[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
 }
 

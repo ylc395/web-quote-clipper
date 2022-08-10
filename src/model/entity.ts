@@ -15,6 +15,7 @@ export const COLORS = [
 ];
 
 export interface Quote {
+  id: string;
   sourceUrl: string;
   contents: string[];
   comment: string;
@@ -25,6 +26,6 @@ export interface Quote {
 
 export interface Note {
   content?: string;
+  path: string;
   id: string;
-  path?: string;
 }

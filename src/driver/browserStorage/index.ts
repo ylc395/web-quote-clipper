@@ -3,7 +3,7 @@ import EventEmitter from 'eventemitter3';
 import { QuoteDatabase, Storage, StorageEvents, QuotesQuery } from 'model/db';
 import type { Quote } from 'model/entity';
 import MarkdownService from 'service/MarkdownService';
-import { getUrlPath } from 'service/QuoteService';
+import { getUrlPath, generateQuoteId } from 'service/QuoteService';
 
 const STORAGE_AREA = 'local';
 
@@ -73,7 +73,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   async putQuote(quote: Quote) {
     const quotes = await this.getAllQuotes({ contentType: 'md' });
     const index = quotes.findIndex(
-      ({ createdAt }) => quote.createdAt === createdAt,
+      (_quote) => quote.id === generateQuoteId(_quote),
     );
     quotes[index] = quote;
     await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
@@ -84,7 +84,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
   async deleteQuote(quote: Quote) {
     const quotes = await this.getAllQuotes({ contentType: 'md' });
     const index = quotes.findIndex(
-      ({ createdAt }) => quote.createdAt === createdAt,
+      (_quote) => quote.id === generateQuoteId(_quote),
     );
 
     if (index < 0) {

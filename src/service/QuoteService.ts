@@ -7,6 +7,10 @@ export function getUrlPath(url: string) {
   return `${urlObj.origin}${urlObj.pathname}`;
 }
 
+export function generateQuoteId(quote: Omit<Quote, 'id'>) {
+  return quote.createdAt.toString();
+}
+
 @singleton()
 export default class QuoteService {
   private db?: QuoteDatabase;
@@ -16,7 +20,9 @@ export default class QuoteService {
   }
 
   fetchQuotes = async ({ url, contentType, orderBy }: QuotesQuery) => {
-    const quotes = await this.db!.getAllQuotes({ contentType, url });
+    const quotes: Quote[] = (
+      await this.db!.getAllQuotes({ contentType, url })
+    ).map((quote) => ({ ...quote, id: generateQuoteId(quote) }));
 
     if (orderBy === 'contentLength') {
       quotes.sort((a, b) => {
@@ -39,6 +45,8 @@ export default class QuoteService {
 
   createQuote = async (quote: Quote) => {
     const createdQuote = await this.db!.postQuote(quote);
+    createdQuote.id = generateQuoteId(createdQuote);
+
     return createdQuote;
   };
 

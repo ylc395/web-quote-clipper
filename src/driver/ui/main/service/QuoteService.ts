@@ -41,9 +41,6 @@ export default class QuoteService {
     }
 
     await runtime.deleteQuote(quote);
-
-    this.quotes.value = this.quotes.value.filter(
-      ({ createdAt }) => createdAt !== quote.createdAt,
-    );
+    this.quotes.value = this.quotes.value.filter(({ id }) => id !== quote.id);
   };
 }

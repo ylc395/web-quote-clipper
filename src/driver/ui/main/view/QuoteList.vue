@@ -37,7 +37,7 @@ export default defineComponent({
 <template>
   <template v-if="quotes">
     <div v-if="quotes.length > 0" class="quote-list">
-      <div v-for="quote of quotes" :key="quote.createdAt" class="quote-item">
+      <div v-for="quote of quotes" :key="quote.id" class="quote-item">
         <div class="quote-item-info">
           <div :title="quote.note.path" class="quote-path" v-if="quote.note">{{
             quote.note.path
