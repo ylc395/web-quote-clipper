@@ -15,7 +15,7 @@ export default class QuoteService {
     this.initDb();
   }
 
-  async fetchQuotes({ url, contentType, orderBy }: QuotesQuery) {
+  fetchQuotes = async ({ url, contentType, orderBy }: QuotesQuery) => {
     const quotes = await this.db!.getAllQuotes({ contentType, url });
 
     if (orderBy === 'contentLength') {
@@ -35,23 +35,23 @@ export default class QuoteService {
     }
 
     return quotes;
-  }
+  };
 
-  async createQuote(quote: Quote) {
+  createQuote = async (quote: Quote) => {
     const createdQuote = await this.db!.postQuote(quote);
     return createdQuote;
-  }
+  };
 
   private initDb() {
     this.db = container.resolve(databaseToken);
   }
 
-  async updateQuote(quote: Quote) {
+  updateQuote = async (quote: Quote) => {
     const newQuote = await this.db!.putQuote(quote);
     return newQuote;
-  }
+  };
 
-  async deleteQuote(quote: Quote) {
+  deleteQuote = async (quote: Quote) => {
     return this.db!.deleteQuote(quote);
-  }
+  };
 }

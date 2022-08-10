@@ -1,22 +1,12 @@
-import type { Message } from './message';
-import { initBadgeText, setBadgeText } from './badgeText';
+import { expose } from 'lib/rpc';
+import type Rpc from './rpc';
 
-chrome.runtime.onMessage.addListener(({ event, payload }: Message, sender) => {
-  switch (event) {
-    case 'setBadgeText':
-      return setBadgeText(payload, sender);
-    case 'notify':
-      return chrome.notifications.create({
-        silent: true,
-        title: payload.title,
-        type: 'basic',
-        iconUrl:
-          ' data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw== ',
-        message: payload.content,
-      });
-    default:
-      break;
-  }
+import { initBadgeText, setBadgeText } from './badgeText';
+import { notify } from './notify';
+
+expose<Rpc>({
+  setBadgeText,
+  notify,
 });
 
 chrome.webNavigation.onCommitted.addListener(initBadgeText);

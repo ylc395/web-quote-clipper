@@ -74,7 +74,7 @@ export default class MarkManager {
 
     console.log('💧 hydrating...');
 
-    const quotes = await runtime.getQuotes(getQuery());
+    const quotes = await runtime.fetchQuotes(getQuery());
     const updatedIds: string[] = [];
     const unmatchedQuotes: Quote[] = [];
     const existedQuoteIds = Object.keys(this.matchedQuotesMap);
@@ -147,7 +147,7 @@ export default class MarkManager {
     console.log('🚛 Fetching quotes...');
 
     try {
-      const quotes = await runtime.getQuotes(getQuery());
+      const quotes = await runtime.fetchQuotes(getQuery());
 
       this.unmatchedQuotes.value = quotes;
 

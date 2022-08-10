@@ -1,5 +1,3 @@
-import type { SetBadgeTextMessage } from './message';
-
 const tabMarkRecord = {
   tabId: 0,
   total: 0,
@@ -19,11 +17,11 @@ export function initBadgeText({ tabId }: { tabId: number }) {
 }
 
 export function setBadgeText(
-  payload: SetBadgeTextMessage['payload'],
-  sender: { tab?: { id?: number }; frameId?: number },
+  payload: { active: number; total: number },
+  sender?: { tab?: { id?: number }; frameId?: number },
 ) {
-  if (!sender.tab?.id) {
-    return;
+  if (!sender?.tab?.id) {
+    throw new Error('no sender id');
   }
 
   const tabId = sender.tab.id;

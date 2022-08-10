@@ -76,7 +76,7 @@ export default class HighlightService {
     }
 
     if (type === 'persist') {
-      const createdQuote = await runtime.postQuote(result.quote);
+      const createdQuote = await runtime.createQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, {
         range: result.range,
         isPersisted: true,

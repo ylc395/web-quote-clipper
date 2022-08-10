@@ -29,7 +29,8 @@
     "tsyringe": "^4.7.0",
     "unified": "^10.1.2",
     "unist-util-visit": "^4.1.0",
-    "vue": "^3.2.37"
+    "vue": "^3.2.37",
+    "webextension-polyfill": "^0.9.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.1",
@@ -42,6 +43,7 @@
     "@types/lodash.throttle": "^4.1.7",
     "@types/mark.js": "^8.11.7",
     "@types/mdast": "^3.0.10",
+    "@types/webextension-polyfill": "^0.9.0",
     "rollup": "^2.75.7",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-polyfill-node": "^0.9.0",

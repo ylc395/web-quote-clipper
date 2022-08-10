@@ -1,45 +1,34 @@
 import 'reflect-metadata';
-import { imgSrcToDataUrl } from './helper';
+import browser from 'webextension-polyfill';
+import { imgSrcToDataUrl } from 'service/MarkdownService';
+import { expose, wrap } from 'lib/rpc';
 import bootstrap from './bootstrap';
-import { Message, MessageEvents, Response } from './message';
-import { MessageEvents as ContentRuntimeMessageEvents } from 'driver/ui/runtime/contentRuntime';
+import type Rpc from './rpc';
+import type ContentScript from 'driver/ui/content/rpc';
+
 import 'driver/ui/extension';
 
-bootstrap(({ quoteService }) => {
-  chrome.runtime.onMessage.addListener(
-    (message: Message, sender, sendBack: (payload: Response) => void) => {
-      const success = (res: unknown) => sendBack({ res });
-      const fail = (err: unknown) =>
-        sendBack({ err: err instanceof Error ? err.message : err });
-
-      switch (message.event) {
-        case MessageEvents.CreateQuote:
-          quoteService.createQuote(message.payload).then(success, fail);
-          return true;
-        case MessageEvents.RequestQuotes:
-          quoteService.fetchQuotes(message.payload).then(success, fail);
-          return true;
-        case MessageEvents.GetDataUrl:
-          imgSrcToDataUrl(message.payload).then(success, fail);
-          return true;
-        case MessageEvents.DeleteQuote:
-          quoteService.deleteQuote(message.payload).then(success, fail);
-          return true;
-        case MessageEvents.UpdateQuote:
-          quoteService.updateQuote(message.payload).then(success, fail);
-          return true;
-        default:
-          return;
-      }
-    },
-  );
-});
+bootstrap(
+  ({
+    quoteService: { createQuote, updateQuote, deleteQuote, fetchQuotes },
+  }) => {
+    expose<Rpc>({
+      createQuote,
+      updateQuote,
+      deleteQuote,
+      fetchQuotes,
+      imgSrcToDataUrl,
+    });
+  },
+);
 
 chrome.webNavigation.onHistoryStateUpdated.addListener(
   ({ tabId, url, frameId }) => {
-    chrome.tabs.sendMessage(tabId, {
-      event: ContentRuntimeMessageEvents.UrlUpdated,
-      payload: { frameId, url },
+    const { handleUrlUpdated } = wrap<ContentScript>({
+      endPoint: browser.tabs,
+      target: tabId,
     });
+    // todo: need to handle frameId
+    handleUrlUpdated(url);
   },
 );

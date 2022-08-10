@@ -2,7 +2,6 @@ import { singleton } from 'tsyringe';
 import { ref } from 'vue';
 import type { Quote } from 'model/entity';
 import runtime from 'driver/ui/runtime/mainRuntime';
-import { MessageEvents as ContentRuntimeMessageEvents } from 'driver/ui/runtime/contentRuntime';
 
 @singleton()
 export default class QuoteService {
@@ -17,7 +16,7 @@ export default class QuoteService {
     this.tabUrl.value = await runtime.getCurrentTabUrl();
 
     this.quotes.value = this.tabUrl.value
-      ? await runtime.getQuotes({
+      ? await runtime.fetchQuotes({
           contentType: 'html',
           url: this.tabUrl.value,
         })
@@ -25,10 +24,7 @@ export default class QuoteService {
   };
 
   scrollToQuote = (quote: Quote) => {
-    runtime.postMessageToCurrentTab({
-      event: ContentRuntimeMessageEvents.Scroll,
-      payload: quote,
-    });
+    runtime.scrollToMark(quote);
   };
 
   jumpToJoplin = (quote: Quote) => {
@@ -44,10 +40,7 @@ export default class QuoteService {
       throw new Error('no quotes');
     }
 
-    await runtime.postMessageToCurrentTab({
-      event: ContentRuntimeMessageEvents.DeleteQuote,
-      payload: quote,
-    });
+    await runtime.deleteQuote(quote);
 
     this.quotes.value = this.quotes.value.filter(
       ({ createdAt }) => createdAt !== quote.createdAt,
