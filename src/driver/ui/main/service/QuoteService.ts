@@ -7,6 +7,7 @@ import runtime from 'driver/ui/runtime/mainRuntime';
 export default class QuoteService {
   readonly quotes = ref<Quote[] | undefined>();
   readonly tabUrl = ref<string | undefined>();
+  readonly matchedQuoteIds = ref<Quote['id'][] | undefined>();
 
   constructor() {
     this.init();
@@ -21,6 +22,8 @@ export default class QuoteService {
           url: this.tabUrl.value,
         })
       : [];
+
+    this.matchedQuoteIds.value = await runtime.getMatchedQuoteIds();
   };
 
   scrollToQuote = (quote: Quote) => {

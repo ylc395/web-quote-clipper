@@ -4,4 +4,5 @@ export default interface ContentScript {
   handleUrlUpdated: MarkManager['handleUrlUpdated'];
   scrollToMark: MarkManager['scrollToMark'];
   deleteQuote: MarkManager['deleteQuote'];
+  getMatchedQuoteIds: MarkManager['getMatchedQuoteIds'];
 }

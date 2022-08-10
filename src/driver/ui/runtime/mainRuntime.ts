@@ -11,7 +11,7 @@ async function getCurrentTab() {
 
 // todo: not background, content runtime!
 const { fetchQuotes } = wrap<Background>({ endPoint: browser.runtime });
-const { deleteQuote, scrollToMark } = wrap<ContentScript>({
+const { deleteQuote, scrollToMark, getMatchedQuoteIds } = wrap<ContentScript>({
   endPoint: browser.tabs,
   target: async () => (await getCurrentTab()).id,
 });
@@ -21,6 +21,7 @@ export default {
   fetchQuotes,
   deleteQuote,
   scrollToMark,
+  getMatchedQuoteIds,
   getCurrentTabUrl: async () => {
     const tab = await getCurrentTab();
     return tab.url;

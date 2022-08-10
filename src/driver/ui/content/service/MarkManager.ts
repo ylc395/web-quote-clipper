@@ -2,7 +2,14 @@ import highlightRange from 'dom-highlight-range';
 import { container, singleton } from 'tsyringe';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import { shallowReactive, shallowRef, watch, computed, reactive } from 'vue';
+import {
+  shallowReactive,
+  shallowRef,
+  watch,
+  computed,
+  reactive,
+  toRaw,
+} from 'vue';
 
 import type { Quote } from 'model/entity';
 import { DbTypes } from 'model/db';
@@ -380,5 +387,9 @@ export default class MarkManager {
     }
 
     return target[0];
+  };
+
+  getMatchedQuoteIds = () => {
+    return Object.values(this.matchedQuotesMap).map(({ id }) => id);
   };
 }

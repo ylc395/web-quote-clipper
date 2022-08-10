@@ -14,8 +14,15 @@ import QuoteService from '../service/QuoteService';
 export default defineComponent({
   components: { JoplinIcon, BIconTrashFill, BIconBullseye },
   setup() {
-    const { quotes, tabUrl, scrollToQuote, jumpToJoplin, deleteQuote, init } =
-      container.resolve(QuoteService);
+    const {
+      matchedQuoteIds,
+      quotes,
+      tabUrl,
+      scrollToQuote,
+      jumpToJoplin,
+      deleteQuote,
+      init,
+    } = container.resolve(QuoteService);
     const dbType = useConfig('db');
 
     const isJoplin = computed(() => dbType.value === DbTypes.Joplin);
@@ -25,6 +32,7 @@ export default defineComponent({
       quotes,
       tabUrl,
       isJoplin,
+      matchedQuoteIds,
       scrollToQuote,
       jumpToJoplin,
       deleteQuote,
@@ -35,9 +43,15 @@ export default defineComponent({
 });
 </script>
 <template>
-  <template v-if="quotes">
+  <template v-if="quotes && matchedQuoteIds">
     <div v-if="quotes.length > 0" class="quote-list">
-      <div v-for="quote of quotes" :key="quote.id" class="quote-item">
+      <div
+        v-for="quote of quotes"
+        :key="quote.id"
+        class="quote-item"
+        :data-color="quote.color"
+        :class="{ 'quote-item-unmatched': !matchedQuoteIds.includes(quote.id) }"
+      >
         <div class="quote-item-info">
           <div :title="quote.note.path" class="quote-path" v-if="quote.note">{{
             quote.note.path
@@ -46,7 +60,10 @@ export default defineComponent({
             <button title="Open In Joplin" @click="jumpToJoplin(quote)"
               ><JoplinIcon
             /></button>
-            <button title="Scroll To This" @click="scrollToQuote(quote)"
+            <button
+              v-if="matchedQuoteIds.includes(quote.id)"
+              title="Scroll To This"
+              @click="scrollToQuote(quote)"
               ><BIconBullseye
             /></button>
             <button title="Delete" @click="deleteQuote(quote)"
@@ -83,6 +100,10 @@ export default defineComponent({
     padding: 10px 8px;
     margin: 0 10px 10px 10px;
     border-radius: 6px;
+
+    &-unmatched {
+      opacity: 0.5;
+    }
 
     &:last-child {
       margin-bottom: 0;
