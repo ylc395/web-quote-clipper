@@ -1,6 +1,8 @@
+import browser from 'webextension-polyfill';
+
 export function notify(payload: { title: string; content: string }) {
-  chrome.notifications.create({
-    silent: true,
+  browser.notifications.create({
+    ...{ silent: true },
     title: payload.title,
     type: 'basic',
     iconUrl:

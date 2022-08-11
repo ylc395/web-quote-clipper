@@ -22,7 +22,7 @@ bootstrap(
   },
 );
 
-chrome.webNavigation.onHistoryStateUpdated.addListener(
+browser.webNavigation.onHistoryStateUpdated.addListener(
   ({ tabId, url, frameId }) => {
     const { handleUrlUpdated } = wrap<ContentScript>({
       endPoint: browser.tabs,

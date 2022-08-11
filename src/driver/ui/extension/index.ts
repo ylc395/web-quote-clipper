@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { expose } from 'lib/rpc';
 import type Rpc from './rpc';
 
@@ -9,5 +10,5 @@ expose<Rpc>({
   notify,
 });
 
-chrome.webNavigation.onCommitted.addListener(initBadgeText);
-chrome.webNavigation.onHistoryStateUpdated.addListener(initBadgeText);
+browser.webNavigation.onCommitted.addListener(initBadgeText);
+browser.webNavigation.onHistoryStateUpdated.addListener(initBadgeText);

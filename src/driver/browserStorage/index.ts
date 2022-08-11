@@ -1,4 +1,5 @@
 import { container, singleton } from 'tsyringe';
+import browser from 'webextension-polyfill';
 import EventEmitter from 'eventemitter3';
 import { QuoteDatabase, Storage, StorageEvents, QuotesQuery } from 'model/db';
 import type { Quote } from 'model/entity';
@@ -14,7 +15,7 @@ export class BrowserStorage
 {
   constructor() {
     super();
-    chrome.storage.onChanged.addListener((changes, areaname) => {
+    browser.storage.onChanged.addListener((changes, areaname) => {
       if (areaname === STORAGE_AREA) {
         this.emit(StorageEvents.Changed, changes);
       }
@@ -22,11 +23,11 @@ export class BrowserStorage
   }
 
   set(key: string, value: string) {
-    return chrome.storage[STORAGE_AREA].set({ [key]: value });
+    return browser.storage[STORAGE_AREA].set({ [key]: value });
   }
 
   get(key: string) {
-    return chrome.storage[STORAGE_AREA].get([key]).then((v) => v[key]);
+    return browser.storage[STORAGE_AREA].get([key]).then((v) => v[key]);
   }
 }
 

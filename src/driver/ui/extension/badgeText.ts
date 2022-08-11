@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 const tabMarkRecord = {
   tabId: 0,
   total: 0,
@@ -5,12 +7,12 @@ const tabMarkRecord = {
 };
 
 export function initBadgeText({ tabId }: { tabId: number }) {
-  chrome.action.setBadgeText({
+  browser.action.setBadgeText({
     text: '-',
     tabId,
   });
 
-  chrome.action.setBadgeBackgroundColor({
+  browser.action.setBadgeBackgroundColor({
     color: 'blue',
     tabId,
   });
@@ -35,12 +37,12 @@ export function setBadgeText(
     tabMarkRecord.total = payload.total;
   }
 
-  chrome.action.setBadgeText({
+  browser.action.setBadgeText({
     text: String(tabMarkRecord.total),
     tabId,
   });
 
-  chrome.action.setBadgeBackgroundColor({
+  browser.action.setBadgeBackgroundColor({
     color: tabMarkRecord.active === tabMarkRecord.total ? 'blue' : 'red',
     tabId,
   });

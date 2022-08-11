@@ -1,12 +1,13 @@
 import { isResponse, Request, isRequest } from './protocol';
+import browser from 'webextension-polyfill';
 
 export function expose<T>(value: T): void {
   if (!value) {
     return;
   }
 
-  chrome.runtime.onMessage.addListener(
-    (message: Request | undefined, sender, sendBack) => {
+  browser.runtime.onMessage.addListener(
+    (message: Request | undefined, sender) => {
       if (
         !isRequest(message) ||
         typeof (value as any)[message.path] !== 'function'
@@ -19,22 +20,20 @@ export function expose<T>(value: T): void {
       try {
         result = (value as any)[message.path](...message.args, sender);
       } catch (error) {
-        sendBack({
+        return Promise.resolve({
           isError: true,
           payload: error,
         });
       }
 
-      Promise.resolve(result).then(
+      return Promise.resolve(result).then(
         (result) => {
-          sendBack({ isError: false, payload: result });
+          return { isError: false, payload: result };
         },
         (e) => {
-          sendBack({ isError: true, payload: e });
+          return { isError: true, payload: e };
         },
       );
-
-      return true;
     },
   );
 }
