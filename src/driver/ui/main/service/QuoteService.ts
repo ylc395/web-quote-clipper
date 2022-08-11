@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 
 import type { Quote } from 'model/entity';
 import runtime from 'driver/ui/runtime/mainRuntime';
+import repository from './repository';
 
 @singleton()
 export default class QuoteService {
@@ -28,13 +29,13 @@ export default class QuoteService {
 
     this.tabUrl.value = await runtime.getCurrentTabUrl();
     this._quotes.value = this.tabUrl.value
-      ? await runtime.fetchQuotes({
+      ? await repository.fetchQuotes({
           contentType: 'html',
           url: this.source.value === 'all' ? undefined : this.tabUrl.value,
         })
       : [];
     this.quotes.value = this._quotes.value;
-    this.matchedQuoteIds.value = await runtime.getMatchedQuoteIds();
+    this.matchedQuoteIds.value = await repository.getMatchedQuoteIds();
   };
 
   scrollToQuote = (quote: Quote) => {
@@ -54,7 +55,7 @@ export default class QuoteService {
       throw new Error('no quotes');
     }
 
-    await runtime.deleteQuote(quote);
+    await repository.deleteQuote(quote);
     this._quotes.value = this._quotes.value.filter(({ id }) => id !== quote.id);
   };
 

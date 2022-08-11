@@ -3,7 +3,7 @@ import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
 import { generateQuoteId } from 'service/QuoteService';
-import runtime from 'driver/ui/runtime/contentRuntime';
+import repository from './repository';
 import {
   isBlockElement,
   isElement,
@@ -77,7 +77,7 @@ export default class HighlightService {
     }
 
     if (type === 'persist') {
-      const createdQuote = await runtime.createQuote(result.quote);
+      const createdQuote = await repository.createQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, {
         range: result.range,
         isPersisted: true,
@@ -158,7 +158,7 @@ export default class HighlightService {
           const imgEl = new Image();
           imgEl.title = currentNode.title;
           imgEl.alt = currentNode.src;
-          imgEl.src = await runtime.toDataUrl(
+          imgEl.src = await repository.toDataUrl(
             currentNode.currentSrc || currentNode.src,
           );
           lastText += `![${imgEl.alt}](${imgEl.src}${

@@ -3,8 +3,8 @@ import browser from 'webextension-polyfill';
 import { imgSrcToDataUrl } from 'service/MarkdownService';
 import { expose, wrap } from 'lib/rpc';
 import bootstrap from './bootstrap';
-import type Rpc from './rpc';
-import type ContentScript from 'driver/ui/content/rpc';
+import type Api from './api';
+import type ContentScript from 'driver/ui/content/api';
 
 import 'driver/ui/extension';
 
@@ -12,7 +12,7 @@ bootstrap(
   ({
     quoteService: { createQuote, updateQuote, deleteQuote, fetchQuotes },
   }) => {
-    expose<Rpc>({
+    expose<Api>({
       createQuote,
       updateQuote,
       deleteQuote,

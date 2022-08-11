@@ -1,11 +1,11 @@
 import browser from 'webextension-polyfill';
 import { expose } from 'lib/rpc';
-import type Rpc from './rpc';
+import type Api from './api';
 
 import { initBadgeText, setBadgeText } from './badgeText';
 import { notify } from './notify';
 
-expose<Rpc>({
+expose<Api>({
   setBadgeText,
   notify,
 });

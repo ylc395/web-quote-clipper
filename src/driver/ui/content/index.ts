@@ -6,12 +6,12 @@ import { BrowserStorage } from 'driver/browserStorage';
 import { expose } from 'lib/rpc';
 import App from './view/App.vue';
 import MarkManager from './service/MarkManager';
-import type Rpc from './rpc';
+import type Api from './api';
 
 container.registerSingleton(storageToken, BrowserStorage);
 const markManager = container.resolve(MarkManager);
 
-expose<Rpc>(markManager);
+expose<Api>(markManager);
 
 const rootEl = document.createElement('div');
 document.body.appendChild(rootEl);

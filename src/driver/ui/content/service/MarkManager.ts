@@ -15,6 +15,7 @@ import type { Quote } from 'model/entity';
 import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import runtime from 'driver/ui/runtime/contentRuntime';
+import repository from './repository';
 
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
 import {
@@ -81,7 +82,7 @@ export default class MarkManager {
 
     console.log('💧 hydrating...');
 
-    const existedQuotes = await runtime.fetchQuotes(getQuery());
+    const existedQuotes = await repository.fetchQuotes(getQuery());
     const updatedCids: string[] = [];
     const unmatchedQuotes: Quote[] = [];
     const existedQuoteCids = Object.keys(this.matchedQuotesMap);
@@ -154,7 +155,7 @@ export default class MarkManager {
     console.log('🚛 Fetching quotes...');
 
     try {
-      const quotes = await runtime.fetchQuotes(getQuery());
+      const quotes = await repository.fetchQuotes(getQuery());
 
       this.unmatchedQuotes.value = quotes;
 
@@ -313,7 +314,7 @@ export default class MarkManager {
     const oldQuote = this.matchedQuotesMap[cid];
     const newQuote = { ...oldQuote, ...quote };
 
-    await runtime.updateQuote(newQuote);
+    await repository.updateQuote(newQuote);
 
     this.matchedQuotesMap[cid] = newQuote;
 
@@ -332,7 +333,7 @@ export default class MarkManager {
     const _quote = this.matchedQuotesMap[cid];
 
     if ((await this.config.get('db')) !== DbTypes.Joplin || _quote.note) {
-      await runtime.deleteQuote(_quote);
+      await repository.deleteQuote(_quote);
     }
 
     this.removeQuoteByCid(cid);
