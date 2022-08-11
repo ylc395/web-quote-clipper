@@ -17,7 +17,9 @@ export default defineComponent({
     const {
       matchedQuoteIds,
       quotes,
+      quotesCount,
       tabUrl,
+      searchKeyword,
       source,
       scrollToQuote,
       jumpToJoplin,
@@ -35,6 +37,8 @@ export default defineComponent({
       isJoplin,
       matchedQuoteIds,
       source,
+      quotesCount,
+      searchKeyword,
       scrollToQuote,
       jumpToJoplin,
       deleteQuote,
@@ -46,14 +50,17 @@ export default defineComponent({
 </script>
 <template>
   <template v-if="quotes && matchedQuoteIds">
-    <div v-if="quotes.length > 0" class="quote-list">
+    <div v-if="quotesCount > 0" class="quote-list">
       <p class="quote-list-info" v-if="quotes && matchedQuoteIds"
-        ><strong>{{ quotes.length }}</strong> quote{{
+        ><strong>{{ quotesCount }}</strong> quote{{
           quotes.length > 1 ? 's' : ''
         }}
         from this page.
-        <strong>{{ matchedQuoteIds.length }}</strong> matched.</p
-      >
+        <strong>{{ matchedQuoteIds.length }}</strong> matched.
+        <template v-if="searchKeyword"
+          ><strong>{{ quotes.length }}</strong> search result.</template
+        >
+      </p>
       <div
         v-for="quote of quotes"
         :key="quote.id"
@@ -90,6 +97,10 @@ export default defineComponent({
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
       </div>
+      <p v-if="quotes.length === 0"
+        >No search result for keyword <span>{{ searchKeyword }}</span
+        >.</p
+      >
     </div>
     <div v-else>
       <h1>Can't find any clipped content from this page.</h1>

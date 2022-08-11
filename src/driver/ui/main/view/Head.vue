@@ -7,9 +7,9 @@ import QuoteService from '../service/QuoteService';
 export default defineComponent({
   components: { BIconGearFill },
   setup() {
-    const { source } = container.resolve(QuoteService);
+    const { source, searchKeyword } = container.resolve(QuoteService);
 
-    return { source };
+    return { source, searchKeyword };
   },
 });
 </script>
@@ -26,8 +26,8 @@ export default defineComponent({
       </div>
     </div>
     <div>
-      <input />
-      <div v-if="source === 'all'">
+      <input v-model="searchKeyword" />
+      <div>
         <button></button>
         <ul>
           <li>Sort by Create Time</li>
