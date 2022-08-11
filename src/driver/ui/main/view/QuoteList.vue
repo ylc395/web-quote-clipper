@@ -19,35 +19,14 @@ export default defineComponent({
     BIconGlobe,
   },
   setup() {
-    const {
-      matchedQuoteIds,
-      quotes,
-      quotesCount,
-      tabUrl,
-      searchKeyword,
-      source,
-      scrollToQuote,
-      jumpToJoplin,
-      deleteQuote,
-      init,
-    } = container.resolve(QuoteService);
     const dbType = useConfig('db');
 
     const isJoplin = computed(() => dbType.value === DbTypes.Joplin);
     const joinContents = ({ contents }: Quote) => contents.join('');
 
     return {
-      quotes,
-      tabUrl,
+      ...container.resolve(QuoteService),
       isJoplin,
-      matchedQuoteIds,
-      source,
-      quotesCount,
-      searchKeyword,
-      scrollToQuote,
-      jumpToJoplin,
-      deleteQuote,
-      init,
       joinContents,
     };
   },
@@ -59,8 +38,7 @@ export default defineComponent({
       <p class="quote-list-info" v-if="quotes && matchedQuoteIds"
         ><strong>{{ quotesCount }}</strong> quote{{
           quotes.length > 1 ? 's' : ''
-        }}
-        from this page.
+        }}{{ source === 'page' ? ' from this page' : '' }}.
         <strong>{{ matchedQuoteIds.length }}</strong> matched.
         <template v-if="searchKeyword"
           ><strong>{{ quotes.length }}</strong> search result.</template
@@ -100,7 +78,7 @@ export default defineComponent({
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
       </div>
-      <p v-if="quotes.length === 0"
+      <p class="no-search-result" v-if="quotes.length === 0"
         >No search result for keyword <span>{{ searchKeyword }}</span
         >.</p
       >
@@ -129,6 +107,7 @@ export default defineComponent({
   &-info {
     margin: 0 0 4px 0;
     color: #737373;
+    font-size: 14px;
   }
 
   .quote-item {
@@ -177,6 +156,11 @@ export default defineComponent({
     cursor: pointer;
     display: flex;
     align-items: center;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
 
     svg {
       margin-right: 4px;
@@ -193,6 +177,7 @@ export default defineComponent({
 
   .quote-operation {
     display: flex;
+    align-items: flex-start;
 
     & > button {
       color: inherit;
@@ -204,6 +189,14 @@ export default defineComponent({
       padding: 0;
       font-size: 16px;
       margin-left: 4px;
+    }
+  }
+
+  .no-search-result {
+    font-size: 14px;
+
+    span {
+      font-style: italic;
     }
   }
 }

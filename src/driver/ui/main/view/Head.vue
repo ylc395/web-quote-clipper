@@ -12,9 +12,7 @@ import QuoteService from '../service/QuoteService';
 export default defineComponent({
   components: { BIconGearFill, BIconSearch, BIconSortDown, BIconSortUp },
   setup() {
-    const { source, searchKeyword } = container.resolve(QuoteService);
-
-    return { source, searchKeyword };
+    return { ...container.resolve(QuoteService) };
   },
 });
 </script>
@@ -23,30 +21,26 @@ export default defineComponent({
     <div class="app-head">
       <h1 class="app-title">Quotes Collection</h1>
       <div class="app-head-button-group">
-        <button @click="source = 'page'">Page</button>
-        <button @click="source = 'all'">All</button>
-      </div>
-      <div class="app-head-icon-button-group">
-        <button title="setting"><BIconGearFill /></button>
+        <button :disabled="source === 'page'" @click="source = 'page'"
+          >Page</button
+        >
+        <button :disabled="source === 'all'" @click="source = 'all'"
+          >All</button
+        >
+        <div class="app-head-icon-button-group">
+          <button title="setting"><BIconGearFill /></button>
+        </div>
       </div>
     </div>
     <div>
-      <div>
+      <div class="search-input">
         <BIconSearch />
         <input
           v-model="searchKeyword"
           :placeholder="`Search quotes${
-            source === 'page' ? ' on this page' : ''
+            source === 'page' ? ' of this page' : ''
           }...`"
         />
-      </div>
-      <div>
-        <button><BIconSortDown /></button>
-        <button><BIconSortUp /></button>
-        <ul>
-          <li>Sort by Create Time</li>
-          <li>Sort by Web Page's Order</li>
-        </ul>
       </div>
     </div>
   </div>
@@ -55,6 +49,8 @@ export default defineComponent({
 .app-head {
   padding: 10px 0;
   display: flex;
+  flex-grow: 1;
+  justify-content: space-between;
 
   .app-title {
     margin: 0 10px 0 0;
@@ -62,13 +58,35 @@ export default defineComponent({
   }
 
   &-button-group {
-    flex-grow: 1;
+    display: flex;
   }
 
   &-icon-button-group button {
     display: flex;
     align-items: center;
     cursor: pointer;
+  }
+}
+
+.search-input {
+  position: relative;
+  margin-bottom: 16px;
+  font-size: 14px;
+
+  $icon-left: 8px;
+
+  svg {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: $icon-left;
+  }
+
+  input {
+    padding-left: calc(1.2em + $icon-left);
+    width: 100%;
+    box-sizing: border-box;
+    height: 32px;
   }
 }
 </style>

@@ -25,6 +25,7 @@ export default class QuoteService {
   }
 
   init = async () => {
+    this.searchKeyword.value = '';
     this.quotes.value = undefined;
     this.matchedQuoteIds.value = undefined;
 
