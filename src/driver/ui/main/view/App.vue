@@ -15,7 +15,7 @@ export default defineComponent({
 </template>
 <style>
 #app {
-  min-width: 420px;
+  width: 450px; /* max width is 800px for extension popup */
   box-sizing: border-box;
   background-color: #f2f2f2;
   padding: 0 10px;

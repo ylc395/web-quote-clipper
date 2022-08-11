@@ -143,19 +143,16 @@ export default defineComponent({
 
     &-path {
       flex-grow: 1;
-    }
-
-    a {
-      color: inherit;
+      font-size: 14px;
     }
   }
 
   .quote-joplin-path,
   .quote-url {
-    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
+    color: inherit;
     text-decoration: none;
 
     &:hover {
