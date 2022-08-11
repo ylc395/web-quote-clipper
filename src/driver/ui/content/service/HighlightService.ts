@@ -158,7 +158,7 @@ export default class HighlightService {
           const imgEl = new Image();
           imgEl.title = currentNode.title;
           imgEl.alt = currentNode.src;
-          imgEl.src = await repository.toDataUrl(
+          imgEl.src = await repository.imgSrcToDataUrl(
             currentNode.currentSrc || currentNode.src,
           );
           lastText += `![${imgEl.alt}](${imgEl.src}${

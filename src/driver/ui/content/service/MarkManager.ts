@@ -65,6 +65,13 @@ export default class MarkManager {
     });
 
     watch([this.activeMarkCount, this.totalMarkCount], this.updateBadgeText);
+    watch(
+      this.activeMarkCount,
+      debounce(
+        () => webExtension.updateMatched(this.getMatchedQuoteIds()),
+        500,
+      ),
+    );
 
     this.init();
   }

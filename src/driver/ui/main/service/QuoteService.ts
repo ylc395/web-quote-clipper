@@ -60,6 +60,10 @@ export default class QuoteService {
     this._quotes.value = this._quotes.value.filter(({ id }) => id !== quote.id);
   };
 
+  updateMatched = async (matchedQuoteIds: Quote['id'][]) => {
+    this.matchedQuoteIds.value = matchedQuoteIds;
+  };
+
   private search = (keyword: string) => {
     if (!keyword) {
       this.quotes.value = this._quotes.value;
