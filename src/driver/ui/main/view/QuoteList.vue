@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent, computed } from 'vue';
 import { container } from 'tsyringe';
-import { BIconTrashFill, BIconBullseye } from 'bootstrap-icons-vue';
+import { BIconTrashFill, BIconBullseye, BIconGlobe } from 'bootstrap-icons-vue';
 import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
@@ -12,7 +12,12 @@ import JoplinIcon from '../../common/view/JoplinIcon.vue'; // rollup-plugin-type
 import QuoteService from '../service/QuoteService';
 
 export default defineComponent({
-  components: { JoplinIcon, BIconTrashFill, BIconBullseye },
+  components: {
+    JoplinIcon,
+    BIconTrashFill,
+    BIconBullseye,
+    BIconGlobe,
+  },
   setup() {
     const {
       matchedQuoteIds,
@@ -69,34 +74,29 @@ export default defineComponent({
         :class="{ 'quote-item-unmatched': !matchedQuoteIds.includes(quote.id) }"
       >
         <div class="quote-item-info">
-          <div class="quote-item-info-row">
+          <div class="quote-item-info-path">
             <div
-              :title="quote.note.path"
-              class="quote-path"
               v-if="quote.note"
-              >{{ quote.note.path }}</div
+              :title="quote.note.path"
+              class="quote-joplin-path"
+              @click="jumpToJoplin(quote)"
+              ><JoplinIcon />{{ quote.note.path.slice(1) }}</div
             >
-            <div class="quote-operation">
-              <button
-                v-if="isJoplin"
-                title="Open In Joplin"
-                @click="jumpToJoplin(quote)"
-                ><JoplinIcon
-              /></button>
-              <button
-                v-if="matchedQuoteIds.includes(quote.id)"
-                title="Scroll To This"
-                @click="scrollToQuote(quote)"
-                ><BIconBullseye
-              /></button>
-              <button title="Delete" @click="deleteQuote(quote)"
-                ><BIconTrashFill
-              /></button>
-            </div>
+            <a v-if="source === 'all'" :href="quote.sourceUrl" class="quote-url"
+              ><BIconGlobe />{{ quote.sourceUrl }}</a
+            >
           </div>
-          <div v-if="source === 'all'"
-            ><a :href="quote.sourceUrl">{{ quote.sourceUrl }}</a></div
-          >
+          <div class="quote-operation">
+            <button
+              v-if="matchedQuoteIds.includes(quote.id)"
+              title="Scroll To This"
+              @click="scrollToQuote(quote)"
+              ><BIconBullseye
+            /></button>
+            <button title="Delete" @click="deleteQuote(quote)"
+              ><BIconTrashFill
+            /></button>
+          </div>
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
       </div>
@@ -160,10 +160,10 @@ export default defineComponent({
 
   .quote-item-info {
     color: #676767;
+    display: flex;
 
-    &-row {
-      display: flex;
-      justify-content: space-between;
+    &-path {
+      flex-grow: 1;
     }
 
     a {
@@ -171,8 +171,20 @@ export default defineComponent({
     }
   }
 
-  .quote-path {
+  .quote-joplin-path,
+  .quote-url {
     font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+
+    svg {
+      margin-right: 4px;
+    }
+  }
+
+  .quote-joplin-path svg {
+    color: #2862be;
   }
 
   .markdown-body {
