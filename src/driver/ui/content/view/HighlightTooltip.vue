@@ -144,7 +144,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use './constants';
+@use '../../constants';
 
 $item-size: 20px;
 $item-margin: 4px;

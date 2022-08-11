@@ -26,4 +26,14 @@ export default {
     const tab = await getCurrentTab();
     return tab.url;
   },
+  handleClickAnchor: () => {
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+
+      if (target.tagName.toLowerCase() === 'a') {
+        const url = target.getAttribute('href');
+        url && browser.tabs.create({ url });
+      }
+    });
+  },
 } as const;

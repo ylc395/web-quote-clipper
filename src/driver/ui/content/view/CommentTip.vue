@@ -86,7 +86,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use './constants';
+@use '../../constants';
 
 .web-clipper-comment-container {
   position: relative;

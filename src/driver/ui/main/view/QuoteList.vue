@@ -18,6 +18,7 @@ export default defineComponent({
       matchedQuoteIds,
       quotes,
       tabUrl,
+      source,
       scrollToQuote,
       jumpToJoplin,
       deleteQuote,
@@ -33,6 +34,7 @@ export default defineComponent({
       tabUrl,
       isJoplin,
       matchedQuoteIds,
+      source,
       scrollToQuote,
       jumpToJoplin,
       deleteQuote,
@@ -45,6 +47,13 @@ export default defineComponent({
 <template>
   <template v-if="quotes && matchedQuoteIds">
     <div v-if="quotes.length > 0" class="quote-list">
+      <p class="quote-list-info" v-if="quotes && matchedQuoteIds"
+        ><strong>{{ quotes.length }}</strong> quote{{
+          quotes.length > 1 ? 's' : ''
+        }}
+        from this page.
+        <strong>{{ matchedQuoteIds.length }}</strong> matched.</p
+      >
       <div
         v-for="quote of quotes"
         :key="quote.id"
@@ -53,23 +62,31 @@ export default defineComponent({
         :class="{ 'quote-item-unmatched': !matchedQuoteIds.includes(quote.id) }"
       >
         <div class="quote-item-info">
-          <div :title="quote.note.path" class="quote-path" v-if="quote.note">{{
-            quote.note.path
-          }}</div>
-          <div class="quote-operation">
-            <button title="Open In Joplin" @click="jumpToJoplin(quote)"
-              ><JoplinIcon
-            /></button>
-            <button
-              v-if="matchedQuoteIds.includes(quote.id)"
-              title="Scroll To This"
-              @click="scrollToQuote(quote)"
-              ><BIconBullseye
-            /></button>
-            <button title="Delete" @click="deleteQuote(quote)"
-              ><BIconTrashFill
-            /></button>
+          <div class="quote-item-info-row">
+            <div
+              :title="quote.note.path"
+              class="quote-path"
+              v-if="quote.note"
+              >{{ quote.note.path }}</div
+            >
+            <div class="quote-operation">
+              <button title="Open In Joplin" @click="jumpToJoplin(quote)"
+                ><JoplinIcon
+              /></button>
+              <button
+                v-if="matchedQuoteIds.includes(quote.id)"
+                title="Scroll To This"
+                @click="scrollToQuote(quote)"
+                ><BIconBullseye
+              /></button>
+              <button title="Delete" @click="deleteQuote(quote)"
+                ><BIconTrashFill
+              /></button>
+            </div>
           </div>
+          <div v-if="source === 'all'"
+            ><a :href="quote.sourceUrl">{{ quote.sourceUrl }}</a></div
+          >
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
       </div>
@@ -89,17 +106,34 @@ export default defineComponent({
   <div v-else>loading...</div>
 </template>
 <style lang="scss">
+@use '../../constants';
+
 .quote-list {
   list-style: none;
-  padding: 0;
-  background-color: #f2f2f2;
+  padding-bottom: 10px;
+
+  &-info {
+    margin: 0 0 4px 0;
+    color: #737373;
+  }
 
   .quote-item {
-    background-color: white;
+    background-color: #fff;
     box-shadow: #c4c4c4 0 0 4px;
     padding: 10px 8px;
-    margin: 0 10px 10px 10px;
+    margin: 6px 0 10px 0;
     border-radius: 6px;
+    border-left: 3px solid transparent;
+
+    @each $key, $value in constants.$mark-colors {
+      &[data-color='#{$key}'] {
+        border-left-color: $value;
+
+        .quote-operation > button:hover {
+          color: $value;
+        }
+      }
+    }
 
     &-unmatched {
       opacity: 0.5;
@@ -111,18 +145,24 @@ export default defineComponent({
   }
 
   .quote-item-info {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
     color: #676767;
+
+    &-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    a {
+      color: inherit;
+    }
   }
 
   .quote-path {
     font-size: 14px;
   }
 
-  .quote-content {
-    font-size: 16px;
+  .markdown-body {
+    margin-top: 6px;
   }
 
   .quote-operation {
@@ -138,10 +178,6 @@ export default defineComponent({
       padding: 0;
       font-size: 16px;
       margin-left: 4px;
-
-      &:hover {
-        color: #2760bc;
-      }
     }
   }
 }

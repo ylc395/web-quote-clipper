@@ -194,7 +194,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use '../constants';
+@use '../../../constants';
 
 .web-clipper-mark-manager-tooltip {
   display: flex;

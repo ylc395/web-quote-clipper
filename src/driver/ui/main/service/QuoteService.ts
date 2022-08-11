@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { Quote } from 'model/entity';
 import runtime from 'driver/ui/runtime/mainRuntime';
 
@@ -7,6 +7,7 @@ import runtime from 'driver/ui/runtime/mainRuntime';
 export default class QuoteService {
   readonly quotes = ref<Quote[] | undefined>();
   readonly tabUrl = ref<string | undefined>();
+  readonly source = ref<'page' | 'all'>('page');
   readonly matchedQuoteIds = ref<Quote['id'][] | undefined>();
 
   constructor() {
@@ -16,12 +17,18 @@ export default class QuoteService {
   init = async () => {
     this.tabUrl.value = await runtime.getCurrentTabUrl();
 
-    this.quotes.value = this.tabUrl.value
-      ? await runtime.fetchQuotes({
-          contentType: 'html',
-          url: this.tabUrl.value,
-        })
-      : [];
+    watch(
+      this.source,
+      async (source) => {
+        this.quotes.value = this.tabUrl.value
+          ? await runtime.fetchQuotes({
+              contentType: 'html',
+              url: source === 'all' ? undefined : this.tabUrl.value,
+            })
+          : [];
+      },
+      { immediate: true },
+    );
 
     this.matchedQuoteIds.value = await runtime.getMatchedQuoteIds();
   };
