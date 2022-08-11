@@ -6,7 +6,7 @@ import { defineComponent, ref, watchPostEffect, watch } from 'vue';
 import { Colors, COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import runtime from 'driver/ui/runtime/contentRuntime';
+import webExtension from 'driver/ui/content/service/extensionService';
 
 import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
@@ -62,7 +62,7 @@ export default defineComponent({
       await capture(type);
 
       if (type !== 'persist') {
-        runtime.notify({
+        webExtension.notify({
           title: 'Copied',
           content: 'You can paste it to Joplin now.',
         });
@@ -144,7 +144,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use '../../constants';
+@use '../../common/view/constants';
 
 $item-size: 20px;
 $item-margin: 4px;

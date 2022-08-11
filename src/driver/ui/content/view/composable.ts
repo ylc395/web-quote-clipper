@@ -16,7 +16,7 @@ import {
 import MarkManager from '../service/MarkManager';
 import type DomMonitor from '../service/DomMonitor';
 
-export { useConfig } from 'driver/ui/composable';
+export { useConfig } from 'driver/ui/common/service/configService';
 
 export function usePopper(
   targetEl: HTMLElement,

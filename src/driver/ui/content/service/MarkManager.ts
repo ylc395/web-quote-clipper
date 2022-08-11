@@ -2,19 +2,13 @@ import highlightRange from 'dom-highlight-range';
 import { container, singleton } from 'tsyringe';
 import Mark from 'mark.js';
 import debounce from 'lodash.debounce';
-import {
-  shallowReactive,
-  shallowRef,
-  watch,
-  computed,
-  reactive,
-  toRaw,
-} from 'vue';
+import { shallowReactive, shallowRef, watch, computed, reactive } from 'vue';
 
 import type { Quote } from 'model/entity';
 import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import runtime from 'driver/ui/runtime/contentRuntime';
+import webExtension from './extensionService';
+import * as joplinService from 'driver/ui/common/service/joplinService';
 import repository from './repository';
 
 import DomMonitor, { DomMonitorEvents } from './DomMonitor';
@@ -225,7 +219,7 @@ export default class MarkManager {
   }, 500);
 
   private updateBadgeText = debounce(() => {
-    runtime.setBadgeText({
+    webExtension.setBadgeText({
       total: this.totalMarkCount.value,
       active: this.activeMarkCount.value,
     });
@@ -362,7 +356,7 @@ export default class MarkManager {
       throw new Error('no quote');
     }
 
-    runtime.jumpToJoplin(quote.note.id);
+    joplinService.openNote(quote.note.id);
   };
 
   copyAs = async (

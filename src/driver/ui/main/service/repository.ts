@@ -2,7 +2,7 @@ import browser from 'webextension-polyfill';
 import { wrap } from 'lib/rpc';
 import type Background from 'driver/background/api';
 import type ContentScript from 'driver/ui/content/api';
-import { getCurrentTab } from 'driver/ui/runtime/mainRuntime';
+import { getCurrentTab } from './extensionService';
 
 const { fetchQuotes } = wrap<Background>({ endPoint: browser.runtime });
 const { deleteQuote, getMatchedQuoteIds } = wrap<ContentScript>({

@@ -1,7 +1,6 @@
 import browser from 'webextension-polyfill';
 import { wrap } from 'lib/rpc';
 import type ContentScript from 'driver/ui/content/api';
-import * as common from './common';
 
 export async function getCurrentTab() {
   const tabs = await browser.tabs.query({ currentWindow: true, active: true });
@@ -14,7 +13,6 @@ const { scrollToMark } = wrap<ContentScript>({
 });
 
 export default {
-  ...common,
   scrollToMark,
   getCurrentTabUrl: async () => {
     const tab = await getCurrentTab();

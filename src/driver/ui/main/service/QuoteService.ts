@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue';
 import debounce from 'lodash.debounce';
 
 import type { Quote } from 'model/entity';
-import runtime from 'driver/ui/runtime/mainRuntime';
+import * as joplinService from 'driver/ui/common/service/joplinService';
+import webExtension from './extensionService';
 import repository from './repository';
 
 @singleton()
@@ -27,7 +28,7 @@ export default class QuoteService {
     this.quotes.value = undefined;
     this.matchedQuoteIds.value = undefined;
 
-    this.tabUrl.value = await runtime.getCurrentTabUrl();
+    this.tabUrl.value = await webExtension.getCurrentTabUrl();
     this._quotes.value = this.tabUrl.value
       ? await repository.fetchQuotes({
           contentType: 'html',
@@ -39,7 +40,7 @@ export default class QuoteService {
   };
 
   scrollToQuote = (quote: Quote) => {
-    runtime.scrollToMark(quote);
+    webExtension.scrollToMark(quote);
   };
 
   jumpToJoplin = (quote: Quote) => {
@@ -47,7 +48,7 @@ export default class QuoteService {
       throw new Error('no note');
     }
 
-    runtime.jumpToJoplin(quote.note.id);
+    joplinService.openNote(quote.note.id);
   };
 
   deleteQuote = async (quote: Quote) => {

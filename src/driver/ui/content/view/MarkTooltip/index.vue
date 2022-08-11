@@ -16,8 +16,8 @@ import {
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
-import runtime from 'driver/ui/runtime/contentRuntime';
-import JoplinIcon from '../../../JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
+import webExtension from 'driver/ui/content/service/extensionService';
+import JoplinIcon from '../../../common/view/JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
 
 import { useTooltipPopper, useSubmenu } from './composable';
 import MarkManager from '../../service/MarkManager';
@@ -72,7 +72,7 @@ export default defineComponent({
     const handleCopy = async (type: Parameters<typeof copyAs>[1]) => {
       await copyAs(id, type);
       delete tooltipTargetMap[id];
-      runtime.notify({
+      webExtension.notify({
         title: 'Copied',
         content: 'You can paste it to Joplin now.',
       });
@@ -194,7 +194,7 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss">
-@use '../../../constants';
+@use '../../../common/view/constants';
 
 .web-clipper-mark-manager-tooltip {
   display: flex;

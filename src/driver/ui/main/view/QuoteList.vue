@@ -6,9 +6,9 @@ import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
 import type { Quote } from 'model/entity';
-import { useConfig } from 'driver/ui/composable';
+import { useConfig } from 'driver/ui/common/service/configService';
 
-import JoplinIcon from '../../JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
+import JoplinIcon from '../../common/view/JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
 import QuoteService from '../service/QuoteService';
 
 export default defineComponent({
@@ -120,7 +120,7 @@ export default defineComponent({
   <div v-else>loading...</div>
 </template>
 <style lang="scss">
-@use '../../constants';
+@use '../../common/view/constants';
 
 .quote-list {
   list-style: none;
