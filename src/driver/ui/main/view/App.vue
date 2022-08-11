@@ -15,7 +15,7 @@ export default defineComponent({
 </template>
 <style>
 #app {
-  min-width: 360px;
+  min-width: 420px;
   box-sizing: border-box;
   background-color: #f2f2f2;
   padding: 0 10px;

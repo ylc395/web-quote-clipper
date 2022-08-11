@@ -1,11 +1,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { container } from 'tsyringe';
-import { BIconGearFill } from 'bootstrap-icons-vue';
+import {
+  BIconGearFill,
+  BIconSearch,
+  BIconSortDown,
+  BIconSortUp,
+} from 'bootstrap-icons-vue';
 import QuoteService from '../service/QuoteService';
 
 export default defineComponent({
-  components: { BIconGearFill },
+  components: { BIconGearFill, BIconSearch, BIconSortDown, BIconSortUp },
   setup() {
     const { source, searchKeyword } = container.resolve(QuoteService);
 
@@ -26,9 +31,18 @@ export default defineComponent({
       </div>
     </div>
     <div>
-      <input v-model="searchKeyword" />
       <div>
-        <button></button>
+        <BIconSearch />
+        <input
+          v-model="searchKeyword"
+          :placeholder="`Search quotes${
+            source === 'page' ? ' on this page' : ''
+          }...`"
+        />
+      </div>
+      <div>
+        <button><BIconSortDown /></button>
+        <button><BIconSortUp /></button>
         <ul>
           <li>Sort by Create Time</li>
           <li>Sort by Web Page's Order</li>

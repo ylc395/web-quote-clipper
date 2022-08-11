@@ -23,6 +23,9 @@ export default class QuoteService {
   }
 
   init = async () => {
+    this.quotes.value = undefined;
+    this.matchedQuoteIds.value = undefined;
+
     this.tabUrl.value = await runtime.getCurrentTabUrl();
     this._quotes.value = this.tabUrl.value
       ? await runtime.fetchQuotes({

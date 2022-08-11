@@ -77,7 +77,10 @@ export default defineComponent({
               >{{ quote.note.path }}</div
             >
             <div class="quote-operation">
-              <button title="Open In Joplin" @click="jumpToJoplin(quote)"
+              <button
+                v-if="isJoplin"
+                title="Open In Joplin"
+                @click="jumpToJoplin(quote)"
                 ><JoplinIcon
               /></button>
               <button
