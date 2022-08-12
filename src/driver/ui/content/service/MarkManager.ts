@@ -17,7 +17,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY,
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
-import { copyQuoteToClipboard, isVisible, getUrlPath } from '../utils';
+import { copyQuoteToClipboard, isVisible, getUrlPath, noop } from '../utils';
 
 const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
 const REFRESH_DELAY = 2000; // not sure what's the best interval
@@ -68,7 +68,8 @@ export default class MarkManager {
     watch(
       this.activeMarkCount,
       debounce(
-        () => webExtension.updateMatched(this.getMatchedQuoteIds()),
+        // this will fail if popup not opened. Just ignore it.
+        () => webExtension.updateMatched(this.getMatchedQuoteIds()).catch(noop),
         500,
       ),
     );

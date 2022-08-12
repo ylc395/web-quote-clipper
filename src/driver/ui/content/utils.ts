@@ -97,3 +97,5 @@ export const copyQuoteToClipboard = async (
     );
   }
 };
+
+export const noop = () => {};
