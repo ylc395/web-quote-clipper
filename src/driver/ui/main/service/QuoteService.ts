@@ -9,11 +9,11 @@ import repository from './repository';
 
 @singleton()
 export default class QuoteService {
-  private readonly _quotes = ref<Quote[] | undefined>();
-  readonly tabUrl = ref<string | undefined>();
+  private readonly allQuotes = ref<Quote[] | undefined>();
+  private readonly tabUrl = ref<string | undefined>();
   readonly source = ref<'page' | 'all'>('page');
   readonly matchedQuoteIds = ref<Quote['id'][] | undefined>();
-  readonly quotesCount = computed(() => this._quotes.value?.length || 0);
+  readonly quotesCount = computed(() => this.allQuotes.value?.length || 0);
   readonly searchKeyword = ref('');
 
   readonly quotes = ref<Quote[] | undefined>();
@@ -30,13 +30,13 @@ export default class QuoteService {
     this.matchedQuoteIds.value = undefined;
 
     this.tabUrl.value = await webExtension.getCurrentTabUrl();
-    this._quotes.value = this.tabUrl.value
+    this.allQuotes.value = this.tabUrl.value
       ? await repository.fetchQuotes({
           contentType: 'html',
           url: this.source.value === 'all' ? undefined : this.tabUrl.value,
         })
       : [];
-    this.quotes.value = this._quotes.value;
+    this.quotes.value = this.allQuotes.value;
     this.matchedQuoteIds.value = await repository.getMatchedQuoteIds();
   };
 
@@ -53,12 +53,14 @@ export default class QuoteService {
   };
 
   deleteQuote = async (quote: Quote) => {
-    if (!this._quotes.value) {
+    if (!this.allQuotes.value) {
       throw new Error('no quotes');
     }
 
     await repository.deleteQuote(quote);
-    this._quotes.value = this._quotes.value.filter(({ id }) => id !== quote.id);
+    this.allQuotes.value = this.allQuotes.value.filter(
+      ({ id }) => id !== quote.id,
+    );
   };
 
   updateMatched = async (matchedQuoteIds: Quote['id'][]) => {
@@ -67,15 +69,15 @@ export default class QuoteService {
 
   private search = (keyword: string) => {
     if (!keyword) {
-      this.quotes.value = this._quotes.value;
+      this.quotes.value = this.allQuotes.value;
       return;
     }
 
-    if (!this._quotes.value) {
+    if (!this.allQuotes.value) {
       throw new Error('no quotes');
     }
 
-    this.quotes.value = this._quotes.value.filter(
+    this.quotes.value = this.allQuotes.value.filter(
       ({ sourceUrl, contents, comment, note }) => {
         return (
           (this.source.value === 'all' && sourceUrl.includes(keyword)) ||

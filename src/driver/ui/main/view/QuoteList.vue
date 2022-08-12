@@ -1,7 +1,12 @@
 <script lang="ts">
 import { defineComponent, computed } from 'vue';
 import { container } from 'tsyringe';
-import { BIconTrashFill, BIconBullseye, BIconGlobe } from 'bootstrap-icons-vue';
+import {
+  BIconTrashFill,
+  BIconBullseye,
+  BIconGlobe,
+  BIconMinecart,
+} from 'bootstrap-icons-vue';
 import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
@@ -17,6 +22,7 @@ export default defineComponent({
     BIconTrashFill,
     BIconBullseye,
     BIconGlobe,
+    BIconMinecart,
   },
   setup() {
     const dbType = useConfig('db');
@@ -86,16 +92,18 @@ export default defineComponent({
         >.</p
       >
     </div>
-    <div v-else>
-      <h1>Can't find any clipped content from this page.</h1>
-      <p v-if="tabUrl">{{ tabUrl }}</p>
-      <template v-if="isJoplin">
+    <div v-else class="empty-list">
+      <div class="empty-icon"><BIconMinecart /></div>
+      <h1 class="empty-title"
+        >Can't find any clipped content from this page.</h1
+      >
+      <div class="empty-retry" v-if="isJoplin">
         <p
           >Joplin may take seconds to update its database. Click Refresh to
           retry.</p
         >
         <button @click="init">Refresh</button>
-      </template>
+      </div>
     </div>
   </template>
   <div v-else>loading...</div>
@@ -207,6 +215,38 @@ export default defineComponent({
     span {
       font-style: italic;
     }
+  }
+}
+
+.empty-list {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 30px;
+  }
+
+  .empty-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0;
+  }
+
+  .empty-url {
+    color: #676767;
+    word-break: break-all;
+  }
+
+  .empty-retry button {
+    background-color: #2878f7;
+    color: #fff;
+    border: 0;
+    height: 30px;
+    width: 80px;
+    border-radius: 6px;
+    cursor: pointer;
   }
 }
 </style>
