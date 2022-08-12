@@ -77,6 +77,9 @@ export default defineComponent({
           </div>
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
+        <div v-if="quote.comment" class="quote-comment">
+          {{ quote.comment }}
+        </div>
       </div>
       <p class="no-search-result" v-if="quotes.length === 0"
         >No search result for keyword <span>{{ searchKeyword }}</span
@@ -170,6 +173,15 @@ export default defineComponent({
 
   .markdown-body {
     margin-top: 6px;
+  }
+
+  .quote-comment {
+    white-space: pre-wrap;
+    background-color: #f6f6f6;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    box-shadow: #888 0 0 2px;
   }
 
   .quote-operation {

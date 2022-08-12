@@ -59,12 +59,33 @@ export default defineComponent({
 
   &-button-group {
     display: flex;
+
+    button {
+      background-color: transparent;
+      border: 1px solid rgb(217, 217, 217);
+      height: 24px;
+      width: 4em;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:disabled {
+        background-color: transparent;
+        color: rgb(24, 144, 255);
+        border-color: currentColor;
+      }
+    }
   }
 
-  &-icon-button-group button {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+  &-icon-button-group {
+    margin-left: 4px;
+
+    button {
+      display: flex;
+      align-items: center;
+      width: fit-content;
+      border: 0;
+      cursor: pointer;
+    }
   }
 }
 
