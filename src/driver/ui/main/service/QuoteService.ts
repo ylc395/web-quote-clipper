@@ -73,6 +73,8 @@ export default class QuoteService {
       return;
     }
 
+    keyword = keyword.toLowerCase();
+
     if (!this.allQuotes.value) {
       throw new Error('no quotes');
     }
@@ -80,10 +82,11 @@ export default class QuoteService {
     this.quotes.value = this.allQuotes.value.filter(
       ({ sourceUrl, contents, comment, note }) => {
         return (
-          (this.source.value === 'all' && sourceUrl.includes(keyword)) ||
-          comment.includes(keyword) ||
-          note?.path.includes(keyword) ||
-          contents.some((content) => content.includes(keyword))
+          (this.source.value === 'all' &&
+            sourceUrl.toLowerCase().includes(keyword)) ||
+          comment.toLowerCase().includes(keyword) ||
+          note?.path.toLowerCase().includes(keyword) ||
+          contents.some((content) => content.toLowerCase().includes(keyword))
         );
       },
     );
