@@ -15,6 +15,7 @@ import {
   getLastChildDeep,
   getAncestor,
   isVisible,
+  isPreElement,
   copyQuoteToClipboard,
 } from '../utils';
 import MarkManager from './MarkManager';
@@ -123,6 +124,7 @@ export default class HighlightService {
     let lastText = '';
     let lastAnchor: { root: HTMLAnchorElement; lastChild: Node } | null = null;
     let lastCode: { lastChild: Node; isBlock: boolean } | null = null;
+    let lastPre: Node | null = null;
     let currentNode: Node | null = treeWalker.currentNode;
 
     // todo: handle strong,em,del...
@@ -182,13 +184,22 @@ export default class HighlightService {
           }
         }
 
-        if (isCodeElement(currentNode)) {
+        if (isCodeElement(currentNode) && !lastPre) {
           const lastChild = getLastValidChild(currentNode);
 
           if (lastChild) {
             const isBlock = Boolean(getAncestor(currentNode, 'pre'));
             lastCode = { lastChild, isBlock };
             lastText += isBlock ? '```\n' : '`';
+          }
+        }
+
+        if (isPreElement(currentNode)) {
+          const lastChild = getLastValidChild(currentNode);
+
+          if (lastChild) {
+            lastPre = lastChild;
+            lastText += '```\n';
           }
         }
 
@@ -242,6 +253,11 @@ export default class HighlightService {
       if (lastCode?.lastChild === currentNode) {
         lastText += lastCode.isBlock ? '\n```' : '`';
         lastCode = null;
+      }
+
+      if (currentNode === lastPre) {
+        lastPre = null;
+        lastText += '\n```';
       }
 
       if (isEndNode) {

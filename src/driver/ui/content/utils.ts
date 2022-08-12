@@ -27,6 +27,9 @@ export const isValidAnchorElement = (
 export const isCodeElement = (element: Element) =>
   element.tagName.toLowerCase() === 'code';
 
+export const isPreElement = (element: Element): element is HTMLPreElement =>
+  element.tagName.toLowerCase() === 'pre';
+
 export const getLastValidChild = (node: Element) => {
   for (let i = node.childNodes.length - 1; i >= 0; i--) {
     const child = node.childNodes[i];
