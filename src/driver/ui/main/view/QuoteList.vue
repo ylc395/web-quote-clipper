@@ -7,6 +7,7 @@ import {
   BIconGlobe,
   BIconMinecart,
 } from 'bootstrap-icons-vue';
+import { NButtonGroup, NButton, NEmpty } from 'naive-ui';
 import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
@@ -23,6 +24,9 @@ export default defineComponent({
     BIconBullseye,
     BIconGlobe,
     BIconMinecart,
+    NButton,
+    NButtonGroup,
+    NEmpty,
   },
   setup() {
     const dbType = useConfig('db');
@@ -70,17 +74,23 @@ export default defineComponent({
               ><BIconGlobe />{{ quote.sourceUrl }}</a
             >
           </div>
-          <div class="quote-operation">
-            <button
+          <NButtonGroup size="tiny" class="quote-operation">
+            <NButton
+              :bordered="false"
+              title="Scroll to this quote"
               v-if="matchedQuoteIds.includes(quote.id)"
-              title="Scroll To This"
               @click="scrollToQuote(quote)"
-              ><BIconBullseye
-            /></button>
-            <button title="Delete" @click="deleteQuote(quote)"
-              ><BIconTrashFill
-            /></button>
-          </div>
+            >
+              <template #icon><BIconBullseye /></template>
+            </NButton>
+            <NButton
+              title="Delete Quote"
+              :bordered="false"
+              @click="deleteQuote(quote)"
+            >
+              <template #icon><BIconTrashFill /></template>
+            </NButton>
+          </NButtonGroup>
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
         <div v-if="quote.comment" class="quote-comment">
@@ -92,19 +102,18 @@ export default defineComponent({
         >.</p
       >
     </div>
-    <div v-else class="empty-list">
-      <div class="empty-icon"><BIconMinecart /></div>
-      <h1 class="empty-title"
-        >Can't find any clipped content from this page.</h1
-      >
-      <div class="empty-retry" v-if="isJoplin">
-        <p
-          >Joplin may take seconds to update its database. Click Refresh to
-          retry.</p
-        >
-        <button @click="init">Refresh</button>
-      </div>
-    </div>
+    <NEmpty v-else>
+      <template #icon><BIconMinecart /></template>
+      <template #default>
+        <div class="empty-description">
+          <p>Can't find any clipped content from this page.</p>
+          <p v-if="isJoplin">Joplin may take seconds to update its database.</p>
+        </div>
+      </template>
+      <template v-if="isJoplin" #extra>
+        <NButton type="primary" @click="init">Refresh</NButton>
+      </template>
+    </NEmpty>
   </template>
   <div v-else>loading...</div>
 </template>
@@ -192,23 +201,6 @@ export default defineComponent({
     box-shadow: #888 0 0 2px;
   }
 
-  .quote-operation {
-    display: flex;
-    align-items: flex-start;
-
-    & > button {
-      color: inherit;
-      display: flex;
-      align-items: center;
-      background-color: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      font-size: 16px;
-      margin-left: 4px;
-    }
-  }
-
   .no-search-result {
     font-size: 14px;
 
@@ -218,35 +210,15 @@ export default defineComponent({
   }
 }
 
-.empty-list {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 10px;
+.empty-description {
   text-align: center;
 
-  .empty-icon {
-    font-size: 30px;
-  }
-
-  .empty-title {
-    font-weight: bold;
-    font-size: 16px;
+  p {
     margin: 0;
-  }
 
-  .empty-url {
-    color: #676767;
-    word-break: break-all;
-  }
-
-  .empty-retry button {
-    background-color: #2878f7;
-    color: #fff;
-    border: 0;
-    height: 30px;
-    width: 80px;
-    border-radius: 6px;
-    cursor: pointer;
+    &:last-child {
+      margin-bottom: 20px;
+    }
   }
 }
 </style>

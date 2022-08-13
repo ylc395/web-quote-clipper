@@ -30,6 +30,7 @@ export default defineComponent({
   box-sizing: border-box;
   background-color: #f2f2f2;
   padding: 0 10px 10px 10px;
+  min-height: 460px;
 }
 
 .big-modal {

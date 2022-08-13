@@ -1,17 +1,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { container } from 'tsyringe';
-import {
-  BIconGearFill,
-  BIconSearch,
-  BIconSortDown,
-  BIconSortUp,
-} from 'bootstrap-icons-vue';
+import { BIconGearFill, BIconSearch } from 'bootstrap-icons-vue';
+import { NInput, NButton, NButtonGroup } from 'naive-ui';
 import Router from 'driver/ui/main/service/RouterService';
 import QuoteService from 'driver/ui/main/service/QuoteService';
 
 export default defineComponent({
-  components: { BIconGearFill, BIconSearch, BIconSortDown, BIconSortUp },
+  components: { BIconGearFill, BIconSearch, NInput, NButton, NButtonGroup },
   setup() {
     return { ...container.resolve(QuoteService), ...container.resolve(Router) };
   },
@@ -21,30 +17,40 @@ export default defineComponent({
   <div>
     <div class="app-head">
       <h1 class="app-title">Quotes Collection</h1>
-      <div class="app-head-button-group">
-        <button :disabled="source === 'page'" @click="source = 'page'"
-          >Page</button
+      <NButtonGroup class="app-head-button-group">
+        <NButton
+          type="primary"
+          :bordered="false"
+          :ghost="source !== 'page'"
+          :disabled="source === 'page'"
+          @click="source = 'page'"
+          >Page</NButton
         >
-        <button :disabled="source === 'all'" @click="source = 'all'"
-          >All</button
+        <NButton
+          type="primary"
+          :bordered="false"
+          :ghost="source !== 'all'"
+          :disabled="source === 'all'"
+          @click="source = 'all'"
+          >All</NButton
         >
-        <div class="app-head-icon-button-group">
-          <button title="setting" @click="views.options = true"
-            ><BIconGearFill
-          /></button>
-        </div>
-      </div>
+        <NButton size="tiny" :bordered="false" @click="views.options = true">
+          <template #icon>
+            <BIconGearFill />
+          </template>
+        </NButton>
+      </NButtonGroup>
     </div>
-    <div>
-      <div class="search-input">
-        <BIconSearch />
-        <input
-          v-model="searchKeyword"
-          :placeholder="`Search quotes${
-            source === 'page' ? ' of this page' : ''
-          }...`"
-        />
-      </div>
+    <div class="search-input">
+      <NInput
+        clearable
+        v-model:value="searchKeyword"
+        :placeholder="`Search quotes${
+          source === 'page' ? ' of this page' : ''
+        }...`"
+      >
+        <template #prefix><BIconSearch /></template>
+      </NInput>
     </div>
   </div>
 </template>
@@ -61,56 +67,11 @@ export default defineComponent({
   }
 
   &-button-group {
-    display: flex;
-
-    button {
-      background-color: transparent;
-      border: 1px solid rgb(217, 217, 217);
-      height: 24px;
-      width: 4em;
-      border-radius: 4px;
-      cursor: pointer;
-
-      &:disabled {
-        background-color: transparent;
-        color: rgb(24, 144, 255);
-        border-color: currentColor;
-      }
-    }
-  }
-
-  &-icon-button-group {
-    margin-left: 4px;
-
-    button {
-      display: flex;
-      align-items: center;
-      width: fit-content;
-      border: 0;
-      cursor: pointer;
-    }
+    align-items: center;
   }
 }
 
 .search-input {
-  position: relative;
   margin-bottom: 16px;
-  font-size: 14px;
-
-  $icon-left: 8px;
-
-  svg {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: $icon-left;
-  }
-
-  input {
-    padding-left: calc(1.2em + $icon-left);
-    width: 100%;
-    box-sizing: border-box;
-    height: 32px;
-  }
 }
 </style>
