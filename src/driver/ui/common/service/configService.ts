@@ -1,5 +1,5 @@
 import ConfigService, { ConfigEvents } from 'service/ConfigService';
-import { shallowRef, Ref } from 'vue';
+import { shallowRef, Ref, readonly } from 'vue';
 import { container } from 'tsyringe';
 
 const configCache: Record<string, Ref<string | undefined>> = {};
@@ -21,5 +21,5 @@ export function useConfig(...args: Parameters<ConfigService['get']>) {
   update();
   configCache[key] = value;
 
-  return value;
+  return readonly(value);
 }

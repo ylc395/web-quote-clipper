@@ -20,6 +20,7 @@ import {
 } from '../utils';
 import MarkManager from './MarkManager';
 import { MARK_CLASS_NAME } from './constants';
+import { OperationTypes } from 'model/config';
 
 const SUSPICIOUS_EMPTY_STRING_REGEX = /^\s{5,}$/;
 
@@ -68,16 +69,14 @@ export default class HighlightService {
     this.currentRange.value = undefined;
   };
 
-  capture = async (
-    type: 'persist' | 'clipboard-inline' | 'clipboard-block',
-  ) => {
+  capture = async (type: OperationTypes) => {
     const result = this.generatedQuote.value;
 
     if (!result) {
       throw new Error('generate quote error');
     }
 
-    if (type === 'persist') {
+    if (type === OperationTypes.Persist) {
       const createdQuote = await repository.createQuote(result.quote);
       this.markManager.highlightQuote(createdQuote, {
         range: result.range,

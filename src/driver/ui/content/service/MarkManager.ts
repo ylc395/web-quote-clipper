@@ -18,6 +18,7 @@ import {
   MARK_QUOTE_ID_DATASET_KEY_CAMEL,
 } from './constants';
 import { copyQuoteToClipboard, isVisible, getUrlPath, noop } from '../utils';
+import type { OperationTypes } from 'model/config';
 
 const UNPERSISTED_CLASS_NAME = `${MARK_CLASS_NAME}-unpersisted`;
 const REFRESH_DELAY = 2000; // not sure what's the best interval
@@ -369,7 +370,7 @@ export default class MarkManager {
 
   copyAs = async (
     cid: string,
-    type: 'clipboard-inline' | 'clipboard-block',
+    type: OperationTypes.ClipboardBlock | OperationTypes.ClipboardInline,
   ) => {
     const quote = this.matchedQuotesMap[cid];
     await copyQuoteToClipboard(quote, type);

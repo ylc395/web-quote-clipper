@@ -7,12 +7,13 @@ import {
   BIconSortDown,
   BIconSortUp,
 } from 'bootstrap-icons-vue';
-import QuoteService from '../service/QuoteService';
+import Router from 'driver/ui/main/service/RouterService';
+import QuoteService from 'driver/ui/main/service/QuoteService';
 
 export default defineComponent({
   components: { BIconGearFill, BIconSearch, BIconSortDown, BIconSortUp },
   setup() {
-    return { ...container.resolve(QuoteService) };
+    return { ...container.resolve(QuoteService), ...container.resolve(Router) };
   },
 });
 </script>
@@ -28,7 +29,9 @@ export default defineComponent({
           >All</button
         >
         <div class="app-head-icon-button-group">
-          <button title="setting"><BIconGearFill /></button>
+          <button title="setting" @click="views.options = true"
+            ><BIconGearFill
+          /></button>
         </div>
       </div>
     </div>

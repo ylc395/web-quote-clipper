@@ -1,6 +1,7 @@
 import BLOCK_ELEMENTS from 'block-elements';
 import { stringifyMetadata } from 'service/MarkdownService';
 import type { Quote } from 'model/entity';
+import { OperationTypes } from 'model/config';
 
 export { getUrlPath } from 'service/QuoteService';
 
@@ -79,15 +80,15 @@ export const isVisible = (node: Node) =>
 
 export const copyQuoteToClipboard = async (
   quote: Quote,
-  type: 'clipboard-inline' | 'clipboard-block',
+  type: OperationTypes.ClipboardInline | OperationTypes.ClipboardBlock,
 ) => {
-  if (type === 'clipboard-block') {
+  if (type === OperationTypes.ClipboardBlock) {
     await navigator.clipboard.writeText(
       `> ${quote.contents.join('\n>\n>')}\n>\n> ${stringifyMetadata(quote)}`,
     );
   }
 
-  if (type === 'clipboard-inline') {
+  if (type === OperationTypes.ClipboardInline) {
     if (quote.contents.length > 1) {
       throw new Error('can not copy to clipboard');
     }

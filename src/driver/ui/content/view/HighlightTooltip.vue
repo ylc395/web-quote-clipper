@@ -10,6 +10,7 @@ import webExtension from 'driver/ui/content/service/extensionService';
 
 import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
+import { OperationTypes } from 'model/config';
 
 export default defineComponent({
   components: { BIconBrushFill },
@@ -61,7 +62,7 @@ export default defineComponent({
       const type = option.type || (await configService.get('operation'));
       await capture(type);
 
-      if (type !== 'persist') {
+      if (type !== OperationTypes.Persist) {
         webExtension.notify({
           title: 'Copied',
           content: 'You can paste it to Joplin now.',
@@ -90,6 +91,7 @@ export default defineComponent({
       rootRef,
       isShowing,
       dbType,
+      OperationTypes,
       JOPLIN: DbTypes.Joplin,
       color,
       handleCapture,
@@ -131,13 +133,15 @@ export default defineComponent({
         bottom: range.reversed ? '100%' : '',
       }"
     >
-      <li @click="handleCapture({ type: 'persist' })">Save To Joplin</li>
-      <li @click="handleCapture({ type: 'clipboard-block' })"
+      <li @click="handleCapture({ type: OperationTypes.Persist })"
+        >Save To Joplin</li
+      >
+      <li @click="handleCapture({ type: OperationTypes.ClipboardBlock })"
         >Copy As Md Blockquote</li
       >
       <li
         v-if="generatedQuote && generatedQuote.quote.contents.length <= 1"
-        @click="handleCapture({ type: 'clipboard-inline' })"
+        @click="handleCapture({ type: OperationTypes.ClipboardInline })"
         >Copy As Md Text</li
       >
     </ul>
