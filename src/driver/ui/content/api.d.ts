@@ -1,8 +1,7 @@
 import type MarkManager from './service/MarkManager';
 
-export default interface ContentScript {
-  handleUrlUpdated: MarkManager['handleUrlUpdated'];
-  scrollToMark: MarkManager['scrollToMark'];
-  deleteQuote: MarkManager['deleteQuote'];
-  getMatchedQuoteIds: MarkManager['getMatchedQuoteIds'];
-}
+type ContentScript = Pick<
+  MarkManager,
+  'handleUrlUpdated' | 'scrollToMark' | 'deleteQuote' | 'getMatchedQuoteIds'
+>;
+export default ContentScript;

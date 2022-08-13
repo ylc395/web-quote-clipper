@@ -1,5 +1,5 @@
 import type QuoteService from './service/QuoteService';
 
-export default interface MainUI {
-  updateMatched: QuoteService['updateMatched'];
-}
+type MainUI = Pick<QuoteService, 'updateMatched'>;
+
+export default MainUI;
