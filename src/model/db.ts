@@ -1,6 +1,6 @@
 import type { InjectionToken } from 'tsyringe';
 import type EventEmitter from 'eventemitter3';
-import type { Quote } from './entity';
+import type { Quote, Note } from './entity';
 
 export interface QuotesQuery {
   url?: string;
@@ -13,6 +13,8 @@ export interface QuoteDatabase {
   postQuote: (quote: Quote) => Promise<Quote>; // create
   getAllQuotes: (query: QuotesQuery) => Promise<Omit<Quote, 'id'>[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
+  searchNotes?: (keyword: string) => Promise<Note[]>;
+  getNoteById?: (id: string) => Promise<Note>;
 }
 
 export enum StorageEvents {

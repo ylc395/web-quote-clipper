@@ -1,6 +1,7 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { container } from 'tsyringe';
+import debounce from 'lodash.debounce';
 import { BIconX } from 'bootstrap-icons-vue';
 import {
   NRadioGroup,
@@ -11,8 +12,11 @@ import {
   NSelect,
   NAutoComplete,
   NButton,
+  SelectOption,
+  FormInst,
 } from 'naive-ui';
 import Router from 'driver/ui/main/service/RouterService';
+import repository from 'driver/ui/main/service/repository';
 import ConfigService from 'service/ConfigService';
 import { DbTypes } from 'model/db';
 import { OperationTypes } from 'model/config';
@@ -33,25 +37,63 @@ export default defineComponent({
     const router = container.resolve(Router);
     const config = container.resolve(ConfigService);
     const formModel = ref(config.getAll());
+    const formRef = ref<FormInst | undefined>();
+
     const save = async () => {
+      try {
+        await formRef.value!.validate();
+      } catch {
+        return;
+      }
       await config.update(formModel.value);
       router.views.options = false;
     };
 
+    const notesOptions = ref<SelectOption[]>([]);
+    const searchNotes = debounce(async (keyword: string, isId = false) => {
+      const notes = await repository.searchNotes(keyword, isId);
+      notesOptions.value = notes.map(({ id: value, path }) => {
+        const paths = path.split('/');
+        return {
+          value,
+          label: paths[paths.length - 1],
+        };
+      });
+    }, 500);
+
+    const needTarget = computed(
+      () =>
+        formModel.value.operation === OperationTypes.Persist &&
+        formModel.value.db === DbTypes.Joplin,
+    );
+
+    const formRules = computed(() =>
+      needTarget.value ? { targetId: { required: true } } : {},
+    );
+
+    if (needTarget.value && formModel.value.targetId) {
+      searchNotes(formModel.value.targetId, true);
+    }
+
     return {
-      router,
       save,
+      router,
       formModel,
+      formRef,
+      formRules,
+      needTarget,
       DbTypes,
       OperationTypes,
+      notesOptions,
+      searchNotes,
     };
   },
 });
 </script>
 <template>
   <div class="option-page">
-    <NForm>
-      <NFormItem label="Database:">
+    <NForm :rules="formRules" :model="formModel" ref="formRef">
+      <NFormItem label="Database:" path="db">
         <NRadioGroup v-model:value="formModel.db">
           <NSpace>
             <NRadio :value="DbTypes.Joplin">Joplin</NRadio>
@@ -78,10 +120,17 @@ export default defineComponent({
           ]"
         />
       </NFormItem>
-      <NFormItem label="Target Note:" path="targetId">
-        <NAutoComplete
+      <NFormItem v-if="needTarget" label="Target Note:" path="targetId">
+        <NSelect
+          remote
+          filterable
           v-model:value="formModel.targetId"
           placeholder="Search Note In Joplin"
+          @search="searchNotes"
+          :options="notesOptions"
+          :input-props="{
+            autocomplete: 'disabled',
+          }"
         />
       </NFormItem>
     </NForm>

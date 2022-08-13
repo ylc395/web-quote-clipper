@@ -188,6 +188,11 @@ export default class Joplin implements QuoteDatabase {
 
   async postQuote(quote: Quote) {
     const noteId = await this.config.get('targetId');
+
+    if (!noteId) {
+      throw new Error('no target note');
+    }
+
     // set note body
     const note = await this.getNoteById(noteId);
     const blockquote = await this.md.generateBlockquote(quote);
@@ -203,7 +208,7 @@ export default class Joplin implements QuoteDatabase {
     };
   }
 
-  private async getNoteById(id: string): Promise<Required<Note>> {
+  async getNoteById(id: string): Promise<Required<Note>> {
     const note = await this.request<{
       body: string;
       parent_id: string;
@@ -236,7 +241,7 @@ export default class Joplin implements QuoteDatabase {
     return quotes;
   }
 
-  private async searchNotes(keyword: string) {
+  async searchNotes(keyword: string) {
     const noteInfos = await this.request<{ id: string; parent_id: string }[]>({
       method: 'GET',
       url: `/search?query=${keyword}`,

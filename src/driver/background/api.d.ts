@@ -6,5 +6,6 @@ export default interface Background {
   updateQuote: QuoteService['updateQuote'];
   deleteQuote: QuoteService['deleteQuote'];
   fetchQuotes: QuoteService['fetchQuotes'];
+  searchNotes: QuoteService['searchNotes'];
   imgSrcToDataUrl: typeof imgSrcToDataUrl;
 }

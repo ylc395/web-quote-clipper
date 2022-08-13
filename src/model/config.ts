@@ -8,13 +8,12 @@ export enum OperationTypes {
 }
 
 export interface AppConfig {
-  targetId: Note['id'];
+  targetId?: Note['id'];
   db: DbTypes;
   operation: OperationTypes;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
-  targetId: '622b83982fd244dca3bc3bcecb8c29e4',
   db: DbTypes.Joplin,
   operation: OperationTypes.Persist,
 };

@@ -16,6 +16,7 @@ export default class QuoteService {
   private db?: QuoteDatabase;
 
   constructor() {
+    debugger;
     this.initDb();
   }
 
@@ -61,5 +62,15 @@ export default class QuoteService {
 
   deleteQuote = async (quote: Quote) => {
     return this.db!.deleteQuote(quote);
+  };
+
+  searchNotes = async (keyword: string, isId = false) => {
+    if (!this.db?.searchNotes || !this.db.getNoteById) {
+      throw new Error('can not search notes');
+    }
+
+    return isId
+      ? [await this.db.getNoteById(keyword)]
+      : this.db.searchNotes(keyword);
   };
 }

@@ -8,19 +8,12 @@ import type ContentScript from 'driver/ui/content/api';
 
 import 'driver/ui/extension';
 
-bootstrap(
-  ({
-    quoteService: { createQuote, updateQuote, deleteQuote, fetchQuotes },
-  }) => {
-    expose<Api>({
-      createQuote,
-      updateQuote,
-      deleteQuote,
-      fetchQuotes,
-      imgSrcToDataUrl,
-    });
-  },
-);
+bootstrap(({ quoteService }) => {
+  expose<Api>({
+    ...quoteService,
+    imgSrcToDataUrl,
+  });
+});
 
 browser.webNavigation.onHistoryStateUpdated.addListener(
   ({ tabId, url, frameId }) => {
