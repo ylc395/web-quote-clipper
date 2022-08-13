@@ -82,17 +82,11 @@ export const copyQuoteToClipboard = async (
   quote: Quote,
   type: OperationTypes.ClipboardInline | OperationTypes.ClipboardBlock,
 ) => {
-  if (type === OperationTypes.ClipboardBlock) {
+  if (type === OperationTypes.ClipboardBlock || quote.contents.length > 1) {
     await navigator.clipboard.writeText(
       `> ${quote.contents.join('\n>\n>')}\n>\n> ${stringifyMetadata(quote)}`,
     );
-  }
-
-  if (type === OperationTypes.ClipboardInline) {
-    if (quote.contents.length > 1) {
-      throw new Error('can not copy to clipboard');
-    }
-
+  } else {
     await navigator.clipboard.writeText(
       `[${quote.contents[0]}]${stringifyMetadata(quote)}`,
     );

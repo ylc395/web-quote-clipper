@@ -30,11 +30,17 @@ export default defineComponent({
     NButton,
   },
   setup() {
+    const router = container.resolve(Router);
     const config = container.resolve(ConfigService);
     const formModel = ref(config.getAll());
+    const save = async () => {
+      await config.update(formModel.value);
+      router.views.options = false;
+    };
 
     return {
-      ...container.resolve(Router),
+      router,
+      save,
       formModel,
       DbTypes,
       OperationTypes,
@@ -80,8 +86,8 @@ export default defineComponent({
       </NFormItem>
     </NForm>
     <NSpace justify="end">
-      <NButton type="primary">Confirm</NButton>
-      <NButton @click="views.options = false">Cancel</NButton>
+      <NButton @click="save" type="primary">Confirm</NButton>
+      <NButton @click="router.views.options = false">Cancel</NButton>
     </NSpace>
   </div>
 </template>

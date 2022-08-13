@@ -67,14 +67,14 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
     return this.config[key];
   }
 
-  async set<T extends keyof AppConfig>(key: T, value: AppConfig[T]) {
+  update = async (config: Partial<AppConfig>) => {
     await this.ready;
 
     if (!this.config) {
       throw new Error('no _config');
     }
 
-    this.config[key] = value;
+    this.config = { ...this.config, ...config };
     await this.storage.set(CONFIG_KEY, JSON.stringify(this.config));
-  }
+  };
 }
