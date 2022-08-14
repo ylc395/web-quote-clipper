@@ -8,7 +8,7 @@ import App from './view/App.vue';
 import MarkManager from './service/MarkManager';
 import type Api from './api';
 
-container.registerSingleton(storageToken, BrowserStorage);
+container.register(storageToken, { useValue: new BrowserStorage('local') });
 const markManager = container.resolve(MarkManager);
 
 expose<Api>(markManager);

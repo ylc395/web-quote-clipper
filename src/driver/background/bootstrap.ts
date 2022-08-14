@@ -12,7 +12,7 @@ import { BrowserQuoteDatabase, BrowserStorage } from 'driver/browserStorage';
 import Joplin from '../joplin';
 import type { AppConfig } from 'model/config';
 
-container.registerSingleton(storageToken, BrowserStorage);
+container.register(storageToken, { useValue: new BrowserStorage('local') });
 
 const DbMap = {
   [DbTypes.Browser]: BrowserQuoteDatabase,

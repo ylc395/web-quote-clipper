@@ -6,35 +6,32 @@ import type { Quote } from 'model/entity';
 import MarkdownService from 'service/MarkdownService';
 import { getUrlPath, generateQuoteId } from 'service/QuoteService';
 
-const STORAGE_AREA = 'sync';
-
-@singleton()
 export class BrowserStorage
   extends EventEmitter<StorageEvents>
   implements Storage
 {
-  constructor() {
+  constructor(private readonly area: 'sync' | 'local') {
     super();
     browser.storage.onChanged.addListener((changes, areaname) => {
-      if (areaname === STORAGE_AREA) {
+      if (areaname === this.area) {
         this.emit(StorageEvents.Changed, changes);
       }
     });
   }
 
   set(key: string, value: string) {
-    return browser.storage[STORAGE_AREA].set({ [key]: value });
+    return browser.storage[this.area].set({ [key]: value });
   }
 
   get(key: string) {
-    return browser.storage[STORAGE_AREA].get([key]).then((v) => v[key]);
+    return browser.storage[this.area].get([key]).then((v) => v[key]);
   }
 }
 
 const QUOTES_KEY = 'quotes';
 
 export class BrowserQuoteDatabase implements QuoteDatabase {
-  private readonly storage = container.resolve(BrowserStorage);
+  private readonly storage = new BrowserStorage('sync');
   private readonly md = new MarkdownService();
 
   async getAllQuotes({ contentType, url }: QuotesQuery) {

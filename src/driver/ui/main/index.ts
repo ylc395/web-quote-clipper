@@ -10,7 +10,7 @@ import QuoteService from './service/QuoteService';
 import App from './view/App.vue';
 import type Api from './api';
 
-container.registerSingleton(storageToken, BrowserStorage);
+container.register(storageToken, { useValue: new BrowserStorage('local') });
 
 const { init, updateMatched } = container.resolve(QuoteService);
 expose<Api>({
