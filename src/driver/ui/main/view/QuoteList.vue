@@ -7,7 +7,13 @@ import {
   BIconGlobe,
   BIconMinecart,
 } from 'bootstrap-icons-vue';
-import { NButtonGroup, NButton, NEmpty, NPopconfirm } from 'naive-ui';
+import {
+  NButtonGroup,
+  NButton,
+  NEmpty,
+  NPopconfirm,
+  NEllipsis,
+} from 'naive-ui';
 import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
@@ -28,6 +34,7 @@ export default defineComponent({
     NButtonGroup,
     NEmpty,
     NPopconfirm,
+    NEllipsis,
   },
   setup() {
     const dbType = useConfig('db');
@@ -69,11 +76,18 @@ export default defineComponent({
               :title="quote.note.path"
               class="quote-joplin-path"
               @click="jumpToJoplin(quote)"
-              ><JoplinIcon />{{ quote.note.path.slice(1) }}</div
             >
-            <a v-if="source === 'all'" :href="quote.sourceUrl" class="quote-url"
-              ><BIconGlobe />{{ quote.sourceUrl }}</a
+              <JoplinIcon />
+              <NEllipsis>{{ quote.note.path.slice(1) }}</NEllipsis>
+            </div>
+            <a
+              v-if="source === 'all' || !quote.note"
+              :href="quote.sourceUrl"
+              class="quote-url"
             >
+              <BIconGlobe />
+              <NEllipsis>{{ quote.sourceUrl }}</NEllipsis>
+            </a>
           </div>
           <NButtonGroup size="tiny" class="quote-operation">
             <NButton
@@ -162,10 +176,12 @@ export default defineComponent({
   .quote-item-info {
     color: #676767;
     display: flex;
+    justify-content: space-between;
 
     &-path {
-      flex-grow: 1;
       font-size: 14px;
+      max-width: 25em;
+      white-space: nowrap;
     }
   }
 
@@ -182,6 +198,7 @@ export default defineComponent({
     }
 
     svg {
+      min-width: 1em;
       margin-right: 4px;
     }
   }
