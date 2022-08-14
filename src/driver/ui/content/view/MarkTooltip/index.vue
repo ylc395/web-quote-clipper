@@ -16,6 +16,7 @@ import {
 } from 'bootstrap-icons-vue';
 import { COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
+import { OperationTypes } from 'model/config';
 import webExtension from 'driver/ui/content/service/extensionService';
 import JoplinIcon from '../../../common/view/JoplinIcon.vue'; // rollup-plugin-typescript2 not support alias path for .vue
 
@@ -101,6 +102,7 @@ export default defineComponent({
       textareaRef,
       dbType,
       JOPLIN: DbTypes.Joplin,
+      OperationTypes,
       jumpToJoplin,
       toggleSubmenu,
       deleteQuote,
@@ -182,12 +184,12 @@ export default defineComponent({
       />
     </div>
     <div v-if="submenuVisibility.copy" class="web-clipper-mark-manager-copy">
-      <button @click="handleCopy('clipboard-block')"
+      <button @click="handleCopy(OperationTypes.ClipboardBlock)"
         >Copy As Md Blockquote
       </button>
       <button
         v-if="quote.contents.length <= 1"
-        @click="handleCopy('clipboard-inline')"
+        @click="handleCopy(OperationTypes.ClipboardInline)"
         >Copy As Md Text
       </button>
     </div>
