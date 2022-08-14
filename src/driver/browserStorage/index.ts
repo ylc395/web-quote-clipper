@@ -6,7 +6,7 @@ import type { Quote } from 'model/entity';
 import MarkdownService from 'service/MarkdownService';
 import { getUrlPath, generateQuoteId } from 'service/QuoteService';
 
-const STORAGE_AREA = 'local';
+const STORAGE_AREA = 'sync';
 
 @singleton()
 export class BrowserStorage
@@ -48,6 +48,7 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
     }
 
     if (url) {
+      url = getUrlPath(url);
       quotes = quotes.filter(({ sourceUrl }) => url === getUrlPath(sourceUrl));
     }
 
