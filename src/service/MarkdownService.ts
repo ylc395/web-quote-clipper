@@ -15,26 +15,28 @@ import type { Quote, Colors } from 'model/entity';
 import type { QuotesQuery } from 'model/db';
 import { getUrlPath } from './QuoteService';
 
-export const ATTR_PREFIX = 'data-web-clipper';
+const ATTR_PREFIX = 'data-web-clipper';
 const COLOR_ATTR = `${ATTR_PREFIX}-color` as const;
 const COMMENT_ATTR = `${ATTR_PREFIX}-comment` as const;
+export const CITE_ATTR = 'cite' as const;
+export const QUOTE_ID_PREFIX = 'quote';
 
 interface BlockQuoteMetadata {
   id: string;
   [COLOR_ATTR]: Colors;
   [COMMENT_ATTR]?: string;
-  cite: string;
+  [CITE_ATTR]: string;
 }
 
 export function generateQuoteIdInMd(quote: Quote) {
-  return `quote${quote.createdAt.toString(36)}`;
+  return `${QUOTE_ID_PREFIX}${quote.createdAt.toString(36)}`;
 }
 
 export function stringifyMetadata(quote: Quote) {
   const comment = quote.comment
     ? ` ${COMMENT_ATTR}="${escape(quote.comment)}"`
     : '';
-  return `{#${generateQuoteIdInMd(quote)} cite="${
+  return `{#${generateQuoteIdInMd(quote)} ${CITE_ATTR}="${
     quote.sourceUrl
   }" ${ATTR_PREFIX}-color="${quote.color}"${comment}}`;
 }

@@ -5,7 +5,8 @@ import { storageToken, QuoteDatabase, QuotesQuery } from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, {
   generateQuoteIdInMd,
-  ATTR_PREFIX,
+  QUOTE_ID_PREFIX,
+  CITE_ATTR,
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
 
@@ -13,6 +14,8 @@ const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = 'http://localhost:27583';
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
+
+const SEARCH_KEYWORD = `/{#${QUOTE_ID_PREFIX}`;
 
 interface Notebook {
   id: string;
@@ -228,7 +231,9 @@ export default class Joplin implements QuoteDatabase {
 
   async getAllQuotes({ contentType, url }: QuotesQuery) {
     const urlPath = url ? getUrlPath(url) : undefined;
-    const notes = await this.searchNotes(url ? `cite=${urlPath}` : ATTR_PREFIX);
+    const notes = await this.searchNotes(
+      url ? `/${CITE_ATTR}="${urlPath}` : SEARCH_KEYWORD,
+    );
 
     const quotes = notes.flatMap((note) => {
       const quotes = this.md.extractQuotes(note.content, contentType, urlPath);
@@ -245,7 +250,7 @@ export default class Joplin implements QuoteDatabase {
   async searchNotes(keyword: string) {
     const noteInfos = await this.request<{ id: string; parent_id: string }[]>({
       method: 'GET',
-      url: `/search?query=${keyword}`,
+      url: `/search?query=${encodeURIComponent(keyword)}`,
     });
 
     const notes = await Promise.all(
