@@ -39,6 +39,10 @@ export default defineComponent({
     }, 300);
 
     const handleColorPicked = (_color: Colors) => {
+      if (dbType.value === DbTypes.Browser) {
+        return;
+      }
+
       if (color.value === _color) {
         color.value = undefined;
         return;
@@ -59,7 +63,11 @@ export default defineComponent({
         await generateQuote(option.color);
       }
 
-      const type = option.type || (await configService.get('operation'));
+      const type =
+        option.type ||
+        (dbType.value === DbTypes.Browser
+          ? OperationTypes.Persist
+          : await configService.get('operation'));
       await capture(type);
 
       if (type !== OperationTypes.Persist) {
