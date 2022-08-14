@@ -30,6 +30,11 @@ export default async function bootstrap(
 
   const dbType = await configService.get('db');
   container.registerSingleton(databaseToken, DbMap[dbType]);
+  configService.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
+    if (patch.db) {
+      container.registerSingleton(databaseToken, DbMap[patch.db]);
+    }
+  });
 
   if (dbType === DbTypes.Joplin) {
     container.registerSingleton(noteFinderToken, Joplin);
@@ -38,19 +43,14 @@ export default async function bootstrap(
   }
 
   const noteService = container.resolve(NoteService);
-  const quoteService = container.resolve(QuoteService);
-
-  configService.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
-    if (patch.db) {
-      container.registerSingleton(databaseToken, DbMap[patch.db]);
-    }
-  });
 
   noteService.on(NoteEvents.TypeChanged, (type: DbTypes) => {
     if (type === DbTypes.Joplin) {
       container.registerSingleton(noteFinderToken, DbMap[DbTypes.Joplin]);
     }
   });
+
+  const quoteService = container.resolve(QuoteService);
 
   cb({ configService, quoteService, noteService });
 }

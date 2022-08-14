@@ -46,6 +46,10 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
       {},
     );
 
+    if (Object.keys(diffKeys).length === 0) {
+      return;
+    }
+
     this.config = newConfig;
     this.emit(ConfigEvents.Updated, diffKeys);
   };
