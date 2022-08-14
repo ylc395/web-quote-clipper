@@ -1,4 +1,4 @@
-import { container } from 'tsyringe';
+import { container, singleton } from 'tsyringe';
 import type { Transformer } from 'unified';
 import type { Quote, Note } from 'model/entity';
 import { storageToken, QuoteDatabase, QuotesQuery } from 'model/db';
@@ -21,6 +21,7 @@ interface Notebook {
   title: string;
 }
 
+@singleton()
 export default class Joplin implements QuoteDatabase {
   private readonly config = container.resolve(ConfigService);
   private readonly md = new Markdown({

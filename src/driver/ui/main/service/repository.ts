@@ -4,7 +4,7 @@ import type Background from 'driver/background/api';
 import type ContentScript from 'driver/ui/content/api';
 import { getCurrentTab } from './extensionService';
 
-const { fetchQuotes, searchNotes } = wrap<Background>({
+const { fetchQuotes, searchNotes, setNotesFinder } = wrap<Background>({
   endPoint: browser.runtime,
 });
 
@@ -18,4 +18,5 @@ export default {
   deleteQuote,
   getMatchedQuoteIds,
   searchNotes,
+  setNotesFinder,
 } as const;

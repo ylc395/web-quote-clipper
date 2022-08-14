@@ -8,9 +8,10 @@ import type ContentScript from 'driver/ui/content/api';
 
 import 'driver/ui/extension';
 
-bootstrap(({ quoteService }) => {
+bootstrap(({ quoteService, noteService }) => {
   expose<Api>({
     ...quoteService,
+    ...noteService,
     imgSrcToDataUrl,
   });
 });

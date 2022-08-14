@@ -13,8 +13,11 @@ export interface QuoteDatabase {
   postQuote: (quote: Quote) => Promise<Quote>; // create
   getAllQuotes: (query: QuotesQuery) => Promise<Omit<Quote, 'id'>[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
-  searchNotes?: (keyword: string) => Promise<Note[]>;
-  getNoteById?: (id: string) => Promise<Note>;
+}
+
+export interface NotesFinder {
+  searchNotes: (keyword: string) => Promise<Note[]>;
+  getNoteById: (id: string) => Promise<Note>;
 }
 
 export enum StorageEvents {
@@ -34,6 +37,11 @@ export const storageToken: InjectionToken<Storage> = Symbol('storageToken');
 export const databaseToken: InjectionToken<QuoteDatabase> =
   Symbol('databaseToken');
 
+export const noteFinderToken: InjectionToken<NotesFinder | {}> =
+  Symbol('noteFinderToken');
+
+export const isNoteFinder = (value: any): value is NotesFinder =>
+  'searchNotes' in value;
 export enum DbTypes {
   Joplin = 'JOPLIN',
   Browser = 'BROWSER',

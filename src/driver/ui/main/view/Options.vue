@@ -1,5 +1,5 @@
 <script lang="ts">
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import { container } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import { BIconX } from 'bootstrap-icons-vue';
@@ -71,9 +71,17 @@ export default defineComponent({
       needTarget.value ? { targetId: { required: true } } : {},
     );
 
-    if (needTarget.value && formModel.value.targetId) {
-      searchNotes(formModel.value.targetId, true);
-    }
+    watch(
+      () => formModel.value.db,
+      async (value) => {
+        await repository.setNotesFinder(value);
+
+        if (needTarget.value && formModel.value.targetId) {
+          await searchNotes(formModel.value.targetId, true);
+        }
+      },
+      { immediate: true },
+    );
 
     return {
       save,
