@@ -44,7 +44,7 @@ export default defineComponent({
     <div class="search-input">
       <NInput
         clearable
-        v-model:value="searchKeyword"
+        @input="search"
         :placeholder="`Search quotes${
           source === 'page' ? ' of this page' : ''
         }...`"

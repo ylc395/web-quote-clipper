@@ -16,17 +16,37 @@ export default class QuoteService {
   readonly quotesCount = computed(() => this.allQuotes.value?.length || 0);
   readonly searchKeyword = ref('');
 
-  readonly quotes = ref<Quote[] | undefined>();
+  readonly quotes = computed(() => {
+    if (!this.allQuotes.value) {
+      return;
+    }
+
+    const keyword = this.searchKeyword.value;
+
+    if (!keyword) {
+      return this.allQuotes.value;
+    }
+
+    return this.allQuotes.value.filter(
+      ({ sourceUrl, contents, comment, note }) => {
+        return (
+          (this.source.value === 'all' &&
+            sourceUrl.toLowerCase().includes(keyword)) ||
+          comment.toLowerCase().includes(keyword) ||
+          note?.path.toLowerCase().includes(keyword) ||
+          contents.some((content) => content.toLowerCase().includes(keyword))
+        );
+      },
+    );
+  });
 
   constructor() {
     this.init();
     watch(this.source, this.init);
-    watch(this.searchKeyword, debounce(this.search, 200));
   }
 
   init = async () => {
     this.searchKeyword.value = '';
-    this.quotes.value = undefined;
     this.matchedQuoteIds.value = undefined;
 
     this.tabUrl.value = await webExtension.getCurrentTabUrl();
@@ -36,7 +56,6 @@ export default class QuoteService {
           url: this.source.value === 'all' ? undefined : this.tabUrl.value,
         })
       : [];
-    this.quotes.value = this.allQuotes.value;
     this.matchedQuoteIds.value = await repository.getMatchedQuoteIds();
   };
 
@@ -67,28 +86,7 @@ export default class QuoteService {
     this.matchedQuoteIds.value = matchedQuoteIds;
   };
 
-  private search = (keyword: string) => {
-    if (!keyword) {
-      this.quotes.value = this.allQuotes.value;
-      return;
-    }
-
-    keyword = keyword.toLowerCase();
-
-    if (!this.allQuotes.value) {
-      throw new Error('no quotes');
-    }
-
-    this.quotes.value = this.allQuotes.value.filter(
-      ({ sourceUrl, contents, comment, note }) => {
-        return (
-          (this.source.value === 'all' &&
-            sourceUrl.toLowerCase().includes(keyword)) ||
-          comment.toLowerCase().includes(keyword) ||
-          note?.path.toLowerCase().includes(keyword) ||
-          contents.some((content) => content.toLowerCase().includes(keyword))
-        );
-      },
-    );
-  };
+  search = debounce((keyword: string) => {
+    this.searchKeyword.value = keyword;
+  }, 500);
 }

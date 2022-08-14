@@ -7,7 +7,7 @@ import {
   BIconGlobe,
   BIconMinecart,
 } from 'bootstrap-icons-vue';
-import { NButtonGroup, NButton, NEmpty } from 'naive-ui';
+import { NButtonGroup, NButton, NEmpty, NPopconfirm } from 'naive-ui';
 import 'github-markdown-css/github-markdown.css';
 
 import { DbTypes } from 'model/db';
@@ -27,6 +27,7 @@ export default defineComponent({
     NButton,
     NButtonGroup,
     NEmpty,
+    NPopconfirm,
   },
   setup() {
     const dbType = useConfig('db');
@@ -83,13 +84,14 @@ export default defineComponent({
             >
               <template #icon><BIconBullseye /></template>
             </NButton>
-            <NButton
-              title="Delete Quote"
-              :bordered="false"
-              @click="deleteQuote(quote)"
-            >
-              <template #icon><BIconTrashFill /></template>
-            </NButton>
+            <NPopconfirm @positive-click="deleteQuote(quote)">
+              <template #trigger>
+                <NButton title="Delete Quote" :bordered="false">
+                  <template #icon><BIconTrashFill /></template>
+                </NButton>
+              </template>
+              Do you want to delete this quote permanently?
+            </NPopconfirm>
           </NButtonGroup>
         </div>
         <div class="markdown-body" v-html="joinContents(quote)"></div>
