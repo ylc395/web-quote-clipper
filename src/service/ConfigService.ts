@@ -34,8 +34,20 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
       return;
     }
 
-    this.config = this.parseConfigText(changes[CONFIG_KEY].newValue);
-    this.emit(ConfigEvents.Updated);
+    const newConfig = this.parseConfigText(changes[CONFIG_KEY].newValue);
+    const diffKeys = (Object.keys(newConfig) as (keyof AppConfig)[]).reduce(
+      (diffConfig: Partial<AppConfig>, key) => {
+        if (newConfig[key] !== this.config![key]) {
+          (diffConfig[key] as any) = newConfig[key];
+        }
+
+        return diffConfig;
+      },
+      {},
+    );
+
+    this.config = newConfig;
+    this.emit(ConfigEvents.Updated, diffKeys);
   };
 
   private parseConfigText(v: unknown) {
@@ -54,7 +66,6 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
   private async init() {
     const configText = await this.storage.get(CONFIG_KEY);
     this.config = this.parseConfigText(configText);
-    this.emit(ConfigEvents.Updated);
   }
 
   async get<T extends keyof AppConfig>(key: T): Promise<AppConfig[T]> {

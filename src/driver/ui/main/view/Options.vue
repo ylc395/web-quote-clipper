@@ -102,6 +102,7 @@ export default defineComponent({
         </NRadioGroup>
       </NFormItem>
       <NFormItem
+        v-if="formModel.db === DbTypes.Joplin"
         label="What happen when click highlight button:"
         path="operation"
       >

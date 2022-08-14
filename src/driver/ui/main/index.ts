@@ -10,7 +10,9 @@ import App from './view/App.vue';
 import type Api from './api';
 
 container.registerSingleton(storageToken, BrowserStorage);
-expose<Api>(container.resolve(QuoteService));
+
+const { init: refresh, updateMatched } = container.resolve(QuoteService);
+expose<Api>({ refresh, updateMatched });
 
 webExtension.handleClickAnchor();
 createApp(App).mount('#root');

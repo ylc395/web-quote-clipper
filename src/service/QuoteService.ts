@@ -1,6 +1,8 @@
 import { container, singleton } from 'tsyringe';
 import type { Quote } from 'model/entity';
 import { databaseToken, QuoteDatabase, QuotesQuery } from 'model/db';
+import ConfigService, { ConfigEvents } from './ConfigService';
+import type { AppConfig } from 'model/config';
 
 export function getUrlPath(url: string) {
   const urlObj = new URL(url);
@@ -14,6 +16,7 @@ export function generateQuoteId(quote: Omit<Quote, 'id'>) {
 @singleton()
 export default class QuoteService {
   private db?: QuoteDatabase;
+  private readonly config = container.resolve(ConfigService);
 
   constructor() {
     debugger;
@@ -53,6 +56,12 @@ export default class QuoteService {
 
   private initDb() {
     this.db = container.resolve(databaseToken);
+
+    this.config.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
+      if (patch.db) {
+        this.db = container.resolve(databaseToken);
+      }
+    });
   }
 
   updateQuote = async (quote: Quote) => {

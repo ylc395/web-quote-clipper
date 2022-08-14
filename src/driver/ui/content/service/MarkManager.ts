@@ -6,7 +6,8 @@ import { shallowReactive, shallowRef, watch, computed, reactive } from 'vue';
 
 import type { Quote } from 'model/entity';
 import { DbTypes } from 'model/db';
-import ConfigService from 'service/ConfigService';
+import type { AppConfig } from 'model/config';
+import ConfigService, { ConfigEvents } from 'service/ConfigService';
 import webExtension from './extensionService';
 import * as joplinService from 'driver/ui/common/service/joplinService';
 import repository from './repository';
@@ -54,6 +55,12 @@ export default class MarkManager {
     this.domMonitor.on(DomMonitorEvents.ContentAdded, this.highlightAll); // todo: maybe we don't need to try to match among the whole page every time
     this.domMonitor.on(DomMonitorEvents.QuoteRemoved, this.removeQuoteByCid);
     window.addEventListener('focus', this.refresh);
+    this.config.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
+      if (patch.db) {
+        this.reset();
+        webExtension.refresh().catch(noop);
+      }
+    });
 
     watch(this.activeMarkCount, (newValue, oldValue) => {
       if (newValue !== 0 && oldValue === 0) {
@@ -164,7 +171,7 @@ export default class MarkManager {
 
       if (quotes.length > 0) {
         this.domMonitor.start();
-        this.highlightAll();
+        await this.highlightAll();
       }
 
       this.updateBadgeText();

@@ -1,9 +1,10 @@
 import { container } from 'tsyringe';
 import { storageToken, databaseToken, DbTypes } from 'model/db';
 import QuoteService from 'service/QuoteService';
-import ConfigService from 'service/ConfigService';
+import ConfigService, { ConfigEvents } from 'service/ConfigService';
 import { BrowserQuoteDatabase, BrowserStorage } from 'driver/browserStorage';
 import Joplin from '../joplin';
+import type { AppConfig } from 'model/config';
 
 container.registerSingleton(storageToken, BrowserStorage);
 
@@ -21,6 +22,12 @@ export default async function bootstrap(
   const configService = container.resolve(ConfigService);
   const dbType = await configService.get('db');
   container.registerSingleton(databaseToken, DbMap[dbType]);
+
+  configService.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
+    if (patch.db) {
+      container.registerSingleton(databaseToken, DbMap[patch.db]);
+    }
+  });
 
   const quoteService = container.resolve(QuoteService);
   cb({ configService, quoteService });
