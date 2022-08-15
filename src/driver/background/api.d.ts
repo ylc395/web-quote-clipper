@@ -4,7 +4,12 @@ import type { imgSrcToDataUrl } from 'service/MarkdownService';
 
 type Background = Pick<
   QuoteService,
-  'createQuote' | 'deleteQuote' | 'fetchQuotes' | 'searchNotes' | 'updateQuote'
+  | 'createQuote'
+  | 'deleteQuote'
+  | 'fetchQuotes'
+  | 'searchNotes'
+  | 'updateQuote'
+  | 'isReady'
 > &
   Pick<NoteService, 'searchNotes' | 'setNotesFinder'> & {
     imgSrcToDataUrl: typeof imgSrcToDataUrl;

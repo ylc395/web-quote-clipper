@@ -7,9 +7,10 @@ import Router from 'driver/ui/main/service/RouterService';
 import Head from './Head.vue';
 import QuoteList from './QuoteList.vue';
 import Options from './Options.vue';
+import Guide from './Guide.vue';
 
 export default defineComponent({
-  components: { QuoteList, Head, Options, NModal },
+  components: { QuoteList, Head, Options, NModal, Guide },
   setup() {
     return { ...container.resolve(Router) };
   },
@@ -18,7 +19,8 @@ export default defineComponent({
 <template>
   <div id="app">
     <Head />
-    <QuoteList />
+    <Guide v-if="views.guide" />
+    <QuoteList v-else />
     <NModal v-model:show="views.options" class="big-modal">
       <Options />
     </NModal>

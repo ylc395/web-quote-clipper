@@ -10,9 +10,10 @@ import Markdown, {
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
 
+export const JOPLIN_PORT = 27538;
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
-const API_URL = 'http://localhost:27583';
+const API_URL = `http://localhost:${JOPLIN_PORT}`;
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
 
 const SEARCH_KEYWORD = `/{#${QUOTE_ID_PREFIX}`;
@@ -40,6 +41,8 @@ export default class Joplin implements QuoteDatabase {
   constructor() {
     this.initializing = this.init();
   }
+
+  ready = () => this.initializing || Promise.resolve();
 
   private async init() {
     if (this.initializing) {

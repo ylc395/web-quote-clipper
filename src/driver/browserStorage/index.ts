@@ -33,6 +33,7 @@ const QUOTES_KEY = 'quotes';
 export class BrowserQuoteDatabase implements QuoteDatabase {
   private readonly storage = new BrowserStorage('sync');
   private readonly md = new MarkdownService();
+  ready = () => Promise.resolve();
 
   async getAllQuotes({ contentType, url }: QuotesQuery) {
     const quotesText = await this.storage.get(QUOTES_KEY);

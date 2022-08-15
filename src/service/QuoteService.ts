@@ -17,10 +17,22 @@ export function generateQuoteId(quote: Omit<Quote, 'id'>) {
 export default class QuoteService {
   private db?: QuoteDatabase;
   private readonly config = container.resolve(ConfigService);
+  private _isReady = false;
 
   constructor() {
     this.initDb();
+    this.config.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
+      patch.db && this.initDb();
+    });
   }
+
+  private initDb() {
+    this._isReady = false;
+    this.db = container.resolve(databaseToken);
+    this.db.ready().then(() => (this._isReady = true));
+  }
+
+  isReady = () => Promise.resolve(this._isReady);
 
   fetchQuotes = async ({ url, contentType, orderBy }: QuotesQuery) => {
     const quotes: Quote[] = (
@@ -52,16 +64,6 @@ export default class QuoteService {
 
     return createdQuote;
   };
-
-  private initDb() {
-    this.db = container.resolve(databaseToken);
-
-    this.config.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
-      if (patch.db) {
-        this.db = container.resolve(databaseToken);
-      }
-    });
-  }
 
   updateQuote = async (quote: Quote) => {
     const newQuote = await this.db!.putQuote(quote);
