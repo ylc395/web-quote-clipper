@@ -19,7 +19,7 @@ import Router from 'driver/ui/main/service/RouterService';
 import repository from 'driver/ui/main/service/repository';
 import ConfigService from 'service/ConfigService';
 import { DbTypes } from 'model/db';
-import { OperationTypes } from 'model/config';
+import { AppConfig, OperationTypes } from 'model/config';
 
 export default defineComponent({
   components: {
@@ -36,7 +36,7 @@ export default defineComponent({
   setup() {
     const router = container.resolve(Router);
     const config = container.resolve(ConfigService);
-    const formModel = ref(config.getAll());
+    const formModel = ref<Partial<AppConfig>>({});
     const formRef = ref<FormInst | undefined>();
 
     const save = async () => {
@@ -71,9 +71,15 @@ export default defineComponent({
       needTarget.value ? { targetId: { required: true } } : {},
     );
 
+    config.getAll().then((v) => (formModel.value = v));
+
     watch(
       () => formModel.value.db,
       async (value) => {
+        if (!value) {
+          return;
+        }
+
         await repository.setNotesFinder(value);
 
         if (needTarget.value && formModel.value.targetId) {

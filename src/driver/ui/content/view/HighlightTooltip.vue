@@ -6,7 +6,6 @@ import { defineComponent, ref, watchPostEffect, watch } from 'vue';
 import { Colors, COLORS } from 'model/entity';
 import { DbTypes } from 'model/db';
 import ConfigService from 'service/ConfigService';
-import webExtension from 'driver/ui/content/service/extensionService';
 
 import { useDomMonitor, useConfig } from './composable';
 import HighlightService from '../service/HighlightService';
@@ -63,19 +62,7 @@ export default defineComponent({
         await generateQuote(option.color);
       }
 
-      const type =
-        option.type ||
-        (dbType.value === DbTypes.Browser
-          ? OperationTypes.Persist
-          : await configService.get('operation'));
-      await capture(type);
-
-      if (type !== OperationTypes.Persist) {
-        webExtension.notify({
-          title: 'Copied',
-          content: 'You can paste it to Joplin now.',
-        });
-      }
+      await capture(option.type);
     };
 
     watchPostEffect(() => {

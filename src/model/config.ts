@@ -15,5 +15,5 @@ export interface AppConfig {
 
 export const DEFAULT_CONFIG: AppConfig = {
   db: DbTypes.Browser,
-  operation: OperationTypes.Persist,
+  operation: OperationTypes.ClipboardBlock,
 };

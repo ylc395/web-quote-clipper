@@ -21,9 +21,11 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
     this.storage.on(StorageEvents.Changed, this.handleStorageChanged);
   }
 
-  getAll = () => {
+  getAll = async () => {
+    await this.ready;
+
     if (!this.config) {
-      throw new Error('no config');
+      throw new Error('no _config');
     }
 
     return { ...this.config };

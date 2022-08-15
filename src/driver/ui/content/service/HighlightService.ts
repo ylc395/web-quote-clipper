@@ -3,6 +3,9 @@ import { container, singleton } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import type { Colors, Quote } from 'model/entity';
 import { generateQuoteId } from 'service/QuoteService';
+import ConfigService from 'service/ConfigService';
+import webExtension from 'driver/ui/content/service/extensionService';
+
 import repository from './repository';
 import {
   isBlockElement,
@@ -21,6 +24,7 @@ import {
 import MarkManager from './MarkManager';
 import { MARK_CLASS_NAME } from './constants';
 import { OperationTypes } from 'model/config';
+import { DbTypes } from 'model/db';
 
 const SUSPICIOUS_EMPTY_STRING_REGEX = /^\s{5,}$/;
 
@@ -33,6 +37,7 @@ function pushContents(contents: string[], content: string) {
 
 @singleton()
 export default class HighlightService {
+  private readonly config = container.resolve(ConfigService);
   private readonly markManager = container.resolve(MarkManager);
   readonly currentRange = shallowRef<
     | {
@@ -69,24 +74,34 @@ export default class HighlightService {
     this.currentRange.value = undefined;
   };
 
-  capture = async (type: OperationTypes) => {
+  capture = async (type?: OperationTypes) => {
     const result = this.generatedQuote.value;
+    const dbType = await this.config.get('db');
 
     if (!result) {
       throw new Error('generate quote error');
     }
 
+    type =
+      dbType === DbTypes.Browser
+        ? OperationTypes.Persist
+        : type || (await this.config.get('operation'));
+
     if (type === OperationTypes.Persist) {
       const createdQuote = await repository.createQuote(result.quote);
-      this.markManager.highlightQuote(createdQuote, {
+      await this.markManager.highlightQuote(createdQuote, {
         range: result.range,
         isPersisted: true,
       });
     } else {
-      copyQuoteToClipboard(result.quote, type);
-      this.markManager.highlightQuote(result.quote, {
+      await copyQuoteToClipboard(result.quote, type);
+      await this.markManager.highlightQuote(result.quote, {
         range: result.range,
         isPersisted: false,
+      });
+      await webExtension.notify({
+        title: 'Copied',
+        content: 'You can paste it to Joplin now.',
       });
     }
     window.getSelection()?.empty(); // tip: this will trigger `selectionchange`
