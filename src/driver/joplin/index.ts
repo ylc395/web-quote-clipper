@@ -17,6 +17,7 @@ const API_URL = `http://localhost:${JOPLIN_PORT}`;
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
 
 const SEARCH_KEYWORD = `/{#${QUOTE_ID_PREFIX}`;
+const RETRY_INTERVAL = 1000;
 
 interface Notebook {
   id: string;
@@ -55,8 +56,10 @@ export default class Joplin implements QuoteDatabase {
     try {
       await this.requestPermission();
       await this.buildNotebookIndex();
-    } finally {
       this.initializing = undefined;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
+      await this.init();
     }
   }
 
@@ -157,7 +160,7 @@ export default class Joplin implements QuoteDatabase {
         await this.requestAuthToken();
       }
 
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, RETRY_INTERVAL));
     }
   }
 
