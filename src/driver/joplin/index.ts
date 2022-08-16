@@ -23,7 +23,9 @@ const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = `http://localhost:${JOPLIN_PORT}`;
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
 
-const SEARCH_KEYWORD = `/{#${QUOTE_ID_PREFIX}`;
+const getSearchKeyword = (quote?: Quote) =>
+  quote ? `/{#${generateQuoteIdInMd(quote)}` : `/{#${QUOTE_ID_PREFIX}`;
+
 const RETRY_INTERVAL = 2000;
 
 interface Notebook {
@@ -206,7 +208,7 @@ export default class Joplin implements Repo {
   }
 
   async putQuote(quote: Quote) {
-    const notes = await this.searchNotes(generateQuoteIdInMd(quote));
+    const notes = await this.searchNotes(getSearchKeyword(quote));
     const note = notes[0];
 
     const newContent = this.md.updateByQuote(note.content, quote);
@@ -261,7 +263,7 @@ export default class Joplin implements Repo {
   async getAllQuotes({ contentType, url }: QuotesQuery) {
     const urlPath = url ? getUrlPath(url) : undefined;
     const notes = await this.searchNotes(
-      url ? `/${CITE_ATTR}="${urlPath}` : SEARCH_KEYWORD,
+      url ? `/${CITE_ATTR}="${urlPath}` : getSearchKeyword(),
     );
 
     const quotes = notes.flatMap((note) => {
@@ -277,6 +279,10 @@ export default class Joplin implements Repo {
   }
 
   async searchNotes(keyword: string) {
+    if (!keyword) {
+      return [];
+    }
+
     const noteInfos = await this.request<{ id: string; parent_id: string }[]>({
       method: 'GET',
       url: `/search?query=${encodeURIComponent(keyword)}`,

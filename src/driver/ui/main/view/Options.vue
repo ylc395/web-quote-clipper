@@ -73,6 +73,7 @@ export default defineComponent({
           };
         });
       } catch (error) {
+        console.log(error);
         searchingStatus.feedback = 'Can not connect to Joplin';
         searchingStatus.validationStatus = 'error';
       }
@@ -180,7 +181,7 @@ export default defineComponent({
           v-model:value="formModel.targetId"
           placeholder="Search Note In Joplin"
           :loading="searchingStatus.loading"
-          :show="notesOptions.length > 0"
+          :show="searchingStatus.feedback ? false : undefined"
           @search="searchNotes"
           :options="notesOptions"
           :input-props="{
