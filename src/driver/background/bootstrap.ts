@@ -27,26 +27,23 @@ export default async function bootstrap(
   }) => void,
 ) {
   const configService = container.resolve(ConfigService);
-
   const dbType = await configService.get('db');
+
   container.registerSingleton(databaseToken, DbMap[dbType]);
   configService.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
     if (patch.db) {
+      const db = container.resolve(databaseToken);
+      db.destroy();
       container.registerSingleton(databaseToken, DbMap[patch.db]);
     }
   });
 
-  if (dbType === DbTypes.Joplin) {
-    container.registerSingleton(noteFinderToken, Joplin);
-  } else {
-    container.registerInstance(noteFinderToken, {});
-  }
-
   const noteService = container.resolve(NoteService);
-
   noteService.on(NoteEvents.TypeChanged, (type: DbTypes) => {
     if (type === DbTypes.Joplin) {
-      container.registerSingleton(noteFinderToken, DbMap[DbTypes.Joplin]);
+      container.registerSingleton(noteFinderToken, Joplin);
+    } else {
+      container.register(noteFinderToken, { useFactory: () => undefined });
     }
   });
 

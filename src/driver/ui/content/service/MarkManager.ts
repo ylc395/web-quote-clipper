@@ -58,7 +58,6 @@ export default class MarkManager {
     this.config.on(ConfigEvents.Updated, (patch: Partial<AppConfig>) => {
       if (patch.db) {
         this.reset();
-        webExtension.refresh().catch(noop);
       }
     });
 

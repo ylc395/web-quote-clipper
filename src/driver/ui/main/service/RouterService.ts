@@ -20,6 +20,7 @@ export default class RouterService {
       useConfig('db'),
       () => {
         clearInterval(this.checkTimer);
+        this.views.guide = false;
         this.checkTimer = setInterval(async () => {
           const isReady = await repository.isReady();
           this.views.guide = !isReady;

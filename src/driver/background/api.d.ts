@@ -10,9 +10,10 @@ type Background = Pick<
   | 'searchNotes'
   | 'updateQuote'
   | 'isReady'
-> &
-  Pick<NoteService, 'searchNotes' | 'setNotesFinder'> & {
-    imgSrcToDataUrl: typeof imgSrcToDataUrl;
-  };
+> & {
+  imgSrcToDataUrl: typeof imgSrcToDataUrl;
+  searchNotes: NoteService['searchNotes'];
+  destroyNotesFinder: NoteService['destroy'];
+};
 
 export default Background;

@@ -1,7 +1,14 @@
-import { container, singleton } from 'tsyringe';
+import { container } from 'tsyringe';
 import type { Transformer } from 'unified';
 import type { Quote, Note } from 'model/entity';
-import { storageToken, QuoteDatabase, QuotesQuery } from 'model/db';
+import {
+  storageToken,
+  QuoteDatabase,
+  NotesFinder,
+  QuotesQuery,
+  StorageEvents,
+  StorageChangedEvent,
+} from 'model/db';
 import ConfigService from 'service/ConfigService';
 import Markdown, {
   generateQuoteIdInMd,
@@ -10,14 +17,14 @@ import Markdown, {
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
 
-export const JOPLIN_PORT = 27538;
+export const JOPLIN_PORT = 27583;
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
 const AUTH_TOKEN_KEY = 'JOPLIN_AUTH_TOKEN';
 const API_URL = `http://localhost:${JOPLIN_PORT}`;
 const JOPLIN_RESOURCE_URL_REGEX = /^:\/\w+/;
 
 const SEARCH_KEYWORD = `/{#${QUOTE_ID_PREFIX}`;
-const RETRY_INTERVAL = 1000;
+const RETRY_INTERVAL = 2000;
 
 interface Notebook {
   id: string;
@@ -26,8 +33,9 @@ interface Notebook {
   title: string;
 }
 
-@singleton()
-export default class Joplin implements QuoteDatabase {
+type Repo = QuoteDatabase & NotesFinder;
+
+export default class Joplin implements Repo {
   private readonly config = container.resolve(ConfigService);
   private readonly md = new Markdown({
     transformPlugins: [() => this.replaceImageWithResource],
@@ -37,26 +45,40 @@ export default class Joplin implements QuoteDatabase {
   private apiToken = '';
   private authToken = '';
   private notebooksIndex?: Record<Notebook['id'], Notebook>;
-  private initializing?: Promise<void>;
+  private initializing: Promise<void>;
+  private _isReady = false;
+  private destroyed = false;
 
   constructor() {
     this.initializing = this.init();
+    this.storage.on(StorageEvents.Changed, (change: StorageChangedEvent) => {
+      if (!this.apiToken && change[API_TOKEN_KEY]) {
+        this.apiToken = change[API_TOKEN_KEY].newValue as string;
+      }
+    });
   }
 
-  ready = () => this.initializing || Promise.resolve();
+  isReady = () => this._isReady;
+  ready = () => this.initializing;
+
+  destroy() {
+    this.destroyed = true;
+    this._isReady = false;
+  }
 
   private async init() {
-    if (this.initializing) {
-      return this.initializing;
+    if (this.destroyed) {
+      return;
     }
 
+    this._isReady = false;
     this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
     this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
       await this.buildNotebookIndex();
-      this.initializing = undefined;
+      this._isReady = true;
     } catch {
       await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
       await this.init();
@@ -72,7 +94,7 @@ export default class Joplin implements QuoteDatabase {
     fromRequest = false,
   ): Promise<T> {
     if (!this.apiToken) {
-      await this.init();
+      await this.initializing;
     }
 
     let { method, url, body } = options;
@@ -92,6 +114,7 @@ export default class Joplin implements QuoteDatabase {
       resBody = JSON.parse(resBody);
     } catch {}
 
+    // todo: what if invalid token?
     if (!res.ok) {
       // https://joplinapp.org/api/references/rest_api/#error-handling
       throw new Error(`fail to request Joplin: ${resBody.error || resBody}`);
@@ -137,7 +160,7 @@ export default class Joplin implements QuoteDatabase {
       await this.requestAuthToken();
     }
 
-    while (!this.apiToken) {
+    while (!this.apiToken && !this.destroyed) {
       const url = `${API_URL}/auth/check?auth_token=${this.authToken}`;
       const response = await fetch(url);
 

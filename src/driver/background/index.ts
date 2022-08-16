@@ -11,8 +11,9 @@ import 'driver/ui/extension';
 bootstrap(({ quoteService, noteService }) => {
   expose<Api>({
     ...quoteService,
-    ...noteService,
     imgSrcToDataUrl,
+    searchNotes: noteService.searchNotes,
+    destroyNotesFinder: noteService.destroy,
   });
 });
 

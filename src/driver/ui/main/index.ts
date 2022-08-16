@@ -12,9 +12,8 @@ import type Api from './api';
 
 container.register(storageToken, { useValue: new BrowserStorage('local') });
 
-const { init, updateMatched } = container.resolve(QuoteService);
+const { updateMatched } = container.resolve(QuoteService);
 expose<Api>({
-  refresh: debounce(init, 500) as () => Promise<void>,
   updateMatched,
 });
 

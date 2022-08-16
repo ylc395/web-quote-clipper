@@ -1,7 +1,13 @@
 import { container, singleton } from 'tsyringe';
 import browser from 'webextension-polyfill';
 import EventEmitter from 'eventemitter3';
-import { QuoteDatabase, Storage, StorageEvents, QuotesQuery } from 'model/db';
+import {
+  QuoteDatabase,
+  Storage,
+  StorageEvents,
+  QuotesQuery,
+  StorageChangedEvent,
+} from 'model/db';
 import type { Quote } from 'model/entity';
 import MarkdownService from 'service/MarkdownService';
 import { getUrlPath, generateQuoteId } from 'service/QuoteService';
@@ -12,13 +18,14 @@ export class BrowserStorage
 {
   constructor(private readonly area: 'sync' | 'local') {
     super();
-    browser.storage.onChanged.addListener((changes, areaname) => {
-      if (areaname === this.area) {
-        this.emit(StorageEvents.Changed, changes);
-      }
-    });
+    browser.storage.onChanged.addListener(this.handleChange);
   }
 
+  private handleChange = (changes: StorageChangedEvent, areaname: string) => {
+    if (areaname === this.area) {
+      this.emit(StorageEvents.Changed, changes);
+    }
+  };
   set(key: string, value: string) {
     return browser.storage[this.area].set({ [key]: value });
   }
@@ -26,6 +33,10 @@ export class BrowserStorage
   get(key: string) {
     return browser.storage[this.area].get([key]).then((v) => v[key]);
   }
+
+  destroy = () => {
+    browser.storage.onChanged.removeListener(this.handleChange);
+  };
 }
 
 const QUOTES_KEY = 'quotes';
@@ -94,4 +105,8 @@ export class BrowserQuoteDatabase implements QuoteDatabase {
     quotes.splice(index, 1);
     await this.storage.set(QUOTES_KEY, JSON.stringify(quotes));
   }
+
+  destroy = () => {
+    this.storage.destroy();
+  };
 }

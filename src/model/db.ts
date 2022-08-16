@@ -14,11 +14,13 @@ export interface QuoteDatabase {
   getAllQuotes: (query: QuotesQuery) => Promise<Omit<Quote, 'id'>[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
   ready: () => Promise<void>;
+  destroy: () => void;
 }
 
 export interface NotesFinder {
   searchNotes: (keyword: string) => Promise<Note[]>;
   getNoteById: (id: string) => Promise<Note>;
+  destroy: () => void;
 }
 
 export enum StorageEvents {
@@ -32,13 +34,14 @@ export interface StorageChangedEvent {
 export interface Storage extends EventEmitter<StorageEvents> {
   get: (key: string) => Promise<string | null>;
   set: (key: string, value: string) => Promise<void>;
+  destroy: () => void;
 }
 
 export const storageToken: InjectionToken<Storage> = Symbol('storageToken');
 export const databaseToken: InjectionToken<QuoteDatabase> =
   Symbol('databaseToken');
 
-export const noteFinderToken: InjectionToken<NotesFinder | {}> =
+export const noteFinderToken: InjectionToken<NotesFinder | undefined> =
   Symbol('noteFinderToken');
 
 export const isNoteFinder = (value: any): value is NotesFinder =>

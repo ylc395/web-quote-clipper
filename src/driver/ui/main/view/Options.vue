@@ -1,5 +1,12 @@
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from 'vue';
+import {
+  computed,
+  defineComponent,
+  ref,
+  watch,
+  onUnmounted,
+  reactive,
+} from 'vue';
 import { container } from 'tsyringe';
 import debounce from 'lodash.debounce';
 import { BIconX } from 'bootstrap-icons-vue';
@@ -39,26 +46,38 @@ export default defineComponent({
     const formModel = ref<Partial<AppConfig>>({});
     const formRef = ref<FormInst | undefined>();
 
-    const save = async () => {
-      try {
-        await formRef.value!.validate();
-      } catch {
-        return;
-      }
-      await config.update(formModel.value);
-      router.views.options = false;
-    };
-
     const notesOptions = ref<SelectOption[]>([]);
+    const searchingStatus = reactive<{
+      feedback?: string;
+      validationStatus?: string;
+      loading: boolean;
+    }>({ loading: false });
+
     const searchNotes = debounce(async (keyword: string, isId = false) => {
-      const notes = await repository.searchNotes(keyword, isId);
-      notesOptions.value = notes.map(({ id: value, path }) => {
-        const paths = path.split('/');
-        return {
-          value,
-          label: paths[paths.length - 1],
-        };
-      });
+      if (!formModel.value.db) {
+        throw new Error('no db');
+      }
+
+      searchingStatus.loading = true;
+      try {
+        const notes = await repository.searchNotes(
+          formModel.value.db,
+          keyword,
+          isId,
+        );
+        notesOptions.value = notes.map(({ id: value, path }) => {
+          const paths = path.split('/');
+          return {
+            value,
+            label: paths[paths.length - 1],
+          };
+        });
+      } catch (error) {
+        searchingStatus.feedback = 'Can not connect to Joplin';
+        searchingStatus.validationStatus = 'error';
+      }
+
+      searchingStatus.loading = false;
     }, 500);
 
     const needTarget = computed(
@@ -71,23 +90,36 @@ export default defineComponent({
       needTarget.value ? { targetId: { required: true } } : {},
     );
 
+    const save = async () => {
+      searchingStatus.feedback = undefined;
+      searchingStatus.validationStatus = undefined;
+
+      try {
+        await formRef.value!.validate();
+      } catch {
+        return;
+      }
+      await config.update(formModel.value);
+      router.views.options = false;
+    };
+
     config.getAll().then((v) => (formModel.value = v));
 
     watch(
       () => formModel.value.db,
-      async (value) => {
-        if (!value) {
-          return;
-        }
-
-        await repository.setNotesFinder(value);
-
+      async () => {
         if (needTarget.value && formModel.value.targetId) {
           await searchNotes(formModel.value.targetId, true);
         }
       },
       { immediate: true },
     );
+
+    window.addEventListener('unload', repository.destroyNotesFinder);
+    onUnmounted(() => {
+      window.removeEventListener('unload', repository.destroyNotesFinder);
+      repository.destroyNotesFinder();
+    });
 
     return {
       save,
@@ -100,6 +132,7 @@ export default defineComponent({
       OperationTypes,
       notesOptions,
       searchNotes,
+      searchingStatus,
     };
   },
 });
@@ -135,12 +168,19 @@ export default defineComponent({
           ]"
         />
       </NFormItem>
-      <NFormItem v-if="needTarget" label="Target Note:" path="targetId">
+      <NFormItem
+        v-if="needTarget"
+        label="Target Note:"
+        path="targetId"
+        v-bind="searchingStatus"
+      >
         <NSelect
           remote
           filterable
           v-model:value="formModel.targetId"
           placeholder="Search Note In Joplin"
+          :loading="searchingStatus.loading"
+          :show="notesOptions.length > 0"
           @search="searchNotes"
           :options="notesOptions"
           :input-props="{

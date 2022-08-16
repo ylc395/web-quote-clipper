@@ -6,6 +6,7 @@ import type { Quote } from 'model/entity';
 import * as joplinService from 'driver/ui/common/service/joplinService';
 import webExtension from './extensionService';
 import repository from './repository';
+import { useConfig } from 'driver/ui/common/service/configService';
 
 @singleton()
 export default class QuoteService {
@@ -41,8 +42,7 @@ export default class QuoteService {
   });
 
   constructor() {
-    this.init();
-    watch(this.source, this.init);
+    watch([this.source, useConfig('db')], this.init, { immediate: true });
   }
 
   init = async () => {

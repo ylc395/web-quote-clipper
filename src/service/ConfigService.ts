@@ -91,7 +91,9 @@ export default class ConfigService extends EventEmitter<ConfigEvents> {
       throw new Error('no _config');
     }
 
-    this.config = { ...this.config, ...config };
-    await this.storage.set(CONFIG_KEY, JSON.stringify(this.config));
+    await this.storage.set(
+      CONFIG_KEY,
+      JSON.stringify({ ...this.config, ...config }),
+    );
   };
 }
