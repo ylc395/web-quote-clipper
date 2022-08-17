@@ -42,12 +42,15 @@ export default class QuoteService {
   });
 
   constructor() {
-    watch([this.source, useConfig('db')], this.init, { immediate: true });
+    watch([this.source, useConfig('db')], () => this.init(), {
+      immediate: true,
+    });
   }
 
-  init = async () => {
+  init = async (global = false) => {
     this.searchKeyword.value = '';
     this.matchedQuoteIds.value = undefined;
+    this.allQuotes.value = undefined;
 
     this.tabUrl.value = await webExtension.getCurrentTabUrl();
     this.allQuotes.value = this.tabUrl.value
@@ -56,6 +59,11 @@ export default class QuoteService {
           url: this.source.value === 'all' ? undefined : this.tabUrl.value,
         })
       : [];
+
+    if (global) {
+      await repository.refresh();
+    }
+
     this.matchedQuoteIds.value = await repository.getMatchedQuoteIds();
   };
 

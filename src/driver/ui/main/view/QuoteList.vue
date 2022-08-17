@@ -6,6 +6,7 @@ import {
   BIconBullseye,
   BIconGlobe,
   BIconMinecart,
+  BIconTruck,
 } from 'bootstrap-icons-vue';
 import {
   NButtonGroup,
@@ -30,6 +31,7 @@ export default defineComponent({
     BIconBullseye,
     BIconGlobe,
     BIconMinecart,
+    BIconTruck,
     NButton,
     NButtonGroup,
     NEmpty,
@@ -131,7 +133,12 @@ export default defineComponent({
       </template>
     </NEmpty>
   </template>
-  <div v-else>loading...</div>
+  <div v-else class="loading">
+    <div class="loading-icon"
+      ><JoplinIcon v-if="isJoplin" /><BIconTruck v-else
+    /></div>
+    <p>loading...</p>
+  </div>
 </template>
 <style lang="scss">
 @use '../../common/view/constants';
@@ -238,6 +245,21 @@ export default defineComponent({
     &:last-child {
       margin-bottom: 20px;
     }
+  }
+}
+
+.loading {
+  text-align: center;
+  padding-top: 80px;
+  font-size: 18px;
+  color: #737373;
+
+  &-icon {
+    font-size: 50px;
+  }
+
+  p {
+    margin: 0;
   }
 }
 </style>

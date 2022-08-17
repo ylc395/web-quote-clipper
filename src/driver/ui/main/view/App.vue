@@ -19,9 +19,9 @@ export default defineComponent({
 <template>
   <div id="app">
     <Head />
-    <Guide v-if="views.guide" />
+    <Guide v-if="guideView" />
     <QuoteList v-else />
-    <NModal v-model:show="views.options" class="big-modal">
+    <NModal v-model:show="optionsView" class="big-modal">
       <Options />
     </NModal>
   </div>

@@ -38,7 +38,10 @@ export function expose<T>(value: T): void {
           return { errorType: 0, payload: result };
         },
         (e) => {
-          return { errorType: getErrorType(e), payload: e };
+          return {
+            errorType: getErrorType(e),
+            payload: e instanceof Error ? e.stack : e,
+          };
         },
       );
     },

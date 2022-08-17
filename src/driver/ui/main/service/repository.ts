@@ -8,7 +8,7 @@ const { fetchQuotes, searchNotes, destroyNotesFinder } = wrap<Background>({
   endPoint: browser.runtime,
 });
 
-const { deleteQuote, getMatchedQuoteIds } = wrap<ContentScript>({
+const { deleteQuote, getMatchedQuoteIds, refresh } = wrap<ContentScript>({
   endPoint: browser.tabs,
   target: async () => (await getCurrentTab()).id,
 });
@@ -19,4 +19,5 @@ export default {
   getMatchedQuoteIds,
   searchNotes,
   destroyNotesFinder,
+  refresh,
 } as const;

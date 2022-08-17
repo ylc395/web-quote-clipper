@@ -18,30 +18,32 @@ export default defineComponent({
     <div class="app-head">
       <h1 class="app-title">Quotes Collection</h1>
       <NButtonGroup class="app-head-button-group">
-        <NButton
-          type="primary"
-          :bordered="false"
-          :ghost="source !== 'page'"
-          :disabled="source === 'page'"
-          @click="source = 'page'"
-          >Page</NButton
-        >
-        <NButton
-          type="primary"
-          :bordered="false"
-          :ghost="source !== 'all'"
-          :disabled="source === 'all'"
-          @click="source = 'all'"
-          >All</NButton
-        >
-        <NButton size="tiny" :bordered="false" @click="views.options = true">
+        <template v-if="!guideView">
+          <NButton
+            type="primary"
+            :bordered="false"
+            :ghost="source !== 'page'"
+            :disabled="source === 'page'"
+            @click="source = 'page'"
+            >Page</NButton
+          >
+          <NButton
+            type="primary"
+            :bordered="false"
+            :ghost="source !== 'all'"
+            :disabled="source === 'all'"
+            @click="source = 'all'"
+            >All</NButton
+          >
+        </template>
+        <NButton size="tiny" :bordered="false" @click="optionsView = true">
           <template #icon>
             <BIconGearFill />
           </template>
         </NButton>
       </NButtonGroup>
     </div>
-    <div class="search-input">
+    <div class="search-input" v-if="!guideView">
       <NInput
         clearable
         @input="search"

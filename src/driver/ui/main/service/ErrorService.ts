@@ -8,7 +8,7 @@ export default class ErrorService {
   private readonly router = container.resolve(RouterService);
   private handler = (e: Error) => {
     if (e instanceof DatabaseConnectionError) {
-      this.router.views.guide = true;
+      this.router.guideView.value = true;
       return;
     }
 

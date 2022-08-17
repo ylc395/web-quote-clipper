@@ -59,6 +59,9 @@ export default defineComponent({
       }
 
       searchingStatus.loading = true;
+      searchingStatus.validationStatus = undefined;
+      searchingStatus.feedback = undefined;
+
       try {
         const notes = await repository.searchNotes(
           formModel.value.db,
@@ -75,7 +78,7 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
         searchingStatus.feedback = 'Can not connect to Joplin';
-        searchingStatus.validationStatus = 'error';
+        searchingStatus.validationStatus = 'warning';
       }
 
       searchingStatus.loading = false;
@@ -101,7 +104,7 @@ export default defineComponent({
         return;
       }
       await config.update(formModel.value);
-      router.views.options = false;
+      router.optionsView.value = false;
     };
 
     config.getAll().then((v) => (formModel.value = v));
@@ -192,7 +195,7 @@ export default defineComponent({
     </NForm>
     <NSpace justify="end">
       <NButton @click="save" type="primary">Confirm</NButton>
-      <NButton @click="router.views.options = false">Cancel</NButton>
+      <NButton @click="router.optionsView.value = false">Cancel</NButton>
     </NSpace>
   </div>
 </template>

@@ -17,6 +17,7 @@ import Markdown, {
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
 import { DatabaseConnectionError } from 'model/error';
+import { delay, timeout } from 'lib/promise';
 
 export const JOPLIN_PORT = 27583;
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
@@ -48,10 +49,10 @@ export default class Joplin implements Repo {
   private apiToken = '';
   private authToken = '';
   private notebooksIndex?: Record<Notebook['id'], Notebook>;
-  private ready?: Promise<void>;
+  private ready: Promise<void>;
   private destroyed = false;
 
-  constructor() {
+  constructor(private readonly useIndex = true) {
     this.ready = this.init();
     this.storage.on(StorageEvents.Changed, (change: StorageChangedEvent) => {
       if (!this.apiToken && change[API_TOKEN_KEY]) {
@@ -70,10 +71,10 @@ export default class Joplin implements Repo {
 
     try {
       await this.requestPermission();
-      await this.buildNotebookIndex();
+      this.useIndex && (await this.buildNotebookIndex());
     } catch (e) {
-      this.ready = undefined;
-      throw e;
+      await delay(RETRY_INTERVAL);
+      await this.init();
     }
   }
 
@@ -87,20 +88,20 @@ export default class Joplin implements Repo {
     fromRequest = false,
   ): Promise<T> {
     let res: Response;
-    let { method, url, body } = options;
-
-    url = `${API_URL}${url}${!url.includes('?') ? '?' : '&'}token=${
-      this.apiToken
-    }`;
-
-    if (!this.ready) {
-      this.ready = this.init();
-    }
+    let url: string;
 
     try {
       if (!options.forced) {
-        await this.ready;
+        await timeout(this.ready, 3000, () => {
+          throw new Error('timeout');
+        });
       }
+
+      url = `${API_URL}${options.url}${
+        !options.url.includes('?') ? '?' : '&'
+      }token=${this.apiToken}`;
+
+      const { method, body } = options;
 
       res = await fetch(url, {
         method,
@@ -187,7 +188,7 @@ export default class Joplin implements Repo {
         await this.requestAuthToken();
       }
 
-      await new Promise((r) => setTimeout(r, RETRY_INTERVAL));
+      await delay(RETRY_INTERVAL);
     }
   }
 
@@ -377,7 +378,7 @@ export default class Joplin implements Repo {
 
   private getPathOfNote(note: { parent_id: string; title: string }) {
     if (!this.notebooksIndex) {
-      throw new Error('no index');
+      return note.title;
     }
 
     const notebooksIndex = this.notebooksIndex;

@@ -41,7 +41,9 @@ export default async function bootstrap(
   const noteService = container.resolve(NoteService);
   noteService.on(NoteEvents.TypeChanged, (type: DbTypes) => {
     if (type === DbTypes.Joplin) {
-      container.registerSingleton(noteFinderToken, Joplin);
+      container.register(noteFinderToken, {
+        useFactory: () => new Joplin(false),
+      });
     } else {
       container.register(noteFinderToken, { useFactory: () => undefined });
     }

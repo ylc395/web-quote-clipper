@@ -84,7 +84,7 @@ export default class MarkManager {
     this.init();
   }
 
-  private refresh = debounce(async () => {
+  refresh = debounce(async () => {
     if ((await this.config.get('db')) !== DbTypes.Joplin) {
       return;
     }

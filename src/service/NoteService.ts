@@ -1,7 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import { container, singleton } from 'tsyringe';
 import { DbTypes, isNoteFinder, noteFinderToken, NotesFinder } from 'model/db';
-import type { Note } from 'model/entity';
 
 export enum NoteEvents {
   TypeChanged = 'TYPE_CHANGED',
@@ -23,13 +22,7 @@ export default class NoteService extends EventEmitter {
       ? this.notesFinder.getNoteById(keyword)
       : this.notesFinder.searchNotes(keyword);
 
-    return new Promise<Note[]>((resolve, reject) => {
-      search.then(
-        (result) => resolve(Array.isArray(result) ? result : [result]),
-        reject,
-      );
-      setTimeout(reject, 2000);
-    });
+    return search.then((result) => (Array.isArray(result) ? result : [result]));
   };
 
   private setType = (type: DbTypes) => {
