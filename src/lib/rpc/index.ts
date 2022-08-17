@@ -1,4 +1,11 @@
-import { isResponse, Request, isRequest } from './protocol';
+import {
+  isResponse,
+  Request,
+  isRequest,
+  Response,
+  getErrorType,
+  getErrorByType,
+} from './protocol';
 import browser from 'webextension-polyfill';
 
 export function expose<T>(value: T): void {
@@ -7,7 +14,7 @@ export function expose<T>(value: T): void {
   }
 
   browser.runtime.onMessage.addListener(
-    (message: Request | undefined, sender) => {
+    (message: Request | undefined, sender): undefined | Promise<Response> => {
       if (
         !isRequest(message) ||
         typeof (value as any)[message.path] !== 'function'
@@ -21,17 +28,17 @@ export function expose<T>(value: T): void {
         result = (value as any)[message.path](...message.args, sender);
       } catch (error) {
         return Promise.resolve({
-          isError: true,
+          errorType: getErrorType(error),
           payload: error,
         });
       }
 
       return Promise.resolve(result).then(
         (result) => {
-          return { isError: false, payload: result };
+          return { errorType: 0, payload: result };
         },
         (e) => {
-          return { isError: true, payload: e };
+          return { errorType: getErrorType(e), payload: e };
         },
       );
     },
@@ -76,8 +83,11 @@ export function wrap<T>(
         throw new Error('not a response');
       }
 
-      if (res.isError) {
-        throw new Error(res ? res.payload : 'no response');
+      if (res.errorType > 0) {
+        throw (
+          getErrorByType(res) ||
+          new Error(res ? res.payload : 'no rpc response')
+        );
       }
 
       return res.payload;

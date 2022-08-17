@@ -13,7 +13,6 @@ export interface QuoteDatabase {
   postQuote: (quote: Quote) => Promise<Quote>; // create
   getAllQuotes: (query: QuotesQuery) => Promise<Omit<Quote, 'id'>[]>;
   deleteQuote: (quote: Quote) => Promise<void>;
-  ready: () => Promise<void>;
   destroy: () => void;
 }
 

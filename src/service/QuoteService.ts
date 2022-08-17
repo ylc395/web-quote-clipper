@@ -17,7 +17,6 @@ export function generateQuoteId(quote: Omit<Quote, 'id'>) {
 export default class QuoteService {
   private db?: QuoteDatabase;
   private readonly config = container.resolve(ConfigService);
-  private _isReady = false;
 
   constructor() {
     this.initDb();
@@ -27,12 +26,8 @@ export default class QuoteService {
   }
 
   private initDb() {
-    this._isReady = false;
     this.db = container.resolve(databaseToken);
-    this.db.ready().then(() => (this._isReady = true));
   }
-
-  isReady = () => Promise.resolve(this._isReady);
 
   fetchQuotes = async ({ url, contentType, orderBy }: QuotesQuery) => {
     const quotes: Quote[] = (

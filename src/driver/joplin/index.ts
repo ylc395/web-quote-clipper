@@ -16,6 +16,7 @@ import Markdown, {
   CITE_ATTR,
 } from 'service/MarkdownService';
 import { getUrlPath } from 'service/QuoteService';
+import { DatabaseConnectionError } from 'model/error';
 
 export const JOPLIN_PORT = 27583;
 const API_TOKEN_KEY = 'JOPLIN_API_TOKEN';
@@ -47,12 +48,11 @@ export default class Joplin implements Repo {
   private apiToken = '';
   private authToken = '';
   private notebooksIndex?: Record<Notebook['id'], Notebook>;
-  private initializing: Promise<void>;
-  private _isReady = false;
+  private ready?: Promise<void>;
   private destroyed = false;
 
   constructor() {
-    this.initializing = this.init();
+    this.ready = this.init();
     this.storage.on(StorageEvents.Changed, (change: StorageChangedEvent) => {
       if (!this.apiToken && change[API_TOKEN_KEY]) {
         this.apiToken = change[API_TOKEN_KEY].newValue as string;
@@ -60,30 +60,20 @@ export default class Joplin implements Repo {
     });
   }
 
-  isReady = () => this._isReady;
-  ready = () => this.initializing;
-
   destroy() {
     this.destroyed = true;
-    this._isReady = false;
   }
 
   private async init() {
-    if (this.destroyed) {
-      return;
-    }
-
-    this._isReady = false;
     this.apiToken = (await this.storage.get(API_TOKEN_KEY)) || '';
     this.authToken = (await this.storage.get(AUTH_TOKEN_KEY)) || '';
 
     try {
       await this.requestPermission();
       await this.buildNotebookIndex();
-      this._isReady = true;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
-      await this.init();
+    } catch (e) {
+      this.ready = undefined;
+      throw e;
     }
   }
 
@@ -92,24 +82,34 @@ export default class Joplin implements Repo {
       method: 'PUT' | 'GET' | 'POST';
       url: string;
       body?: Record<string, unknown> | FormData;
+      forced?: boolean;
     },
     fromRequest = false,
   ): Promise<T> {
-    if (!this.apiToken) {
-      await this.initializing;
-    }
-
+    let res: Response;
     let { method, url, body } = options;
 
     url = `${API_URL}${url}${!url.includes('?') ? '?' : '&'}token=${
       this.apiToken
     }`;
 
-    const res = await fetch(url, {
-      method,
-      body:
-        body instanceof FormData ? body : body ? JSON.stringify(body) : null,
-    });
+    if (!this.ready) {
+      this.ready = this.init();
+    }
+
+    try {
+      if (!options.forced) {
+        await this.ready;
+      }
+
+      res = await fetch(url, {
+        method,
+        body:
+          body instanceof FormData ? body : body ? JSON.stringify(body) : null,
+      });
+    } catch (e) {
+      throw new DatabaseConnectionError((e as Error).message);
+    }
 
     let resBody: any = await res.text();
     try {
@@ -119,7 +119,9 @@ export default class Joplin implements Repo {
     // todo: what if invalid token?
     if (!res.ok) {
       // https://joplinapp.org/api/references/rest_api/#error-handling
-      throw new Error(`fail to request Joplin: ${resBody.error || resBody}`);
+      throw new DatabaseConnectionError(
+        `Invalid Joplin Response: ${resBody.error || resBody}`,
+      );
     }
 
     if (
@@ -356,6 +358,7 @@ export default class Joplin implements Repo {
     const notebooks = await this.request<Notebook[]>({
       url: '/folders',
       method: 'GET',
+      forced: true,
     });
 
     const buildIndex = (notebooks: Notebook[]) => {
